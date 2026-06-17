@@ -594,6 +594,58 @@ async function chercherAdresses(q, el){
   }));
 }
 
+/* Auto-remplissage société via l'API officielle recherche-entreprises.api.gouv.fr (gratuit, sans clé) */
+let ENTR_RESULTS=[];
+function brancherEntrepriseAuto(el){
+  if(!el) return;
+  el.setAttribute('autocomplete','off');
+  el.addEventListener('input', ()=>{ const q=el.value.trim(); clearTimeout(acTimer); fermerAuto();
+    if(q.length<3) return; acTimer=setTimeout(()=>chercherEntreprises(q, el), 320); });
+  el.addEventListener('blur', ()=>setTimeout(fermerAuto, 180));
+}
+async function chercherEntreprises(q, el){
+  ENTR_RESULTS=[];
+  try{
+    const r=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+encodeURIComponent(q)+'&page=1&per_page=7');
+    const j=await r.json(); ENTR_RESULTS=j.results||[];
+  }catch(e){ return; }
+  fermerAuto();
+  if(!ENTR_RESULTS.length) return;
+  acBox=document.createElement('div'); acBox.className='ac-list';
+  acBox.innerHTML=ENTR_RESULTS.map((e,i)=>{ const sg=e.siege||{};
+    const ville=[sg.code_postal, sg.libelle_commune].filter(Boolean).join(' ');
+    const nom=e.nom_complet||e.nom_raison_sociale||'—';
+    return `<div data-i="${i}">${esc(nom)}<span class="cp">${esc(ville||e.siren||'')}</span></div>`; }).join('');
+  const cont=el.closest('.f')||el.parentElement; cont.style.position='relative';
+  acBox.style.top=(el.offsetTop+el.offsetHeight+2)+'px'; acBox.style.left=el.offsetLeft+'px';
+  acBox.style.width=Math.max(el.offsetWidth,300)+'px';
+  cont.appendChild(acBox);
+  acBox.querySelectorAll('div[data-i]').forEach(d=>d.addEventListener('mousedown', ev=>{
+    ev.preventDefault(); remplirEntreprise(ENTR_RESULTS[+d.dataset.i]); fermerAuto();
+  }));
+}
+function remplirEntreprise(e){
+  if(!e) return;
+  const sg=e.siege||{};
+  const setV=(id,v)=>{ const el=document.getElementById(id); if(el && v!=null && v!=='') el.value=v; };
+  const tsel=document.getElementById('c-type'); if(tsel) tsel.value='societe';
+  setV('c-raison', e.nom_complet||e.nom_raison_sociale||'');
+  setV('c-siret', sg.siret||'');
+  const dir=(e.dirigeants||[]).find(d=> d.type_dirigeant==='personne physique' || d.prenoms || d.nom);
+  if(dir){
+    if(dir.nom) setV('c-nom', titleStr(dir.nom));
+    if(dir.prenoms) setV('c-prenom', titleStr(dir.prenoms));
+    if(dir.qualite) setV('c-fonction', capStr(dir.qualite));
+  }
+  const ligneAdr = sg.adresse || [[sg.numero_voie, sg.type_voie, sg.libelle_voie].filter(Boolean).join(' '), [sg.code_postal, sg.libelle_commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const notesEl=document.getElementById('c-notes');
+  if(notesEl && !notesEl.value.trim()){
+    const bits=[]; if(e.siren) bits.push('SIREN '+e.siren); if(ligneAdr) bits.push('Siège : '+ligneAdr);
+    notesEl.value=bits.join('\n');
+  }
+  const rech=document.getElementById('c-recherche'); if(rech) rech.value='';
+}
+
 /* Briques de formulaire */
 function fText(id,label,v,o={}){ return `<div class="f ${o.full?'full':''}"><label>${label}</label><input id="${id}" class="${o.title?'cap-title':o.cap?'cap':o.tel?'tel':''}" type="${o.type||'text'}" value="${v==null?'':esc(v)}"></div>`; }
 function fNum(id,label,v,o={}){ return fText(id,label,v,{...o,type:'number'}); }
@@ -724,6 +776,9 @@ function formClient(rec, liens){
     </div>
     <div class="full">${listeLiens(liens)}</div>` : '';
   const corps=`<div class="form-grid">
+    <div class="f full"><label>🔎 Auto-remplissage société (nom ou SIREN)</label>
+      <input id="c-recherche" autocomplete="off" placeholder="Ex. : nom de l'entreprise ou n° SIREN">
+      <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche automatiquement.</div></div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
     ${fSel('c-role','Rôle',rec.role||'acheteur_locataire',[['acheteur_locataire','Preneur / Acquéreur'],['vendeur_bailleur','Bailleur / Vendeur'],['les_deux','Les deux']])}
     ${fText('c-raison','Raison sociale',rec.raison_sociale,{title:true})}
@@ -742,6 +797,7 @@ function formClient(rec, liens){
       email:(val('c-email')||'').toLowerCase()||null, notes:val('c-notes'), rgpd_consent:val('c-rgpd') });
     vueClients();
   }, rec.id ? async()=>{ await del('clients', rec.id); vueClients(); } : null, 'client:'+(rec.id||'new'));
+  brancherEntrepriseAuto(document.getElementById('c-recherche'));
   draftApply('client:'+(rec.id||'new'));
 }
 
