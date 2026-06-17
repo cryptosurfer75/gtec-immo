@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTEC Immobilier — Immobilier d'entreprise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Vert d'eau GTEC (accent + barre de menu) */
+  --teal-dark:#2E6357; --teal:#3D8074; --teal-light:#5FA08F;
+  /* Bleu marine GTEC (bandeau logo + pied de page) */
+  --bleu:#1A2738;
+  --gris-fonce:#4A5A5E; --gris-clair:#C9D0D3; --gris-bg:#F4F6F7;
+  --noir:#2A3338; --blanc:#fff;
+  --ombre:0 2px 14px rgba(42,51,56,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;color:var(--noir);background:var(--blanc);line-height:1.5}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ---------- En-tête : bandeau logo (bleu) + barre menu (vert) ---------- */
+.topbar{background:var(--bleu);text-align:center;padding:16px 0}
+.topbar img{height:62px;display:inline-block}
+header{position:sticky;top:0;z-index:50;background:var(--teal);box-shadow:0 2px 10px rgba(42,51,56,.15)}
+.menu{display:flex;justify-content:center;flex-wrap:wrap}
+.menu a{display:flex;align-items:center;height:52px;padding:0 24px;color:#fff;font-weight:500;font-size:.95rem;
+  border-left:1px solid rgba(255,255,255,.16);transition:background .15s}
+.menu a:last-child{border-right:1px solid rgba(255,255,255,.16)}
+.menu a:hover{background:rgba(255,255,255,.14)}
+.btn{display:inline-block;background:linear-gradient(135deg,var(--teal),var(--teal-dark));color:#fff;padding:11px 22px;border-radius:9px;font-weight:600;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px rgba(46,99,87,.3)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(46,99,87,.4)}
+.btn-ghost{background:transparent;color:var(--teal);border:1.5px solid var(--teal);box-shadow:none}
+.btn-ghost:hover{background:var(--teal);color:#fff;box-shadow:0 6px 18px rgba(46,99,87,.32)}
+
+/* ---------- Hero + recherche ---------- */
+.hero{position:relative;color:#fff;padding:122px 0 132px;overflow:hidden}
+/* béton : photo de bâtiment + voile émeraude profond */
+.hero::before{content:'';position:absolute;inset:0;z-index:0;
+  background:linear-gradient(112deg,rgba(11,38,33,.96) 0%,rgba(17,78,67,.88) 40%,rgba(30,140,120,.5) 100%),
+             url('hero.jpg') center/cover no-repeat}
+/* verre : trame d'un mur-rideau, fondue sur la droite */
+.hero::after{content:'';position:absolute;inset:0;z-index:0;opacity:.16;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);
+  background-size:66px 66px;
+  -webkit-mask-image:linear-gradient(112deg,#000 5%,transparent 68%);
+          mask-image:linear-gradient(112deg,#000 5%,transparent 68%)}
+.hero .wrap{position:relative;z-index:2;animation:rise .7s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.78rem;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;background:rgba(255,255,255,.12);padding:8px 16px;border-radius:30px;margin-bottom:20px;
+  backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.18)}
+.hero .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--teal-light);box-shadow:0 0 0 4px rgba(52,195,164,.25)}
+.hero h1{font-size:3.4rem;font-weight:800;max-width:800px;line-height:1.07;letter-spacing:-.015em;text-shadow:0 2px 24px rgba(0,0,0,.28)}
+.hero h1 .accent{color:var(--teal-light)}
+.hero p{margin-top:18px;font-size:1.2rem;opacity:.94;max-width:600px;text-shadow:0 1px 10px rgba(0,0,0,.2)}
+/* bandeau de confiance */
+.trust{display:flex;gap:14px 40px;flex-wrap:wrap;margin-top:32px}
+.trust .t{position:relative;padding-left:16px}
+.trust .t::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:3px;background:var(--teal-light)}
+.trust .t b{display:block;font-size:1.04rem;font-weight:700;letter-spacing:.01em}
+.trust .t span{font-size:.84rem;opacity:.82}
+/* recherche : panneau de verre dépoli posé sur le hero */
+.search{background:rgba(255,255,255,.13);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.28);
+  border-radius:18px;box-shadow:0 22px 60px rgba(0,0,0,.32);padding:22px;margin-top:38px;position:relative;z-index:5;
+  display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:14px;align-items:end}
+.search .search-titre{grid-column:1/-1;margin:-2px 0 2px;font-size:.82rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.9}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:.76rem;font-weight:600;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.04em}
+.field select,.field input{padding:12px 13px;border:1.5px solid transparent;border-radius:10px;font:inherit;color:var(--noir);background:rgba(255,255,255,.96)}
+.field select:focus,.field input:focus{outline:none;border-color:var(--teal-light);box-shadow:0 0 0 3px rgba(52,195,164,.3)}
+.search .btn{height:46px;font-size:.98rem}
+
+/* ---------- Sections ---------- */
+section{padding:64px 0}
+.section-label{display:inline-block;font-size:.76rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
+.section-label::before{content:'';display:inline-block;width:22px;height:2px;background:var(--teal-light);vertical-align:middle;margin-right:9px;border-radius:2px}
+.section-title{font-size:1.95rem;font-weight:800;margin-bottom:7px;color:var(--noir);letter-spacing:-.01em}
+.section-title .accent{color:var(--teal)}
+.section-sub{color:var(--gris-fonce);margin-bottom:30px;font-size:1.02rem}
+/* apparition au défilement */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* Catégories */
+.cats{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.cat{background:var(--gris-bg);border:1px solid var(--gris-clair);border-radius:14px;padding:24px 12px;text-align:center;cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s}
+.cat:hover{border-color:var(--teal);background:#fff;box-shadow:var(--ombre);transform:translateY(-3px)}
+.cat .ico{display:inline-flex;width:50px;height:50px;align-items:center;justify-content:center;border-radius:14px;
+  background:linear-gradient(135deg,rgba(52,195,164,.16),rgba(26,39,56,.06));font-size:1.5rem}
+.cat .lbl{margin-top:10px;font-weight:600;font-size:.9rem;color:var(--noir)}
+
+/* Cartes biens */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.card{border:1px solid var(--gris-clair);border-radius:16px;overflow:hidden;background:#fff;
+  transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column}
+.card:hover{box-shadow:0 14px 36px rgba(42,51,56,.16);transform:translateY(-4px)}
+.card .photo{height:200px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--teal-dark),var(--teal));color:rgba(255,255,255,.55);font-size:3.2rem}
+.card .photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.card:hover .photo img{transform:scale(1.06)}
+.badge{position:absolute;top:13px;left:13px;background:#fff;color:var(--teal-dark);font-size:.7rem;font-weight:700;
+  padding:6px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.fav{position:absolute;top:11px;right:11px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.92);
+  cursor:pointer;font-size:1rem;line-height:34px;text-align:center;transition:.15s;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.fav:hover{transform:scale(1.12)}.fav.on{background:var(--teal);color:#fff}
+.typetag{position:absolute;bottom:13px;left:13px;background:rgba(42,51,56,.72);color:#fff;font-size:.74rem;font-weight:600;
+  padding:5px 11px;border-radius:8px;backdrop-filter:blur(4px)}
+.card .body{padding:17px 17px 18px;display:flex;flex-direction:column;gap:9px;flex:1}
+.card .ref{font-size:.72rem;color:var(--teal);font-weight:700;letter-spacing:.02em}
+.card h3{font-size:1.08rem;font-weight:700;line-height:1.28}
+.card .ville{color:var(--gris-fonce);font-size:.9rem;display:flex;align-items:center;gap:5px}
+.card .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.card .meta span{display:inline-flex;align-items:center;gap:5px;background:var(--gris-bg);color:var(--gris-fonce);
+  font-size:.82rem;font-weight:500;padding:5px 10px;border-radius:8px}
+.card .meta span b{color:var(--noir);font-weight:700}
+.card .sep{height:1px;background:var(--gris-clair);margin:6px 0 2px}
+.card .prix{margin-top:auto;font-size:1.28rem;font-weight:800;color:var(--teal-dark);line-height:1.2}
+.card .prix small{display:block;font-weight:500;font-size:.76rem;color:var(--gris-fonce);margin-top:2px}
+.card .voir{margin-top:12px;display:block;text-align:center;background:var(--gris-bg);color:var(--teal-dark);
+  font-weight:600;padding:10px;border-radius:9px;transition:.15s}
+.card .voir:hover{background:var(--teal);color:#fff}
+
+/* 3 piliers */
+.piliers{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pilier{text-align:left;padding:28px 26px;background:#fff;border:1px solid var(--gris-clair);border-radius:16px;
+  transition:transform .18s,box-shadow .18s,border-color .18s}
+.pilier:hover{transform:translateY(-4px);box-shadow:var(--ombre);border-color:transparent}
+.pilier .ico{display:inline-flex;width:54px;height:54px;align-items:center;justify-content:center;border-radius:14px;
+  background:linear-gradient(135deg,rgba(52,195,164,.18),rgba(30,140,120,.1));font-size:1.55rem}
+.pilier h4{margin:16px 0 7px;font-size:1.16rem;color:var(--noir)}
+.pilier p{color:var(--gris-fonce);font-size:.95rem}
+
+/* Pied de page */
+footer{background:var(--bleu);color:#c5cfdb;padding:46px 0 30px;margin-top:20px}
+footer .cols{display:grid;grid-template-columns:2fr 1fr 1fr;gap:30px}
+footer h5{color:#fff;font-size:1rem;margin-bottom:12px}
+footer a:hover{color:#fff}
+footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-size:.84rem;color:#8a989d}
+
+.empty{grid-column:1/-1;text-align:center;color:var(--gris-fonce);padding:40px;background:var(--gris-bg);border-radius:12px}
+
+/* Fiche produit */
+.fiche-bg{position:fixed;inset:0;background:rgba(26,39,56,.62);display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;z-index:200;overflow:auto}
+.fiche{background:#fff;border-radius:18px;max-width:780px;width:100%;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.fiche-img{height:300px;position:relative;background:linear-gradient(135deg,var(--teal-dark),var(--teal));display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:4rem}
+.fiche-img img{width:100%;height:100%;object-fit:cover}
+.fiche-x{position:absolute;top:14px;right:14px;width:40px;height:40px;border:none;border-radius:50%;background:rgba(255,255,255,.93);font-size:1.4rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.fiche-badge{position:absolute;top:16px;left:16px;background:#fff;color:var(--teal-dark);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;padding:7px 14px;border-radius:20px}
+.fiche-c{padding:26px}
+.fiche-c .ref{color:var(--teal);font-weight:700;font-size:.78rem}
+.fiche-c h2{font-size:1.6rem;color:var(--bleu);margin:4px 0;letter-spacing:-.01em}
+.fiche-c .ville{color:var(--gris-fonce);margin-bottom:6px}
+.fiche-prix{font-size:1.55rem;font-weight:800;color:var(--teal-dark);margin:14px 0}
+.fiche-prix small{font-weight:500;font-size:.85rem;color:var(--gris-fonce)}
+.fiche-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+.fiche-grid .it{background:var(--gris-bg);border-radius:10px;padding:11px 13px}
+.fiche-grid .it .k{font-size:.71rem;text-transform:uppercase;letter-spacing:.03em;color:var(--gris-fonce)}
+.fiche-grid .it .v{font-weight:700;color:var(--bleu);margin-top:2px}
+.fiche-h{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--teal-dark);font-weight:700;margin:20px 0 8px}
+.fiche-desc{color:#3a464b;line-height:1.6;white-space:pre-line}
+.fiche-eq{display:flex;flex-wrap:wrap;gap:8px}
+.fiche-eq span{background:rgba(61,128,116,.12);color:var(--teal-dark);border-radius:20px;padding:6px 12px;font-size:.85rem;font-weight:500}
+.fiche-contact{display:inline-block;margin-top:22px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));color:#fff;padding:12px 24px;border-radius:10px;font-weight:600}
+
+@media(max-width:900px){
+  .search{grid-template-columns:1fr 1fr}
+  .search .btn{grid-column:1/-1}
+  .cats{grid-template-columns:repeat(3,1fr)}
+  .grid,.piliers,footer .cols{grid-template-columns:1fr}
+  .topbar img{height:50px}
+  .menu a{padding:0 13px;font-size:.82rem;height:46px}
+  .hero{padding:80px 0 90px}
+  .hero h1{font-size:2.1rem}
+  .hero h1 br{display:none}
+  .hero p{font-size:1.05rem}
+  .trust{gap:12px 26px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ EN-TÊTE ============ -->
+<div class="topbar">
+  <a href="#"><img src="logo-gtec.png" alt="GTEC Immobilier"></a>
+</div>
+<header>
+  <nav class="menu">
+    <a href="#">Accueil</a>
+    <a href="#biens">Nos offres</a>
+    <a href="#services">À votre service</a>
+    <a href="#contact">Contact</a>
+    <a href="#contact">Estimer mon bien</a>
+  </nav>
+</header>
+
+<!-- ============ HERO + RECHERCHE ============ -->
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow">GTEC Immobilier · Immobilier d'entreprise</span>
+    <h1>Les locaux qui font <span class="accent">grandir</span><br>votre activité</h1>
+    <p>Bureaux, locaux commerciaux, entrepôts, terrains — à la vente comme à la location. Une équipe locale, l'exigence GTEC.</p>
+
+    <div class="trust">
+      <div class="t"><b>Immobilier d'entreprise</b><span>bureaux · locaux · entrepôts · terrains</span></div>
+      <div class="t"><b>Vente &amp; location</b><span>à l'achat comme au bail</span></div>
+      <div class="t"><b>L'exigence GTEC</b><span>la rigueur du bâtisseur</span></div>
+    </div>
+
+    <div class="search">
+      <div class="search-titre">Trouvez votre local</div>
+      <div class="field">
+        <label>Transaction</label>
+        <select id="f-transaction">
+          <option value="">Toutes</option>
+          <option value="location">Location</option>
+          <option value="vente">Vente</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Type de bien</label>
+        <select id="f-type">
+          <option value="">Tous types</option>
+          <option value="bureaux">Bureaux</option>
+          <option value="local_commercial">Local commercial</option>
+          <option value="entrepot_logistique">Entrepôt / Logistique</option>
+          <option value="activite">Activité</option>
+          <option value="fonds_de_commerce">Fonds de commerce</option>
+          <option value="terrain">Terrain</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Surface min (m²)</label>
+        <input type="number" id="f-smin" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Surface max (m²)</label>
+        <input type="number" id="f-smax" placeholder="∞" min="0">
+      </div>
+      <button class="btn" onclick="appliquerFiltres()">Rechercher</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CATÉGORIES ============ -->
+<section>
+  <div class="wrap reveal">
+    <span class="section-label">Nos expertises</span>
+    <h2 class="section-title">Explorez par <span class="accent">catégorie</span></h2>
+    <p class="section-sub">Cliquez pour filtrer les biens disponibles.</p>
+    <div class="cats" id="cats"></div>
+  </div>
+</section>
+
+<!-- ============ BIENS ============ -->
+<section id="biens" style="background:var(--gris-bg)">
+  <div class="wrap reveal">
+    <span class="section-label">Le catalogue</span>
+    <h2 class="section-title">Nos biens <span class="accent">disponibles</span></h2>
+    <p class="section-sub" id="biens-count">Chargement…</p>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<!-- ============ 3 PILIERS ============ -->
+<section id="services">
+  <div class="wrap reveal">
+    <span class="section-label">Pourquoi GTEC</span>
+    <h2 class="section-title">À votre <span class="accent">service</span></h2>
+    <p class="section-sub">Une équipe locale, à l'écoute de votre projet.</p>
+    <div class="piliers">
+      <div class="pilier"><div class="ico">📍</div><h4>La proximité</h4><p>Une connaissance fine du marché local et de ses opportunités.</p></div>
+      <div class="pilier"><div class="ico">🤝</div><h4>L'accompagnement</h4><p>De la recherche à la signature, un interlocuteur dédié.</p></div>
+      <div class="pilier"><div class="ico">🏗️</div><h4>L'expertise GTEC</h4><p>Construction et immobilier : nous parlons le langage de l'entreprise.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PIED DE PAGE ============ -->
+<footer id="contact">
+  <div class="wrap cols">
+    <div>
+      <h5>GTEC Immobilier</h5>
+      <p style="max-width:340px">L'immobilier d'entreprise dans la lignée de GTEC. Bureaux, locaux, entrepôts : nous accompagnons les professionnels.</p>
+    </div>
+    <div>
+      <h5>Contact</h5>
+      <p>📞 À renseigner<br>✉️ À renseigner</p>
+    </div>
+    <div>
+      <h5>Liens</h5>
+      <p><a href="#biens">Nos offres</a><br><a href="#services">À votre service</a><br><a href="crm/" title="Réservé aux collaborateurs">Espace pro</a></p>
+    </div>
+  </div>
+  <div class="wrap bas">© 2026 GTEC Immobilier — Tous droits réservés.</div>
+</footer>
+
+<!-- fiche produit -->
+<div id="fiche-root"></div>
+
+<!-- ============ SCRIPT ============ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ====================================================================
+   CONFIG — à remplir avec les infos du projet Supabase Gtec
+   (Settings → API). La clé "anon public" est faite pour être publique.
+   ==================================================================== */
+const SUPABASE_URL      = 'https://rqeyadmapekiwzyjtyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_kSLakua0tOFW8_6tL7W_Tw_Keihe6xW';
+
+const LABELS = {
+  bureaux:'Bureaux', local_commercial:'Local commercial',
+  entrepot_logistique:'Entrepôt / Logistique', activite:'Activité',
+  fonds_de_commerce:'Fonds de commerce', terrain:'Terrain'
+};
+const ICONS = {
+  bureaux:'🏢', local_commercial:'🏪', entrepot_logistique:'📦',
+  activite:'🏭', fonds_de_commerce:'🛒', terrain:'🌳'
+};
+
+let TOUS = [];          // tous les biens chargés
+const euro = n => n==null ? '—' : new Intl.NumberFormat('fr-FR').format(Math.round(n))+' €';
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* Fiche produit (ouverte par « En savoir + ») */
+function ouvrirFiche(id){
+  const b = TOUS.find(x=>String(x.id)===String(id)); if(!b) return;
+  const photo=(b.offre_photos||[]).sort((a,c)=>(c.est_principale-a.est_principale)||(a.ordre-c.ordre))[0];
+  const imgUrl=b.cover_url||(photo&&photo.url);
+  const trans=b.transaction==='vente'?'À vendre':b.transaction==='location'?'À louer':'Vente / Location';
+  const it=(k,v)=> v?`<div class="it"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`:'';
+  const surf = b.surface_m2 ? b.surface_m2+' m²'+((b.surface_min_m2||b.surface_max_m2)?` (div. ${b.surface_min_m2||'?'}–${b.surface_max_m2||'?'} m²)`:'') : '';
+  const eqVals = (b.equipements && typeof b.equipements==='object') ? Object.values(b.equipements).flat() : [];
+  document.getElementById('fiche-root').innerHTML = `<div class="fiche-bg" onclick="if(event.target===this)fermerFiche()">
+    <div class="fiche">
+      <div class="fiche-img">${imgUrl?`<img src="${esc(imgUrl)}">`:(ICONS[b.type_bien]||'🏢')}
+        <span class="fiche-badge">${trans}</span>
+        <button class="fiche-x" onclick="fermerFiche()">×</button></div>
+      <div class="fiche-c">
+        <div class="ref">${esc(b.reference||'')} · ${LABELS[b.type_bien]||''}</div>
+        <h2>${esc(b.titre||LABELS[b.type_bien]||'Bien')}</h2>
+        <div class="ville">📍 ${esc(b.ville||'')}${b.code_postal?' ('+esc(b.code_postal)+')':''}${b.secteur?' — '+esc(b.secteur):''}</div>
+        <div class="fiche-prix">${prixHtml(b)}</div>
+        ${b.description?`<div class="fiche-h">Descriptif</div><div class="fiche-desc">${esc(b.description)}</div>`:''}
+        <div class="fiche-h">Caractéristiques &amp; modalités</div>
+        <div class="fiche-grid">
+          ${it('Surface', surf)}
+          ${it('État', b.etat?(ETATS[b.etat]||b.etat):'')}
+          ${it('Étage', b.etage)}
+          ${it('Niveaux', b.nb_niveaux!=null?b.nb_niveaux:'')}
+          ${it('Année', b.annee)}
+          ${it('DPE', b.dpe?('Classe '+b.dpe):'')}
+          ${it('Charges', b.charges!=null?euro(b.charges)+' / mois':'')}
+          ${it('Dépôt de garantie', b.depot_garantie)}
+          ${it('Honoraires', b.honoraires)}
+        </div>
+        ${eqVals.length?`<div class="fiche-h">Équipements</div><div class="fiche-eq">${eqVals.map(v=>`<span>${esc(v)}</span>`).join('')}</div>`:''}
+        <a class="fiche-contact" href="#contact" onclick="fermerFiche()">Demander une visite / contact</a>
+      </div>
+    </div></div>`;
+}
+function fermerFiche(){ document.getElementById('fiche-root').innerHTML=''; }
+
+/* Grille des catégories */
+function rendreCats(){
+  document.getElementById('cats').innerHTML = Object.keys(LABELS).map(k=>`
+    <div class="cat" onclick="filtrerParType('${k}')">
+      <div class="ico">${ICONS[k]}</div>
+      <div class="lbl">${LABELS[k]}</div>
+    </div>`).join('');
+}
+
+/* Prix / loyer affiché */
+function prixHtml(b){
+  if(b.transaction==='vente' || (b.transaction==='les_deux' && b.prix_vente))
+    return `${euro(b.prix_vente)} <small>FAI</small>`;
+  if(b.loyer_annuel_m2){
+    return `${euro(b.loyer_annuel_m2)} <small>/mois ${b.loyer_type||'HT HC'}</small>`;
+  }
+  return '<small>Sur demande</small>';
+}
+
+/* Une carte */
+const ETATS = {neuf:'Neuf', bon:'Bon état', a_renover:'À rénover'};
+function carte(b){
+  const photo = (b.offre_photos||[]).sort((a,c)=>(c.est_principale-a.est_principale)||(a.ordre-c.ordre))[0];
+  const imgUrl = b.cover_url || (photo && photo.url);
+  const img = imgUrl ? `<img src="${imgUrl}" alt="">` : (ICONS[b.type_bien]||'🏢');
+  const trans = b.transaction==='vente' ? 'À vendre' : b.transaction==='location' ? 'À louer' : 'Vente / Location';
+  return `<div class="card">
+    <div class="photo">${img}
+      <span class="badge">${trans}</span>
+      <button class="fav" title="Ajouter aux favoris" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'♥':'♡'">♡</button>
+      <span class="typetag">${ICONS[b.type_bien]||''} ${LABELS[b.type_bien]||''}</span>
+    </div>
+    <div class="body">
+      <div class="ref">${b.reference}</div>
+      <h3>${b.titre||LABELS[b.type_bien]||'Bien'}</h3>
+      <div class="ville">📍 ${b.ville||''}${b.code_postal? ' ('+b.code_postal+')':''}</div>
+      <div class="meta">
+        ${b.surface_m2? `<span>📐 <b>${b.surface_m2} m²</b></span>`:''}
+        ${b.divisible? `<span>✂️ divisible</span>`:''}
+        ${b.etat? `<span>🏷️ ${ETATS[b.etat]||b.etat}</span>`:''}
+      </div>
+      <div class="sep"></div>
+      <div class="prix">${prixHtml(b)}</div>
+      <a class="voir" href="#" onclick="ouvrirFiche('${b.id}');return false;">En savoir +</a>
+    </div>
+  </div>`;
+}
+
+/* Affichage filtré */
+function afficher(liste){
+  const grid = document.getElementById('grid');
+  document.getElementById('biens-count').textContent =
+    liste.length ? `${liste.length} bien${liste.length>1?'s':''} disponible${liste.length>1?'s':''}` : '';
+  grid.innerHTML = liste.length
+    ? liste.map(carte).join('')
+    : `<div class="empty">Aucun bien ne correspond à votre recherche pour le moment.</div>`;
+}
+
+function appliquerFiltres(){
+  const t = document.getElementById('f-transaction').value;
+  const ty = document.getElementById('f-type').value;
+  const smin = parseFloat(document.getElementById('f-smin').value)||0;
+  const smax = parseFloat(document.getElementById('f-smax').value)||Infinity;
+  afficher(TOUS.filter(b=>
+    (!t  || b.transaction===t || b.transaction==='les_deux') &&
+    (!ty || b.type_bien===ty) &&
+    (b.surface_m2==null || (b.surface_m2>=smin && b.surface_m2<=smax))
+  ));
+}
+function filtrerParType(k){
+  document.getElementById('f-type').value=k;
+  document.getElementById('biens').scrollIntoView({behavior:'smooth'});
+  appliquerFiltres();
+}
+
+/* Chargement initial depuis Supabase */
+async function charger(){
+  rendreCats();
+  if(SUPABASE_URL.includes('VOTRE-PROJET')){
+    document.getElementById('biens-count').textContent =
+      '⚙️ Configuration Supabase à renseigner dans le fichier (URL + clé anon).';
+    return;
+  }
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data, error } = await sb
+    .from('offres')
+    .select('*, offre_photos(url,est_principale,ordre)')
+    .eq('publie', true)
+    .eq('statut', 'disponible')
+    .order('created_at', { ascending:false });
+  if(error){
+    document.getElementById('biens-count').textContent = 'Erreur de chargement : '+error.message;
+    return;
+  }
+  TOUS = data || [];
+  afficher(TOUS);
+}
+charger();
+
+/* Apparition au défilement */
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, {threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
