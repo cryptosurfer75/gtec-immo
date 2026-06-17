@@ -487,9 +487,10 @@ async function charger(){
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const { data, error } = await sb
     .from('offres')
-    .select('*, offre_photos(url,est_principale,ordre)')
+    .select('id,reference,titre,type_bien,ville,code_postal,secteur,transaction,prix_vente,loyer_annuel_m2,loyer_type,charges,depot_garantie,honoraires,description,surface_m2,surface_min_m2,surface_max_m2,divisible,etage,nb_niveaux,annee,dpe,equipements,cover_url, offre_photos(url,est_principale,ordre)')
     .eq('publie', true)
     .eq('statut', 'disponible')
+    .eq('archive', false)
     .order('created_at', { ascending:false });
   if(error){
     document.getElementById('biens-count').textContent = 'Erreur de chargement : '+error.message;
