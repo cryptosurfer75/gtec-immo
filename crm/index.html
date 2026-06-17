@@ -1061,7 +1061,7 @@ function formDemande(rec){
     rec.id ? {archived:!!rec.archive, toggle:async()=>{ await save('demandes', rec.id, {archive:!rec.archive}); vueDemandes(); }} : null);
   const locsInit = (rec.demande_localites && rec.demande_localites.length)
     ? rec.demande_localites
-    : AMIENS_METRO.map(([v,cp])=>({ville:v, code_postal:cp}));   // nouvelle demande : toute la métropole cochée par défaut
+    : [{ville:'', code_postal:''}];   // nouvelle demande : un champ ville vide (plus de métropole pré-cochée)
   locsInit.forEach(l=>ajouterLoc(l.ville, l.code_postal));
   draftApply('demande:'+(rec.id||'new'));
   majAnnuel('d-budget','d-budget-an');
