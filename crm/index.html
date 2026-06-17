@@ -933,13 +933,13 @@ async function editDemande(id){ await chargerClients();
 function formDemande(rec){
   rec=rec||{};
   const crit=rec.criteres_secondaires||{};
-  const typesChecks = Object.entries(LABELS).map(([k,l])=>`<label style="display:inline-flex;align-items:center;gap:6px;margin:0 16px 8px 0;font-size:.9rem">
-    <input type="checkbox" id="dt-${k}" ${(rec.types_bien||[]).includes(k)?'checked':''}> ${l}</label>`).join('');
+  const typesChecks = Object.entries(LABELS).map(([k,l])=>`<label style="display:flex;align-items:center;gap:9px;font-size:.9rem;font-weight:500;text-transform:none;letter-spacing:normal;color:var(--noir);padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;cursor:pointer">
+    <input type="checkbox" id="dt-${k}" ${(rec.types_bien||[]).includes(k)?'checked':''} style="width:auto;flex:none;margin:0"> <span>${l}</span></label>`).join('');
   const corps=`<div class="form-grid">
     <div class="f full"><label>Client</label><select id="d-client">${optClients(rec.client_id)}</select></div>
     ${fSel('d-trans','Transaction',rec.transaction||'achat',[['achat','Achat'],['location','Location'],['les_deux','Les deux']])}
     ${fSel('d-statut','Statut',rec.statut||'active',[['active','Active'],['cloturee','Clôturée']])}
-    <div class="f full"><label>Type(s) de bien recherché(s)</label><div>${typesChecks}</div></div>
+    <div class="f full"><label>Type(s) de bien recherché(s)</label><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:2px">${typesChecks}</div></div>
     ${fNum('d-smin','Surface mini (m²)',rec.surface_min_m2)}
     ${fNum('d-smax','Surface maxi (m²)',rec.surface_max_m2)}
     <div class="f full"><label>Budget max (loyer mensuel, ou prix d'achat)</label>
