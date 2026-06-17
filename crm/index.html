@@ -793,7 +793,7 @@ function formClient(rec, liens){
       <input id="c-recherche" autocomplete="off" placeholder="Ex. : nom de l'entreprise ou n° SIREN">
       <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche automatiquement.</div></div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
-    ${fSel('c-role','Rôle',rec.role||'acheteur_locataire',[['acheteur_locataire','Preneur / Acquéreur'],['vendeur_bailleur','Bailleur / Vendeur'],['les_deux','Les deux']])}
+    ${fSel('c-role','Rôle',rec.role||'acheteur_locataire',[['','—'],['acheteur_locataire','Preneur / Acquéreur'],['vendeur_bailleur','Bailleur / Vendeur'],['les_deux','Les deux'],['prestataire','Prestataire'],['developpeur','Développeur'],['franchise','Franchisé'],['autre','Autre']])}
     ${fText('c-forme','Forme juridique (SARL, SAS, SCI…)',rec.forme_juridique)}
     ${fText('c-raison','Raison sociale',rec.raison_sociale,{title:true})}
     ${fText('c-siret','SIRET',rec.siret)}
