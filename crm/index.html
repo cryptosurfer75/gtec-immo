@@ -397,7 +397,7 @@ async function vueDemandes(){
       <td>${d.surface_min_m2||d.surface_max_m2?`${d.surface_min_m2||0}–${d.surface_max_m2||'∞'} m²`:'—'}</td>
       <td>${d.budget_max?euro(d.budget_max):'—'}</td>
       <td>${esc(localitesResume(d.demande_localites))}</td>
-      <td><button class="btn btn-sm" onclick="event.stopPropagation();rapprocher('${d.id}')">Rapprocher →</button></td>
+      <td><button class="btn btn-sm" title="Rapprocher" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocher('${d.id}')">R</button></td>
       ${btnAction('demande',d.id,d.reference,cptD[d.id]||0)}
     </tr>`).join('');
   C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${liste.length} demande(s)`,
