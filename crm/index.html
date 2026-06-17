@@ -638,11 +638,7 @@ function remplirEntreprise(e){
     if(dir.qualite) setV('c-fonction', capStr(dir.qualite));
   }
   const ligneAdr = sg.adresse || [[sg.numero_voie, sg.type_voie, sg.libelle_voie].filter(Boolean).join(' '), [sg.code_postal, sg.libelle_commune].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-  const notesEl=document.getElementById('c-notes');
-  if(notesEl && !notesEl.value.trim()){
-    const bits=[]; if(e.siren) bits.push('SIREN '+e.siren); if(ligneAdr) bits.push('Siège : '+ligneAdr);
-    notesEl.value=bits.join('\n');
-  }
+  setV('c-adresse', ligneAdr);
   const rech=document.getElementById('c-recherche'); if(rech) rech.value='';
 }
 
@@ -783,18 +779,18 @@ function formClient(rec, liens){
     ${fSel('c-role','Rôle',rec.role||'acheteur_locataire',[['acheteur_locataire','Preneur / Acquéreur'],['vendeur_bailleur','Bailleur / Vendeur'],['les_deux','Les deux']])}
     ${fText('c-raison','Raison sociale',rec.raison_sociale,{title:true})}
     ${fText('c-siret','SIRET',rec.siret)}
+    ${fText('c-adresse','Adresse (siège)',rec.adresse,{full:true})}
     ${fText('c-prenom','Prénom',rec.prenom,{cap:true})}
     ${fText('c-nom','Nom',rec.nom,{cap:true})}
     ${fText('c-fonction','Fonction (ex. Gérant, Responsable)',rec.fonction,{full:true,cap:true})}
     ${fText('c-tel','Téléphone',formatTel(rec.telephone),{tel:true})}
     ${fText('c-email','E-mail',rec.email,{type:'email'})}
     ${fArea('c-notes','Notes',rec.notes)}
-    ${fCheck('c-rgpd','Consentement RGPD recueilli',rec.rgpd_consent)}
   </div>${liensHtml}`;
   ouvrirForm(rec.id?'Modifier le client':'Nouveau client', corps, async()=>{
     await save('clients', rec.id, { type_client:val('c-type'), role:val('c-role'), raison_sociale:capTitle('c-raison'),
-      siret:val('c-siret'), prenom:cap('c-prenom'), nom:cap('c-nom'), fonction:cap('c-fonction'), telephone:telVal('c-tel'),
-      email:(val('c-email')||'').toLowerCase()||null, notes:val('c-notes'), rgpd_consent:val('c-rgpd') });
+      siret:val('c-siret'), adresse:val('c-adresse'), prenom:cap('c-prenom'), nom:cap('c-nom'), fonction:cap('c-fonction'), telephone:telVal('c-tel'),
+      email:(val('c-email')||'').toLowerCase()||null, notes:val('c-notes') });
     vueClients();
   }, rec.id ? async()=>{ await del('clients', rec.id); vueClients(); } : null, 'client:'+(rec.id||'new'));
   brancherEntrepriseAuto(document.getElementById('c-recherche'));
