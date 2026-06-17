@@ -138,6 +138,12 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 .metro-chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 .metro-chip.metro-all{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:700}
 .metro-chip.metro-clear{color:var(--gris-fonce);border-style:dashed}
+.act-list{display:flex;flex-direction:column;gap:10px}
+.act-row{border:1px solid var(--gris-clair);border-radius:9px;padding:10px 12px}
+.act-meta{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--gris-fonce);margin-bottom:5px}
+.act-meta b{color:var(--bleu);font-size:.9rem}
+.act-meta .lien{margin-left:auto}
+.act-note{font-size:.92rem;white-space:pre-wrap}
 /* sélecteur d'équipements (2 volets) */
 .equip-wrap{display:flex;min-height:300px}
 .equip-left{width:50%;border-right:1px solid var(--gris-clair);padding-right:14px;max-height:58vh;overflow:auto}
@@ -346,6 +352,7 @@ async function vueOffres(){
   OFFRES = data||[];
   const archivees = OFFRES.filter(o=>o.archive);
   const liste = OFFRES.filter(o=> OFF_ARCH ? o.archive : !o.archive);
+  const cpt = await compteursActions('offre');
   const lignes = liste.map(o=>`
     <tr style="cursor:pointer" onclick="editOffre('${o.id}')">
       <td>${refBadge(o.reference, o.type_bien)}${o.cover_url?`<img src="${esc(o.cover_url)}" class="ref-thumb">`:''}</td>
@@ -357,10 +364,11 @@ async function vueOffres(){
       <td><span class="tag ${o.statut==='disponible'?'green':''}">${esc(o.statut||'—')}</span></td>
       <td>${o.publie?'<span class="tag green">en ligne</span>':'<span class="tag">brouillon</span>'}</td>
       <td>${esc(nomClient(o.clients))}</td>
+      ${btnAction('offre',o.id,o.reference,cpt[o.id]||0)}
     </tr>`).join('');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${liste.length} bien(s)`,
     liste.length
-      ? `<table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th></tr></thead><tbody>${lignes}</tbody></table>`
+      ? `<table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th><th>Action</th></tr></thead><tbody>${lignes}</tbody></table>`
       : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.'),
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
      <button class="btn btn-ghost btn-sm" onclick="OFF_ARCH=!OFF_ARCH;vueOffres()">${OFF_ARCH?'← Biens actifs':'Archivés ('+archivees.length+')'}</button>`);
@@ -378,6 +386,7 @@ async function vueDemandes(){
   DEMANDES = data||[];
   const archivees = DEMANDES.filter(d=>d.archive);
   const liste = DEMANDES.filter(d=> DEM_ARCH ? d.archive : !d.archive);
+  const cptD = await compteursActions('demande');
   const lignes = liste.map(d=>`
     <tr style="cursor:pointer" onclick="editDemande('${d.id}')">
       <td>${refBadge(d.reference, (d.types_bien||[])[0])}</td>
@@ -389,10 +398,11 @@ async function vueDemandes(){
       <td>${d.budget_max?euro(d.budget_max):'—'}</td>
       <td>${esc(localitesResume(d.demande_localites))}</td>
       <td><button class="btn btn-sm" onclick="event.stopPropagation();rapprocher('${d.id}')">Rapprocher →</button></td>
+      ${btnAction('demande',d.id,d.reference,cptD[d.id]||0)}
     </tr>`).join('');
   C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${liste.length} demande(s)`,
     liste.length
-      ? `<table><thead><tr><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th></tr></thead><tbody>${lignes}</tbody></table>`
+      ? `<table><thead><tr><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead><tbody>${lignes}</tbody></table>`
       : vide(DEM_ARCH?'Aucune demande archivée.':'Aucune demande pour le moment.'),
     `<button class="btn btn-sm" onclick="nouvelleDemande()">+ Ajouter une demande</button>
      <button class="btn btn-ghost btn-sm" onclick="DEM_ARCH=!DEM_ARCH;vueDemandes()">${DEM_ARCH?'← Demandes actives':'Archivées ('+archivees.length+')'}</button>`);
@@ -424,6 +434,64 @@ async function rapprocher(demandeId){
   }).join('');
 }
 function fermerModal(){ document.getElementById('modal-root').innerHTML=''; CURRENT_FORM_KEY=null; draftClear(); }
+
+/* ===== SUIVI / ACTIONS (notes datées sur offres & demandes) ===== */
+const TYPES_ACTION = [['appel','Appel'],['email','E-mail'],['visite','Visite'],['rdv','Rendez-vous'],['relance','Relance'],['proposition','Proposition'],['autre','Autre']];
+function libelleTypeAction(v){ const t=TYPES_ACTION.find(x=>x[0]===v); return t?t[1]:(v||'—'); }
+async function compteursActions(cibleType){
+  const { data } = await sb.from('actions').select('cible_id').eq('cible_type',cibleType);
+  const m={}; (data||[]).forEach(a=>{ m[a.cible_id]=(m[a.cible_id]||0)+1; }); return m;
+}
+function btnAction(type,id,ref,n){
+  return `<td onclick="event.stopPropagation()"><button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
+}
+async function ouvrirActions(cibleType, cibleId, ref){
+  const titre=(cibleType==='offre'?'Suivi du bien':'Suivi de la demande')+(ref?' '+ref:'');
+  document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)fermerModal()"><div class="modal">
+    <div class="modal-h"><h3>${esc(titre)}</h3><button class="x" onclick="fermerModal()">×</button></div>
+    <div class="modal-b" id="act-b"><div class="loading">Chargement…</div></div></div></div>`;
+  await rafraichirActions(cibleType, cibleId);
+}
+async function rafraichirActions(cibleType, cibleId){
+  const b=document.getElementById('act-b'); if(!b) return;
+  const { data } = await sb.from('actions').select('*').eq('cible_type',cibleType).eq('cible_id',cibleId)
+    .order('date_action',{ascending:false}).order('created_at',{ascending:false});
+  const liste=(data||[]).map(a=>`<div class="act-row">
+      <div class="act-meta"><b>${esc(libelleTypeAction(a.type_action))}</b><span>${esc(a.date_action||'')}</span>
+        <button type="button" class="lien" onclick="supprimerAction('${a.id}','${cibleType}','${cibleId}')">Supprimer</button></div>
+      ${a.note?`<div class="act-note">${esc(a.note)}</div>`:''}
+    </div>`).join('') || vide('Aucune action pour le moment.');
+  const today=new Date().toISOString().slice(0,10);
+  b.innerHTML = `
+    <form onsubmit="return ajouterAction(event,'${cibleType}','${cibleId}')">
+      <div class="form-grid">
+        <div class="f"><label>Date</label><input id="act-date" type="date" value="${today}"></div>
+        <div class="f"><label>Type d'action</label><select id="act-type">${TYPES_ACTION.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+        <div class="f full"><label>Note</label><textarea id="act-note" rows="3"></textarea></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin:2px 0 18px"><button class="btn btn-sm" type="submit">Ajouter</button></div>
+    </form>
+    <div class="act-list">${liste}</div>`;
+}
+async function ajouterAction(ev, cibleType, cibleId){
+  ev.preventDefault();
+  const payload={ cible_type:cibleType, cible_id:cibleId,
+    date_action:document.getElementById('act-date').value||null,
+    type_action:document.getElementById('act-type').value,
+    note:(document.getElementById('act-note').value||'').trim()||null };
+  const { error } = await sb.from('actions').insert(payload);
+  if(error){ alert('Erreur : '+error.message); return false; }
+  await rafraichirActions(cibleType, cibleId);
+  if(cibleType==='offre') vueOffres(); else vueDemandes();
+  return false;
+}
+async function supprimerAction(id, cibleType, cibleId){
+  if(!confirm('Supprimer cette action ?')) return;
+  const { error } = await sb.from('actions').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await rafraichirActions(cibleType, cibleId);
+  if(cibleType==='offre') vueOffres(); else vueDemandes();
+}
 
 /* ===== CLIENTS ===== */
 let CLIENTS_FULL = [];
@@ -1003,7 +1071,7 @@ function formOffre(rec){
       loyer_type:val('o-loyer-type'),
       client_id:val('o-client'), publie:val('o-pub'), equipements:EQUIP_SEL, cover_url });
     vueOffres();
-  }, rec.id ? async()=>{ if(rec.cover_url) await supprimerCoverStorage(rec.cover_url); await sb.from('offre_photos').delete().eq('offre_id', rec.id); await del('offres', rec.id); vueOffres(); } : null, 'offre:'+(rec.id||'new'),
+  }, rec.id ? async()=>{ if(rec.cover_url) await supprimerCoverStorage(rec.cover_url); await sb.from('offre_photos').delete().eq('offre_id', rec.id); await sb.from('actions').delete().eq('cible_type','offre').eq('cible_id',rec.id); await del('offres', rec.id); vueOffres(); } : null, 'offre:'+(rec.id||'new'),
     rec.id ? {archived:!!rec.archive, toggle:async()=>{ await save('offres', rec.id, {archive:!rec.archive}); vueOffres(); }} : null);
   brancherVilleAuto(document.getElementById('o-ville'), ()=>document.getElementById('o-cp'));
   brancherAdresseAuto(document.getElementById('o-adresse'));
@@ -1060,7 +1128,7 @@ function formDemande(rec){
     </div>
   </div>`;
   ouvrirForm(rec.id?'Modifier la demande':'Nouvelle demande', corps, ()=>saveDemande(rec),
-    rec.id ? async()=>{ await sb.from('demande_localites').delete().eq('demande_id', rec.id); await del('demandes', rec.id); vueDemandes(); } : null,
+    rec.id ? async()=>{ await sb.from('demande_localites').delete().eq('demande_id', rec.id); await sb.from('actions').delete().eq('cible_type','demande').eq('cible_id',rec.id); await del('demandes', rec.id); vueDemandes(); } : null,
     'demande:'+(rec.id||'new'),
     rec.id ? {archived:!!rec.archive, toggle:async()=>{ await save('demandes', rec.id, {archive:!rec.archive}); vueDemandes(); }} : null);
   const locsInit = (rec.demande_localites && rec.demande_localites.length)
