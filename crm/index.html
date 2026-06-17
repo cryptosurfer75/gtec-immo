@@ -624,11 +624,28 @@ async function chercherEntreprises(q, el){
     ev.preventDefault(); remplirEntreprise(ENTR_RESULTS[+d.dataset.i]); fermerAuto();
   }));
 }
+/* Traduit le code officiel "catégorie juridique" (INSEE) en forme lisible */
+function formeJuridique(code){
+  code=String(code||'');
+  if(!code) return '';
+  if(code==='5720') return 'SASU';
+  if(code==='6540') return 'SCI';
+  if(code==='5202') return 'SNC';
+  if(code==='1000') return 'Entrepreneur individuel';
+  if(code.startsWith('54')) return 'SARL';
+  if(code.startsWith('57')) return 'SAS';
+  if(code.startsWith('55')||code.startsWith('56')) return 'SA';
+  if(code.startsWith('65')) return 'Société civile';
+  if(code.startsWith('62')) return 'GIE';
+  if(code.startsWith('92')||code.startsWith('93')) return 'Association';
+  return '';
+}
 function remplirEntreprise(e){
   if(!e) return;
   const sg=e.siege||{};
   const setV=(id,v)=>{ const el=document.getElementById(id); if(el && v!=null && v!=='') el.value=v; };
   const tsel=document.getElementById('c-type'); if(tsel) tsel.value='societe';
+  setV('c-forme', formeJuridique(e.nature_juridique));
   setV('c-raison', e.nom_complet||e.nom_raison_sociale||'');
   setV('c-siret', sg.siret||'');
   const dir=(e.dirigeants||[]).find(d=> d.type_dirigeant==='personne physique' || d.prenoms || d.nom);
@@ -777,6 +794,7 @@ function formClient(rec, liens){
       <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche automatiquement.</div></div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
     ${fSel('c-role','Rôle',rec.role||'acheteur_locataire',[['acheteur_locataire','Preneur / Acquéreur'],['vendeur_bailleur','Bailleur / Vendeur'],['les_deux','Les deux']])}
+    ${fText('c-forme','Forme juridique (SARL, SAS, SCI…)',rec.forme_juridique)}
     ${fText('c-raison','Raison sociale',rec.raison_sociale,{title:true})}
     ${fText('c-siret','SIRET',rec.siret)}
     ${fText('c-adresse','Adresse (siège)',rec.adresse,{full:true})}
@@ -788,7 +806,7 @@ function formClient(rec, liens){
     ${fArea('c-notes','Notes',rec.notes)}
   </div>${liensHtml}`;
   ouvrirForm(rec.id?'Modifier le client':'Nouveau client', corps, async()=>{
-    await save('clients', rec.id, { type_client:val('c-type'), role:val('c-role'), raison_sociale:capTitle('c-raison'),
+    await save('clients', rec.id, { type_client:val('c-type'), role:val('c-role'), forme_juridique:val('c-forme'), raison_sociale:capTitle('c-raison'),
       siret:val('c-siret'), adresse:val('c-adresse'), prenom:cap('c-prenom'), nom:cap('c-nom'), fonction:cap('c-fonction'), telephone:telVal('c-tel'),
       email:(val('c-email')||'').toLowerCase()||null, notes:val('c-notes') });
     vueClients();
