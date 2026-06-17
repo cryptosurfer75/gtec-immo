@@ -136,6 +136,8 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 .metro-chip{padding:7px 12px;border:1.5px solid var(--gris-clair);border-radius:20px;font-size:.85rem;cursor:pointer;background:#fff;transition:.12s}
 .metro-chip:hover{border-color:var(--teal)}
 .metro-chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.metro-chip.metro-all{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:700}
+.metro-chip.metro-clear{color:var(--gris-fonce);border-style:dashed}
 /* sélecteur d'équipements (2 volets) */
 .equip-wrap{display:flex;min-height:300px}
 .equip-left{width:50%;border-right:1px solid var(--gris-clair);padding-right:14px;max-height:58vh;overflow:auto}
@@ -1046,8 +1048,10 @@ function formDemande(rec){
     ${fSep('Localités souhaitées')}
     <div class="full">
       <div class="metro">
-        <div class="metro-h" onclick="toggleMetro()">📍 Amiens Métropole — choisir les communes <span id="metro-chev">▸</span></div>
+        <div class="metro-h" onclick="toggleMetro()">📍 Amiens Métropole — sélectionner les communes <span id="metro-chev">▸</span></div>
         <div id="metro-list" class="metro-list" style="display:none">
+          <span class="metro-chip metro-all" onclick="toutMetro()">✓ Toute la métropole</span>
+          <span class="metro-chip metro-clear" onclick="viderMetro()">✗ Tout enlever</span>
           ${AMIENS_METRO.map(([v,cp])=>`<span class="metro-chip" data-v="${esc(v)}" onclick="ajouterVilleMetro('${esc(v)}','${cp}')">${esc(v)}</span>`).join('')}
         </div>
       </div>
@@ -1086,7 +1090,25 @@ function ajouterVilleMetro(v,cp){
 }
 function majMetroChips(){
   const villes=[...document.querySelectorAll('#loc-list .loc-ville')].map(i=>(i.value||'').trim().toLowerCase());
-  document.querySelectorAll('.metro-chip').forEach(ch=>ch.classList.toggle('on', villes.includes((ch.dataset.v||'').toLowerCase())));
+  document.querySelectorAll('.metro-chip[data-v]').forEach(ch=>ch.classList.toggle('on', villes.includes((ch.dataset.v||'').toLowerCase())));
+}
+function toutMetro(){
+  AMIENS_METRO.forEach(([v,cp])=>{
+    const ex=[...document.querySelectorAll('#loc-list .loc-row')].find(r=>(r.querySelector('.loc-ville').value||'').trim().toLowerCase()===v.toLowerCase());
+    if(!ex) ajouterLoc(v,cp);
+  });
+  // retire d'éventuelles lignes ville vides
+  [...document.querySelectorAll('#loc-list .loc-row')].forEach(r=>{
+    if(!(r.querySelector('.loc-ville').value||'').trim() && !(r.querySelector('.loc-cp').value||'').trim()) r.remove();
+  });
+  majMetroChips(); draftCollect(CURRENT_FORM_KEY);
+}
+function viderMetro(){
+  const metro=AMIENS_METRO.map(([v])=>v.toLowerCase());
+  [...document.querySelectorAll('#loc-list .loc-row')].forEach(r=>{
+    if(metro.includes((r.querySelector('.loc-ville').value||'').trim().toLowerCase())) r.remove();
+  });
+  majMetroChips(); draftCollect(CURRENT_FORM_KEY);
 }
 async function saveDemande(rec){
   const payload={ client_id:val('d-client'), transaction:val('d-trans'), statut:val('d-statut'),
