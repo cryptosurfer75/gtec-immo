@@ -80,6 +80,10 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 .tag{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--gris-bg);color:var(--gris-fonce)}
 .tag.green{background:rgba(61,128,116,.14);color:var(--teal-dark)}
 .tag.blue{background:rgba(26,39,56,.1);color:var(--bleu)}
+/* Cadre coloré autour du nom dans le fichier clients (écriture noire conservée) */
+.cli-nom{display:inline-block;padding:3px 11px;border-radius:9px;border:1.5px solid transparent;font-weight:700;color:var(--noir)}
+.cli-nom.soc{border-color:rgba(61,128,116,.55);background:rgba(61,128,116,.10)}
+.cli-nom.part{border-color:rgba(111,168,220,.7);background:rgba(111,168,220,.14)}
 .empty{padding:40px;text-align:center;color:var(--gris-fonce)}
 .loading{padding:40px;text-align:center;color:var(--gris-fonce)}
 
@@ -506,7 +510,7 @@ async function vueClients(){
   CLIENTS_FULL = data||[];
   const lignes = CLIENTS_FULL.map(c=>`
     <tr style="cursor:pointer" onclick="editClient('${c.id}')">
-      <td><b style="color:${c.type_client==='societe'?'var(--gris-fonce)':'var(--noir)'}">${esc(nomClient(c))}</b></td>
+      <td><span class="cli-nom ${c.type_client==='societe'?'soc':'part'}">${esc(nomClient(c))}</span></td>
       <td>${esc(contactClient(c)||'—')}</td>
       <td>${esc(c.fonction||'—')}</td>
       <td>${esc(ROLE_LABELS[c.role]||c.role||'—')}</td>
@@ -1038,7 +1042,7 @@ function formOffre(rec){
       <div id="o-equip-summary" style="margin-top:10px;font-size:.9rem"></div></div>
     ${fSep('Vitrine & rattachement')}
     ${fArea('o-desc','Description',rec.description)}
-    ${fSel('o-dispo','Disponibilité',rec.disponibilite||'',[['','—'],['Libre de suite','Libre de suite'],['Nous consulter','Nous consulter']],{full:true})}
+    ${fSel('o-dispo','Disponibilité',rec.disponibilite||'',[['','—'],['Disponibilité immédiate','Disponibilité immédiate'],['Nous consulter','Nous consulter']],{full:true})}
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
     <div class="f full"><label>Client propriétaire</label><select id="o-client">${optClients(rec.client_id)}</select></div>
     ${fCheck('o-pub','Publier sur la vitrine',rec.publie)}
