@@ -280,6 +280,8 @@ const HONO_20 = '20 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_15 = '15 % HT du montant du loyer annuel hors-taxes, hors charges';
 const nomClient = c => !c ? '—' : (c.type_client==='societe' ? (c.raison_sociale||'Société')
   : [c.prenom,c.nom].filter(Boolean).join(' ')||'Client');
+/* Nom-prénom du gérant / contact enregistré sur la fiche (société surtout) */
+const contactClient = c => !c ? '' : [c.prenom,c.nom].filter(Boolean).join(' ');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 
 /* ===== AUTH ===== */
@@ -505,6 +507,7 @@ async function vueClients(){
   const lignes = CLIENTS_FULL.map(c=>`
     <tr style="cursor:pointer" onclick="editClient('${c.id}')">
       <td><b>${esc(nomClient(c))}</b></td>
+      <td>${esc(contactClient(c)||'—')}${c.fonction?` <span style="font-size:.78rem;color:var(--gris-fonce)">(${esc(c.fonction)})</span>`:''}</td>
       <td><span class="tag ${c.type_client==='societe'?'blue':''}">${c.type_client==='societe'?'Société':'Particulier'}</span></td>
       <td>${esc(ROLE_LABELS[c.role]||c.role||'—')}</td>
       <td class="num">${esc(formatTel(c.telephone)||'—')}</td>
@@ -512,7 +515,7 @@ async function vueClients(){
     </tr>`).join('');
   C().innerHTML = panel('Fichier clients', `${CLIENTS_FULL.length} client(s)`,
     CLIENTS_FULL.length
-      ? `<table><thead><tr><th>Nom</th><th>Type</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead><tbody>${lignes}</tbody></table>`
+      ? `<table><thead><tr><th>Nom</th><th>Contact / Gérant</th><th>Type</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead><tbody>${lignes}</tbody></table>`
       : vide('Aucun client pour le moment.'),
     `<button class="btn btn-sm" onclick="nouveauClient()">+ Ajouter un client</button>`);
 }
