@@ -77,13 +77,13 @@ th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--gr
 tr:last-child td{border-bottom:none}
 tbody tr:hover{background:#fafcfc}
 td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
-.tag{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--gris-bg);color:var(--gris-fonce)}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--gris-bg);color:var(--gris-fonce);border:1px solid rgba(42,51,56,.14)}
 .tag.green{background:rgba(61,128,116,.14);color:var(--teal-dark)}
 .tag.blue{background:rgba(26,39,56,.1);color:var(--bleu)}
 /* Cadre coloré autour du nom dans le fichier clients (écriture noire conservée) */
-.cli-nom{display:inline-block;padding:3px 11px;border-radius:9px;font-weight:700;color:var(--noir)}
-.cli-nom.soc{background:rgba(61,128,116,.24)}
-.cli-nom.part{background:rgba(58,124,191,.26)}
+.cli-nom{display:inline-block;padding:3px 11px;border-radius:9px;border:1px solid transparent;font-weight:700;color:var(--noir)}
+.cli-nom.soc{background:rgba(61,128,116,.24);border-color:rgba(61,128,116,.5)}
+.cli-nom.part{background:rgba(58,124,191,.26);border-color:rgba(58,124,191,.5)}
 .empty{padding:40px;text-align:center;color:var(--gris-fonce)}
 .loading{padding:40px;text-align:center;color:var(--gris-fonce)}
 
@@ -373,7 +373,7 @@ async function vueOffres(){
       <td>${o.transaction==='vente'||o.prix_vente?euro(o.prix_vente):o.loyer_annuel_m2?euro(o.loyer_annuel_m2)+'/mois '+esc(o.loyer_type||'HT HC'):'—'}</td>
       <td><span class="tag ${o.statut==='disponible'?'green':''}">${esc(o.statut||'—')}</span></td>
       <td>${o.publie?'<span class="tag green">en ligne</span>':'<span class="tag">brouillon</span>'}</td>
-      <td>${nomClientBadge(o.clients)}</td>
+      <td>${esc(nomClient(o.clients))}</td>
       ${btnAction('offre',o.id,o.reference,cpt[o.id]||0)}
     </tr>`).join('');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${liste.length} bien(s)`,
@@ -400,7 +400,7 @@ async function vueDemandes(){
   const lignes = liste.map(d=>`
     <tr style="cursor:pointer" onclick="editDemande('${d.id}')">
       <td>${refBadge(d.reference, (d.types_bien||[])[0])}</td>
-      <td>${nomClientBadge(d.clients)}</td>
+      <td><b>${esc(nomClient(d.clients))}</b></td>
       <td>${(d.types_bien||[]).map(t=>typeBadge(t)).join(' ')||'—'}</td>
       <td><span class="tag ${d.transaction==='achat'?'blue':'green'}">${esc(d.transaction||'—')}</span></td>
       <td>${urgenceBadge(d.urgence)}</td>
@@ -540,7 +540,7 @@ async function vueMandats(){
       <td><span class="tag blue">${esc(m.numero||'—')}</span></td>
       <td>${esc(m.type_mandat||'—')} · ${esc(m.exclusivite||'')}</td>
       <td>${esc(m.offres?.reference||'—')}</td>
-      <td>${nomClientBadge(m.clients)}</td>
+      <td>${esc(nomClient(m.clients))}</td>
       <td>${esc(m.commission||'—')}</td>
       <td><span class="tag ${m.statut==='actif'?'green':''}">${esc(m.statut||'—')}</span></td>
     </tr>`).join('');
