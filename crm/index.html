@@ -233,6 +233,8 @@ const LABELS = {bureaux:'Bureaux', local_commercial:'Local commercial', entrepot
   activite:'Activité', fonds_de_commerce:'Fonds de commerce', terrain:'Terrain'};
 const euro = n => n==null ? '—' : new Intl.NumberFormat('fr-FR').format(Math.round(n))+' €';
 const ROLE_LABELS = {acheteur_locataire:'Preneur / Acquéreur', vendeur_bailleur:'Bailleur / Vendeur', les_deux:'Les deux', prestataire:'Prestataire', developpeur:'Développeur', franchise:'Franchisé', autre:'Autre'};
+/* Secteurs / quartiers proposés dans la fiche bien (menu déroulant) */
+const SECTEURS = ['Pôle Jules Verne','Blanche Tâche Camon','Grand Riez Cagny','ZI Nord Amiens','Village Oasis Dury','Vallée des Vignes','Zac Intercampus','Bornes du Temps','Zac Haute Borne','ZA le Capron Saleux','Zone Montières','Centre ville Amiens'];
 /* Code couleur des références par type de bien */
 const TYPE_COULEUR = {
   bureaux:            {bg:'rgba(30,80,140,.14)',  color:'#1e508c'}, // bleu
@@ -987,7 +989,7 @@ function formOffre(rec){
     ${fText('o-adresse','Adresse complète (privée)',rec.adresse,{full:true})}
     ${fText('o-ville','Ville',rec.ville,{title:true})}
     ${fText('o-cp','Code postal',rec.code_postal)}
-    ${fText('o-secteur','Secteur / quartier',rec.secteur,{full:true,cap:true})}
+    ${fSel('o-secteur','Secteur / quartier',rec.secteur||'',[['','—'],...(rec.secteur&&!SECTEURS.includes(rec.secteur)?[[rec.secteur,rec.secteur]]:[]),...SECTEURS.map(s=>[s,s])],{full:true})}
     ${fSep('Surfaces & caractéristiques')}
     ${fNum('o-surf','Surface (m²)',rec.surface_m2)}
     ${fSel('o-etat','État',rec.etat||'',[['','—'],['neuf','Neuf'],['bon','Bon état'],['a_renover','À rénover']])}
@@ -1060,7 +1062,7 @@ function formOffre(rec){
       cover_url = null;
     }
     await save('offres', rec.id, { type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
-      titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:cap('o-secteur'),
+      titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:val('o-secteur'),
       surface_m2:numVal('o-surf'), surface_min_m2:numVal('o-smin'), surface_max_m2:numVal('o-smax'), nb_lots:numVal('o-lots'),
       parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'), annee:numVal('o-annee'),
       dpe:val('o-dpe'), etat:val('o-etat'), divisible:val('o-div'), norme_pmr:val('o-pmr'), norme_erp:val('o-erp'),
