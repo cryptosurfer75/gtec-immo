@@ -232,7 +232,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const LABELS = {bureaux:'Bureaux', local_commercial:'Local commercial', entrepot_logistique:'Entrepôt / Logistique',
   activite:'Activité', fonds_de_commerce:'Fonds de commerce', terrain:'Terrain'};
 const euro = n => n==null ? '—' : new Intl.NumberFormat('fr-FR').format(Math.round(n))+' €';
-const ROLE_LABELS = {acheteur_locataire:'Preneur / Acquéreur', vendeur_bailleur:'Bailleur / Vendeur', les_deux:'Les deux'};
+const ROLE_LABELS = {acheteur_locataire:'Preneur / Acquéreur', vendeur_bailleur:'Bailleur / Vendeur', les_deux:'Les deux', prestataire:'Prestataire', developpeur:'Développeur', franchise:'Franchisé', autre:'Autre'};
 /* Code couleur des références par type de bien */
 const TYPE_COULEUR = {
   bureaux:            {bg:'rgba(30,80,140,.14)',  color:'#1e508c'}, // bleu
