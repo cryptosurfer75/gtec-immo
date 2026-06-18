@@ -506,17 +506,16 @@ async function vueClients(){
   CLIENTS_FULL = data||[];
   const lignes = CLIENTS_FULL.map(c=>`
     <tr style="cursor:pointer" onclick="editClient('${c.id}')">
-      <td><b>${esc(nomClient(c))}</b></td>
+      <td><b style="color:${c.type_client==='societe'?'var(--gris-fonce)':'var(--noir)'}">${esc(nomClient(c))}</b></td>
       <td>${esc(contactClient(c)||'—')}</td>
       <td>${esc(c.fonction||'—')}</td>
-      <td><span class="tag ${c.type_client==='societe'?'blue':''}">${c.type_client==='societe'?'Société':'Particulier'}</span></td>
       <td>${esc(ROLE_LABELS[c.role]||c.role||'—')}</td>
       <td class="num">${esc(formatTel(c.telephone)||'—')}</td>
       <td>${esc(c.email||'—')}</td>
     </tr>`).join('');
   C().innerHTML = panel('Fichier clients', `${CLIENTS_FULL.length} client(s)`,
     CLIENTS_FULL.length
-      ? `<table><thead><tr><th>Nom</th><th>Contact / Gérant</th><th>Fonction</th><th>Type</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead><tbody>${lignes}</tbody></table>`
+      ? `<table><thead><tr><th>Nom</th><th>Contact / Gérant</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead><tbody>${lignes}</tbody></table>`
       : vide('Aucun client pour le moment.'),
     `<button class="btn btn-sm" onclick="nouveauClient()">+ Ajouter un client</button>`);
 }
