@@ -436,7 +436,7 @@ function ligneOffre(o){
         style="cursor:pointer;display:inline-block;width:13px;height:13px;border-radius:50%;background:${o.publie===true?'var(--teal)':o.publie===false?'#d23f3f':'#fff'};border:1.5px solid ${o.publie===true?'var(--teal-dark)':o.publie===false?'#b3261e':'var(--gris-clair)'};box-shadow:0 0 0 3px ${o.publie===true?'rgba(61,128,116,.22)':o.publie===false?'rgba(210,63,63,.18)':'transparent'}"></span></td>
       <td>${nomClientLien(o.clients, o.client_id)}</td>
       <td><button class="btn btn-sm" title="Rapprocher : candidats pour ce bien" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocherOffre('${o.id}')">R</button></td>
-      ${btnAction('offre',o.id,o.reference,OFF_CPT[o.id]||0)}
+      ${btnAction('offre',o.id,o.reference,OFF_CPT[o.id]||0,o.dossier_pdf_url)}
     </tr>`;
 }
 /* Bascule l'état vitrine d'un bien : blanc→vert→rouge→vert (sans recharger toute la liste) */
@@ -601,11 +601,14 @@ async function compteursActions(cibleType){
   const { data } = await sb.from('actions').select('cible_id').eq('cible_type',cibleType);
   const m={}; (data||[]).forEach(a=>{ m[a.cible_id]=(m[a.cible_id]||0)+1; }); return m;
 }
-function btnAction(type,id,ref,n){
+function btnAction(type,id,ref,n,pdfUrl){
   const dossier = type==='offre'
     ? `<button type="button" class="btn btn-ghost btn-sm" title="Générer le dossier de présentation" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
     : '';
-  return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
+  const pdf = (type==='offre' && pdfUrl)
+    ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
+    : '';
+  return `<td onclick="event.stopPropagation()">${dossier}${pdf}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
 }
 async function ouvrirActions(cibleType, cibleId, ref){
   const titre=(cibleType==='offre'?'Suivi du bien':'Suivi de la demande')+(ref?' '+ref:'');
@@ -1165,6 +1168,26 @@ async function uploadMediaOffre(file){
   if(up.error) throw up.error;
   return sb.storage.from('offres').getPublicUrl(path).data.publicUrl;
 }
+
+/* ===== Dossier PDF rattaché à l'offre ===== */
+let DOSSIER_PDF_FILE=null, DOSSIER_PDF_REMOVE=false;
+function apercuPdf(){
+  const f=document.getElementById('o-pdf-file').files[0]; DOSSIER_PDF_FILE=f||null; DOSSIER_PDF_REMOVE=false;
+  const n=document.getElementById('o-pdf-name'); if(n) n.textContent = f ? ('À enregistrer : '+f.name) : '';
+}
+function showPdfCurrent(url){
+  const el=document.getElementById('o-pdf-current'); if(!el) return;
+  el.innerHTML = url
+    ? `<a href="${esc(url)}" target="_blank" class="btn btn-ghost btn-sm">📎 Ouvrir le dossier PDF rattaché</a>
+       <button type="button" class="lien" style="margin-left:10px;color:#b3261e" onclick="removePdf()">Supprimer</button>`
+    : '';
+}
+function removePdf(){
+  DOSSIER_PDF_FILE=null; DOSSIER_PDF_REMOVE=true;
+  const i=document.getElementById('o-pdf-file'); if(i) i.value='';
+  const n=document.getElementById('o-pdf-name'); if(n) n.textContent='Le dossier rattaché sera retiré à l’enregistrement.';
+  showPdfCurrent(null);
+}
 function thumbMini(src,onDel){
   return `<div style="position:relative;display:inline-block;margin:4px">
     <img src="${esc(src)}" style="height:70px;width:90px;object-fit:cover;border-radius:6px;display:block">
@@ -1279,6 +1302,7 @@ function formOffre(rec){
   EQUIP_SEL = (rec.equipements && typeof rec.equipements==='object') ? JSON.parse(JSON.stringify(rec.equipements)) : {}; EQUIP_OPEN=null;
   COVER_FILE=null; COVER_REMOVE=false;
   CARTE1_FILE=null; CARTE1_REMOVE=false; CARTE2_FILE=null; CARTE2_REMOVE=false;
+  DOSSIER_PDF_FILE=null; DOSSIER_PDF_REMOVE=false;
   const [ht1,hm1]=honoParse(rec.honoraires), [ht2,hm2]=honoParse(rec.honoraires_2);
   const corps=`<div class="form-grid">
     ${fSep('Identité')}
@@ -1353,6 +1377,13 @@ function formOffre(rec){
       <div id="o-carte2-preview" style="margin-top:8px"></div></div>
     ${fSep('Dossier — Photos & plans')}
     <div class="full" id="o-media-dossier"></div>
+    ${fSep('Dossier PDF rattaché')}
+    <div class="full">
+      <div id="o-pdf-current" style="margin-bottom:8px"></div>
+      <input id="o-pdf-file" type="file" accept="application/pdf" onchange="apercuPdf()">
+      <div id="o-pdf-name" style="margin-top:6px;font-size:.85rem;color:var(--gris-fonce)"></div>
+      <p style="font-size:.8rem;color:var(--gris-fonce);margin:6px 0 0">Générez le dossier, enregistrez-le en PDF, puis importez-le ici : il sera accessible à tous les collaborateurs sans avoir à le régénérer.</p>
+    </div>
   </div>`;
   ouvrirForm(rec.id?'Modifier le bien':'Nouveau bien', corps, async()=>{
     const honoraires = honoText(val('o-hono-type1'), numVal('o-hono-montant1'));
@@ -1376,9 +1407,13 @@ function formOffre(rec){
     let carte_aerienne_url = rec.carte_aerienne_url || null;
     if(CARTE2_FILE){ if(rec.carte_aerienne_url) await supprimerCoverStorage(rec.carte_aerienne_url); carte_aerienne_url = await uploadMediaOffre(CARTE2_FILE); }
     else if(CARTE2_REMOVE){ if(rec.carte_aerienne_url) await supprimerCoverStorage(rec.carte_aerienne_url); carte_aerienne_url = null; }
+    // Dossier PDF rattaché
+    let dossier_pdf_url = rec.dossier_pdf_url || null;
+    if(DOSSIER_PDF_FILE){ if(rec.dossier_pdf_url) await supprimerCoverStorage(rec.dossier_pdf_url); dossier_pdf_url = await uploadMediaOffre(DOSSIER_PDF_FILE); }
+    else if(DOSSIER_PDF_REMOVE){ if(rec.dossier_pdf_url) await supprimerCoverStorage(rec.dossier_pdf_url); dossier_pdf_url = null; }
     await save('offres', rec.id, { agent:radioVal('o-agent')||ME_AGENT, type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
       bail:val('o-bail'), indexation:val('o-indexation'), regime_fiscal:val('o-regime'), periodicite_paiement:val('o-periodicite'),
-      carte_plan_url, carte_aerienne_url,
+      carte_plan_url, carte_aerienne_url, dossier_pdf_url,
       titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:val('o-secteur'),
       surface_m2:numVal('o-surf'), surface_min_m2:numVal('o-smin'), surface_max_m2:numVal('o-smax'), nb_lots:numVal('o-lots'),
       parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'), annee:numVal('o-annee'),
@@ -1398,6 +1433,7 @@ function formOffre(rec){
   if(rec.cover_url) showCoverPreview(rec.cover_url);
   if(rec.carte_plan_url) showCartePreview(1, rec.carte_plan_url);
   if(rec.carte_aerienne_url) showCartePreview(2, rec.carte_aerienne_url);
+  showPdfCurrent(rec.dossier_pdf_url);
   initMediaDossier(rec.id, rec.plans_urls);
   draftApply('offre:'+(rec.id||'new'));
   majAnnuel('o-loyer','o-loyer-an');
