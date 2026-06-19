@@ -380,7 +380,7 @@ function ouvrirFiche(id){
         <div class="ref">${esc(b.reference||'')} · ${LABELS[b.type_bien]||''}</div>
         <h2>${esc(b.titre||LABELS[b.type_bien]||'Bien')}</h2>
         <div class="ville">📍 ${esc(b.ville||'')}${b.code_postal?' ('+esc(b.code_postal)+')':''}${b.secteur?' — '+esc(b.secteur):''}</div>
-        <div class="fiche-prix">${prixHtml(b)}</div>
+        <div class="fiche-prix">${prixHtml(b)}${(!(b.transaction==='vente'||(b.transaction==='les_deux'&&b.prix_vente)) && b.loyer_annuel_m2)?`<small style="display:block;margin-top:4px">(soit ${euro(b.loyer_annuel_m2*12)} / an ${esc(b.loyer_type||'HT HC')})</small>`:''}</div>
         ${b.description?`<div class="fiche-h">Descriptif</div><div class="fiche-desc">${esc(b.description)}</div>`:''}
         <div class="fiche-h">Caractéristiques &amp; modalités</div>
         <div class="fiche-grid">
