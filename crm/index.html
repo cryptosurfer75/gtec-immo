@@ -573,24 +573,51 @@ async function supprimerAction(id, cibleType, cibleId){
 
 /* ===== CLIENTS ===== */
 let CLIENTS_FULL = [];
-async function vueClients(){
-  charge();
-  const { data, error } = await sb.from('clients').select('*').order('created_at',{ascending:false});
-  if(error) return erreur(error);
-  CLIENTS_FULL = data||[];
-  const lignes = CLIENTS_FULL.map(c=>`
-    <tr style="cursor:pointer" onclick="editClient('${c.id}')">
+/* normalisation pour la recherche : minuscules + sans accents */
+const normTxt = s => (s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function ligneClient(c){
+  return `<tr style="cursor:pointer" onclick="editClient('${c.id}')">
       <td>${nomClientBadge(c)}</td>
       <td>${esc(contactClient(c)||'—')}</td>
       <td>${esc(c.fonction||'—')}</td>
       <td>${esc(clientRoles(c).map(r=>ROLE_LABELS[r]||r).join(' · ')||'—')}</td>
       <td class="num">${esc(formatTel(c.telephone)||'—')}</td>
       <td>${esc(c.email||'—')}</td>
-    </tr>`).join('');
-  C().innerHTML = panel('Fichier clients', `${CLIENTS_FULL.length} client(s)`,
-    CLIENTS_FULL.length
-      ? `<table><thead><tr><th>Nom</th><th>Contact</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead><tbody>${lignes}</tbody></table>`
-      : vide('Aucun client pour le moment.'),
+    </tr>`;
+}
+/* texte indexé d'un client (ce sur quoi porte la recherche) */
+function clientRecherche(c){
+  return normTxt([nomClient(c), contactClient(c), c.fonction,
+    clientRoles(c).map(r=>ROLE_LABELS[r]||r).join(' '),
+    c.email, c.telephone, c.raison_sociale, c.siret].filter(Boolean).join(' '));
+}
+function filtrerClients(q){
+  const t = normTxt(q).trim();
+  const liste = t ? CLIENTS_FULL.filter(c=>clientRecherche(c).includes(t)) : CLIENTS_FULL;
+  const tb = document.getElementById('clients-tbody');
+  if(tb) tb.innerHTML = liste.length
+    ? liste.map(ligneClient).join('')
+    : `<tr><td colspan="6" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun client ne correspond à « ${esc(q)} ».</td></tr>`;
+  const cnt = document.getElementById('clients-count');
+  if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
+}
+async function vueClients(){
+  charge();
+  const { data, error } = await sb.from('clients').select('*');
+  if(error) return erreur(error);
+  /* tri alphabétique sur le nom affiché (société ou particulier), insensible aux accents/casse */
+  CLIENTS_FULL = (data||[]).sort((a,b)=> nomClient(a).localeCompare(nomClient(b),'fr',{sensitivity:'base'}));
+  const corps = CLIENTS_FULL.length
+    ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+         <input id="clients-search" type="search" autocomplete="off" placeholder="🔎 Rechercher un client (nom, société, e-mail, téléphone…)"
+           oninput="filtrerClients(this.value)"
+           style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+         <span id="clients-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${CLIENTS_FULL.length} résultats</span>
+       </div>
+       <table><thead><tr><th>Nom</th><th>Contact</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead>
+       <tbody id="clients-tbody">${CLIENTS_FULL.map(ligneClient).join('')}</tbody></table>`
+    : vide('Aucun client pour le moment.');
+  C().innerHTML = panel('Fichier clients', `${CLIENTS_FULL.length} client(s)`, corps,
     `<button class="btn btn-sm" onclick="nouveauClient()">+ Ajouter un client</button>`);
 }
 
