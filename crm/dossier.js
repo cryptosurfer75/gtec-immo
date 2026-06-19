@@ -363,7 +363,21 @@
           setTimeout(function(){ map.invalidateSize(); },200);
         });
       }
-      if(document.readyState==='complete') go(); else window.addEventListener('load',go);
+      // Accroche le départ de la flèche pile sur le bord du rectangle (mesuré, donc jamais détaché)
+      function placerFleches(){
+        document.querySelectorAll('.loc-img').forEach(function(box){
+          var tag=box.querySelector('.loc-tag'), svg=box.querySelector('.loc-arrow');
+          if(!tag||!svg) return;
+          var line=svg.querySelector('line'); if(!line) return;
+          var w=box.clientWidth, h=box.clientHeight; if(!w||!h) return;
+          var ux=252/w, uy=135/h;
+          // bord gauche du rectangle (on rentre de 6px dessous pour un raccord net), milieu vertical
+          line.setAttribute('x1', ((tag.offsetLeft+6)*ux).toFixed(1));
+          line.setAttribute('y1', ((tag.offsetTop+tag.offsetHeight/2)*uy).toFixed(1));
+        });
+      }
+      function start(){ placerFleches(); go(); setTimeout(placerFleches,300); }
+      if(document.readyState==='complete') start(); else window.addEventListener('load',start);
     })();`;
   }
 
