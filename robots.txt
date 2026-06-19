@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /crm/
+Allow: /
+
+Sitemap: https://gtec-immobilier.fr/sitemap.xml
