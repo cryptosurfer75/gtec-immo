@@ -1332,9 +1332,8 @@ function formOffre(rec){
       <div id="o-equip-summary" style="margin-top:10px;font-size:.9rem"></div></div>
     ${fSep('Vitrine & rattachement')}
     ${fArea('o-desc','Description',rec.description)}
-    <div class="full" style="margin-top:-8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="full" style="margin-top:-8px">
       <button type="button" class="btn btn-ghost btn-sm" onclick="genererDescriptifOffre()">✍️ Générer le descriptif</button>
-      <span style="font-size:.8rem;color:var(--gris-fonce)">Rédige la description à partir des infos saisies — modifiable ensuite.</span>
     </div>
     ${fSel('o-dispo','Disponibilité',rec.disponibilite||'',[['','—'],['Disponibilité immédiate','Disponibilité immédiate'],['Nous consulter','Nous consulter']],{full:true})}
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
