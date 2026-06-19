@@ -412,11 +412,21 @@ function ligneOffre(o){
       <td>${o.statut==='disponible'
         ? `<span title="Disponible" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(61,128,116,.22)"></span>`
         : `<span class="tag">${esc(o.statut||'—')}</span>`}</td>
-      <td>${o.publie?'<span class="tag green">en ligne</span>':'<span class="tag">brouillon</span>'}</td>
+      <td><span title="${o.publie===true?'En ligne — cliquer pour retirer':o.publie===false?'Hors ligne — cliquer pour remettre en ligne':'Non défini — cliquer pour mettre en ligne'}"
+        onclick="event.stopPropagation();toggleVitrine('${o.id}',${o.publie===true?'true':o.publie===false?'false':'null'})"
+        style="cursor:pointer;display:inline-block;width:13px;height:13px;border-radius:50%;background:${o.publie===true?'var(--teal)':o.publie===false?'#d23f3f':'#fff'};border:1.5px solid ${o.publie===true?'var(--teal-dark)':o.publie===false?'#b3261e':'var(--gris-clair)'};box-shadow:0 0 0 3px ${o.publie===true?'rgba(61,128,116,.22)':o.publie===false?'rgba(210,63,63,.18)':'transparent'}"></span></td>
       <td>${nomClientLien(o.clients, o.client_id)}</td>
       <td><button class="btn btn-sm" title="Rapprocher : candidats pour ce bien" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocherOffre('${o.id}')">R</button></td>
       ${btnAction('offre',o.id,o.reference,OFF_CPT[o.id]||0)}
     </tr>`;
+}
+/* Bascule l'état vitrine d'un bien : blanc→vert→rouge→vert (sans recharger toute la liste) */
+async function toggleVitrine(id, cur){
+  const next = cur===true ? false : true;
+  const { error } = await sb.from('offres').update({publie:next}).eq('id',id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  const o = OFFRES.find(x=>String(x.id)===String(id)); if(o) o.publie = next;
+  filtrerOffres((document.getElementById('offres-search')||{}).value || '');
 }
 function offreRecherche(o){
   return normTxt([o.reference, o.titre, LABELS[o.type_bien], o.ville, o.code_postal, o.secteur,
@@ -448,7 +458,7 @@ async function vueOffres(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultats</span>
        </div>
-       <table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
+       <table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
        <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table>`
     : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
@@ -1336,7 +1346,7 @@ function formOffre(rec){
       honoraires_charge:val('o-hono-charge1'), honoraires_charge_2:val('o-hono-charge2'), depot_garantie:val('o-depot'),
       description:val('o-desc'), disponibilite:val('o-dispo'), plan_url:val('o-plan'),
       loyer_type:val('o-loyer-type'),
-      client_id:val('o-client'), publie:val('o-pub'), equipements:EQUIP_SEL, cover_url });
+      client_id:val('o-client'), publie:(val('o-pub')?true:null), equipements:EQUIP_SEL, cover_url });
     vueOffres();
   }, rec.id ? async()=>{ if(rec.cover_url) await supprimerCoverStorage(rec.cover_url); await sb.from('offre_photos').delete().eq('offre_id', rec.id); await sb.from('actions').delete().eq('cible_type','offre').eq('cible_id',rec.id); await del('offres', rec.id); vueOffres(); } : null, 'offre:'+(rec.id||'new'),
     rec.id ? {archived:!!rec.archive, toggle:async()=>{ await save('offres', rec.id, {archive:!rec.archive}); vueOffres(); }} : null);
