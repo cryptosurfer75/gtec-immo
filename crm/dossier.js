@@ -15,7 +15,12 @@
   // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
   const LOGO = 'https://gtec-immobilier.fr/logo-gtec.png';
-  const CONTACT = { nom:'Florent BOURDIEC', tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' };
+  // Signatures par agent (le bien porte une initiale FB / VDM)
+  const AGENTS = {
+    FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
+    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
+  };
+  const CONTACT_DEFAUT = AGENTS.FB;   // anciens biens sans agent renseigné
   const SECTIONS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',
                     'Conditions juridiques et financières','Photos','Plans'];
 
@@ -240,12 +245,13 @@
     return page('Plans', body, {actif:'Plans', num:9});
   }
 
-  function pageContact(){
+  function pageContact(o){
+    const c = (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg contact">
       <img class="contact-logo" src="${LOGO}" alt="GTEC">
-      <div class="contact-nom">${esc(CONTACT.nom)}</div>
-      <div class="contact-tel">${esc(CONTACT.tel)}</div>
-      <div class="contact-mail">${esc(CONTACT.mail)}</div>
+      <div class="contact-nom">${esc(c.nom)}</div>
+      <div class="contact-tel">${esc(c.tel)}</div>
+      <div class="contact-mail">${esc(c.mail)}</div>
     </section>`;
   }
 
@@ -384,7 +390,7 @@
       pagePhotos(o, photos),
       pagePlans(o, photos),
       pageConditions(o),
-      pageContact(),
+      pageContact(o),
     ].join('');
 
     const titre = `Dossier — ${o.titre || typeLabel(o.type_bien)} ${o.ville||''}`.trim();

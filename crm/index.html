@@ -265,6 +265,21 @@ function refBadge(ref, type){
   const c=TYPE_COULEUR[type];
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:700">${esc(ref||'—')}</span>`;
 }
+/* ----- Agent rédacteur (FB / VDM) ----- */
+const AGENTS_OPTS = [['VDM','VDM — Valéry de Martelaere'],['FB','FB — Florent Bourdiec']];
+let ME_AGENT = 'FB';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
+function agentBadge(a){
+  if(a!=='VDM' && a!=='FB') return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
+  const bg = a==='VDM' ? '#1A2738' : '#3D8074';   // marine pour VDM, vert d'eau pour FB
+  return `<span class="tag" title="Annonce gérée par ${a}" style="background:${bg};color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
+}
+/* Radio FB / VDM dans un formulaire (name = id) */
+function fAgent(name, v){
+  v = (v==='VDM'||v==='FB') ? v : ME_AGENT;
+  const opt = (code,label)=>`<label style="display:inline-flex;align-items:center;gap:7px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:normal"><input type="radio" name="${name}" value="${code}" ${v===code?'checked':''} style="width:auto;flex:none;margin:0"> ${label}</label>`;
+  return `<div class="f full"><label>Annonce gérée par</label><div style="display:flex;gap:26px;align-items:center;padding-top:4px;flex-wrap:wrap">${AGENTS_OPTS.map(([c,l])=>opt(c,l)).join('')}</div></div>`;
+}
+function radioVal(name){ const el=document.querySelector(`input[name="${name}"]:checked`); return el?el.value:null; }
 function typeBadge(type){
   const c=TYPE_COULEUR[type];
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:600">${LABELS[type]||'—'}</span>`;
@@ -360,6 +375,9 @@ function ouvrirApp(session){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('who-mail').textContent = session.user.email;
+  const mail = (session.user.email||'').toLowerCase();
+  ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere')) ? 'VDM'
+           : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'FB';
   aller('dashboard');
   reouvrirDraft();
 }
@@ -403,6 +421,7 @@ async function vueDashboard(){
 let OFFRES = [], OFF_ARCH = false, OFF_CPT = {}, OFF_LISTE = [];
 function ligneOffre(o){
   return `<tr style="cursor:pointer" onclick="editOffre('${o.id}')">
+      <td style="text-align:center">${agentBadge(o.agent)}</td>
       <td>${refBadge(o.reference, o.type_bien)}${o.cover_url?`<img src="${esc(o.cover_url)}" class="ref-thumb">`:''}</td>
       <td><b>${esc(o.titre||LABELS[o.type_bien]||'Bien')}</b></td>
       <td>${typeBadge(o.type_bien)}</td>
@@ -430,14 +449,14 @@ async function toggleVitrine(id, cur){
 }
 function offreRecherche(o){
   return normTxt([o.reference, o.titre, LABELS[o.type_bien], o.ville, o.code_postal, o.secteur,
-    nomClient(o.clients), o.statut].filter(Boolean).join(' '));
+    nomClient(o.clients), o.statut, o.agent].filter(Boolean).join(' '));
 }
 function filtrerOffres(q){
   const t = normTxt(q).trim();
   const liste = t ? OFF_LISTE.filter(o=>offreRecherche(o).includes(t)) : OFF_LISTE;
   const tb = document.getElementById('offres-tbody');
   if(tb) tb.innerHTML = liste.length ? liste.map(ligneOffre).join('')
-    : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
+    : `<tr><td colspan="12" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
   const cnt = document.getElementById('offres-count');
   if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
 }
@@ -458,7 +477,7 @@ async function vueOffres(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultats</span>
        </div>
-       <table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
+       <table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
        <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table>`
     : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
@@ -470,6 +489,7 @@ async function vueOffres(){
 let DEMANDES = [], DEM_ARCH = false, DEM_CPT = {}, DEM_LISTE = [];
 function ligneDemande(d){
   return `<tr style="cursor:pointer" onclick="editDemande('${d.id}')">
+      <td style="text-align:center">${agentBadge(d.agent)}</td>
       <td>${refBadge(d.reference, (d.types_bien||[])[0])}</td>
       <td>${nomClientLien(d.clients, d.client_id)}</td>
       <td>${(d.types_bien||[]).map(t=>typeBadge(t)).join(' ')||'—'}</td>
@@ -483,7 +503,7 @@ function ligneDemande(d){
     </tr>`;
 }
 function demandeRecherche(d){
-  return normTxt([d.reference, nomClient(d.clients),
+  return normTxt([d.reference, nomClient(d.clients), d.agent,
     (d.types_bien||[]).map(t=>LABELS[t]||t).join(' '), d.transaction, d.urgence,
     (d.demande_localites||[]).map(l=>(l.ville||'')+' '+(l.code_postal||'')).join(' ')].filter(Boolean).join(' '));
 }
@@ -492,7 +512,7 @@ function filtrerDemandes(q){
   const liste = t ? DEM_LISTE.filter(d=>demandeRecherche(d).includes(t)) : DEM_LISTE;
   const tb = document.getElementById('demandes-tbody');
   if(tb) tb.innerHTML = liste.length ? liste.map(ligneDemande).join('')
-    : `<tr><td colspan="10" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ne correspond à « ${esc(q)} ».</td></tr>`;
+    : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ne correspond à « ${esc(q)} ».</td></tr>`;
   const cnt = document.getElementById('demandes-count');
   if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
 }
@@ -513,7 +533,7 @@ async function vueDemandes(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultats</span>
        </div>
-       <table><thead><tr><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
+       <table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
        <tbody id="demandes-tbody">${DEM_LISTE.map(ligneDemande).join('')}</tbody></table>`
     : vide(DEM_ARCH?'Aucune demande archivée.':'Aucune demande pour le moment.');
   C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${DEM_LISTE.length} demande(s)`, corps,
@@ -1244,6 +1264,7 @@ function formOffre(rec){
   const [ht1,hm1]=honoParse(rec.honoraires), [ht2,hm2]=honoParse(rec.honoraires_2);
   const corps=`<div class="form-grid">
     ${fSep('Identité')}
+    ${fAgent('o-agent',rec.agent)}
     ${fSel('o-type','Type de bien',rec.type_bien||'bureaux',Object.entries(LABELS))}
     ${fSel('o-trans','Transaction',rec.transaction||'vente',[['vente','À vendre'],['location','À louer'],['les_deux','Les deux']])}
     ${fSel('o-statut','Statut',rec.statut||'disponible',[['disponible','Disponible'],['sous_compromis','Sous compromis'],['vendu_loue','Vendu / loué'],['retire','Retiré']])}
@@ -1334,7 +1355,7 @@ function formOffre(rec){
     let carte_aerienne_url = rec.carte_aerienne_url || null;
     if(CARTE2_FILE){ if(rec.carte_aerienne_url) await supprimerCoverStorage(rec.carte_aerienne_url); carte_aerienne_url = await uploadMediaOffre(CARTE2_FILE); }
     else if(CARTE2_REMOVE){ if(rec.carte_aerienne_url) await supprimerCoverStorage(rec.carte_aerienne_url); carte_aerienne_url = null; }
-    await save('offres', rec.id, { type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
+    await save('offres', rec.id, { agent:radioVal('o-agent')||ME_AGENT, type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
       bail:val('o-bail'), indexation:val('o-indexation'), regime_fiscal:val('o-regime'), periodicite_paiement:val('o-periodicite'),
       carte_plan_url, carte_aerienne_url,
       titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:val('o-secteur'),
@@ -1374,6 +1395,7 @@ function formDemande(rec){
   const typesChecks = Object.entries(LABELS).map(([k,l])=>`<label style="display:flex;align-items:center;gap:9px;font-size:.9rem;font-weight:500;text-transform:none;letter-spacing:normal;color:var(--noir);padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;cursor:pointer">
     <input type="checkbox" id="dt-${k}" ${(rec.types_bien||[]).includes(k)?'checked':''} style="width:auto;flex:none;margin:0"> <span>${l}</span></label>`).join('');
   const corps=`<div class="form-grid">
+    ${fAgent('d-agent',rec.agent)}
     <div class="f full"><label>Client</label><select id="d-client">${optClients(rec.client_id)}</select></div>
     ${fSel('d-trans','Transaction',rec.transaction||'achat',[['achat','Achat'],['location','Location'],['les_deux','Les deux']])}
     ${fSel('d-statut','Statut',rec.statut||'active',[['active','Active'],['cloturee','Clôturée']])}
@@ -1459,7 +1481,7 @@ function viderMetro(){
   majMetroChips(); draftCollect(CURRENT_FORM_KEY);
 }
 async function saveDemande(rec){
-  const payload={ client_id:val('d-client'), transaction:val('d-trans'), statut:val('d-statut'),
+  const payload={ agent:radioVal('d-agent')||ME_AGENT, client_id:val('d-client'), transaction:val('d-trans'), statut:val('d-statut'),
     surface_min_m2:numVal('d-smin'), surface_max_m2:numVal('d-smax'), budget_max:numVal('d-budget'),
     tolerance_budget_pct:numVal('d-tolb')??15, tolerance_surface_pct:numVal('d-tols')??15, urgence:val('d-urgence'),
     types_bien: Object.keys(LABELS).filter(k=>document.getElementById('dt-'+k).checked),
