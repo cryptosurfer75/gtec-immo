@@ -412,11 +412,12 @@ async function vueOffres(){
       <td><span class="tag ${o.statut==='disponible'?'green':''}">${esc(o.statut||'—')}</span></td>
       <td>${o.publie?'<span class="tag green">en ligne</span>':'<span class="tag">brouillon</span>'}</td>
       <td>${esc(nomClient(o.clients))}</td>
+      <td><button class="btn btn-sm" title="Rapprocher : candidats pour ce bien" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocherOffre('${o.id}')">R</button></td>
       ${btnAction('offre',o.id,o.reference,cpt[o.id]||0)}
     </tr>`).join('');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${liste.length} bien(s)`,
     liste.length
-      ? `<table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th><th>Action</th></tr></thead><tbody>${lignes}</tbody></table>`
+      ? `<table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead><tbody>${lignes}</tbody></table>`
       : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.'),
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
      <button class="btn btn-ghost btn-sm" onclick="OFF_ARCH=!OFF_ARCH;vueOffres()">${OFF_ARCH?'← Biens actifs':'Archivés ('+archivees.length+')'}</button>`);
@@ -477,6 +478,32 @@ async function rapprocher(demandeId){
       <div class="info">
         <b>${esc(m.reference||'')} ${esc(m.titre||LABELS[m.type_bien]||'Bien')}</b>
         <div style="color:var(--gris-fonce);font-size:.88rem">${esc(m.ville||'')}${m.surface_m2?' · '+esc(m.surface_m2)+' m²':''}</div>
+        <div class="ecarts">${ecaHtml}</div>
+      </div></div>`;
+  }).join('');
+}
+/* Rapprochement inverse : un bien → les demandes (candidats) qui collent */
+async function rapprocherOffre(offreId){
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `<div class="modal-bg" onclick="if(event.target===this)fermerModal()"><div class="modal">
+    <div class="modal-h"><h3>Candidats pour ce bien</h3><button class="x" onclick="fermerModal()">×</button></div>
+    <div class="modal-b" id="modal-b"><div class="loading">Recherche des candidats…</div></div></div></div>`;
+  const { data, error } = await sb.rpc('match_demandes_pour_offre', { p_offre: offreId });
+  const b = document.getElementById('modal-b');
+  if(error){ b.innerHTML = `<div class="empty">Erreur : ${esc(error.message)}<br><small>(la fonction de rapprochement inverse doit être installée en base)</small></div>`; return; }
+  if(!data || !data.length){ b.innerHTML = vide('Aucune demande ne correspond à ce bien pour l’instant.'); return; }
+  b.innerHTML = data.map(m=>{
+    const sc = m.score ?? m.score_pertinence ?? m.pertinence;
+    const cls = sc>=80?'':sc>=50?'mid':'low';
+    const eca = m.etiquettes||m.ecarts||m.labels;
+    const ecaHtml = Array.isArray(eca)?eca.map(e=>`<span class="tag">${esc(e)}</span>`).join('')
+      : eca?`<span class="tag">${esc(eca)}</span>`:'';
+    const surf = m.surface || (m.surface_min_m2||m.surface_max_m2 ? `${m.surface_min_m2||0}–${m.surface_max_m2||'∞'} m²` : '');
+    return `<div class="match">
+      <div class="score ${cls}">${sc!=null?Math.round(sc):'—'}</div>
+      <div class="info">
+        <b>${esc(m.reference||'')} ${esc(m.client||m.client_nom||'')}</b>
+        <div style="color:var(--gris-fonce);font-size:.88rem">${esc(m.ville||m.localites||'')}${surf?' · '+esc(surf):''}</div>
         <div class="ecarts">${ecaHtml}</div>
       </div></div>`;
   }).join('');
