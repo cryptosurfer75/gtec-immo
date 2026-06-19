@@ -303,17 +303,19 @@ function honoText(type,mt){
 /* Une ligne honoraires (taux/forfait + à la charge de) — dupliquée pour gérer un partage */
 function honoLigne(n,type,mt,charge){
   return `
-    <div class="f"><label>Honoraires${n==='2'?' (2)':''}</label>
-      <select id="o-hono-type${n}" onchange="majHonoraires()">
-        <option value="" ${type===''?'selected':''}>—</option>
-        <option value="p15" ${type==='p15'?'selected':''}>15 % HT du loyer annuel HT HC</option>
-        <option value="p20" ${type==='p20'?'selected':''}>20 % HT du loyer annuel HT HC</option>
-        <option value="p30" ${type==='p30'?'selected':''}>30 % HT du loyer annuel HT HC</option>
-        <option value="forfait" ${type==='forfait'?'selected':''}>Montant forfaitaire</option>
-      </select></div>
-    ${fSel('o-hono-charge'+n,'À la charge de',charge||'',[['','—'],['preneur_acquereur','Preneur / Acquéreur'],['bailleur_vendeur','Bailleur / Vendeur']])}
-    <div class="f full" id="o-hono-forfait-wrap${n}" style="display:${type==='forfait'?'':'none'}">
-      <label>Montant forfaitaire (€)${n==='2'?' (2)':''}</label><input id="o-hono-montant${n}" type="number" value="${mt}"></div>`;
+    <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="f"><label>Honoraires${n==='2'?' (2)':''}</label>
+        <select id="o-hono-type${n}" onchange="majHonoraires()">
+          <option value="" ${type===''?'selected':''}>—</option>
+          <option value="p15" ${type==='p15'?'selected':''}>15 % HT du loyer annuel HT HC</option>
+          <option value="p20" ${type==='p20'?'selected':''}>20 % HT du loyer annuel HT HC</option>
+          <option value="p30" ${type==='p30'?'selected':''}>30 % HT du loyer annuel HT HC</option>
+          <option value="forfait" ${type==='forfait'?'selected':''}>Montant forfaitaire</option>
+        </select></div>
+      ${fSel('o-hono-charge'+n,'À la charge de',charge||'',[['','—'],['preneur_acquereur','Preneur / Acquéreur'],['bailleur_vendeur','Bailleur / Vendeur']])}
+      <div class="f" id="o-hono-forfait-wrap${n}" style="grid-column:1/-1;display:${type==='forfait'?'':'none'}">
+        <label>Montant forfaitaire (€)${n==='2'?' (2)':''}</label><input id="o-hono-montant${n}" type="number" value="${mt}"></div>
+    </div>`;
 }
 const nomClient = c => !c ? '—' : (c.type_client==='societe' ? (c.raison_sociale||'Société')
   : [c.prenom,c.nom].filter(Boolean).join(' ')||'Client');
