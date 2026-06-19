@@ -234,7 +234,6 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 <div id="modal-root2"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script>
 /* ===== CONFIG (même projet Supabase que la vitrine) ===== */
 const SUPABASE_URL      = 'https://rqeyadmapekiwzyjtyhv.supabase.co';
@@ -1163,16 +1162,41 @@ async function supprimerCoverStorage(url){
 let CARTE1_FILE=null, CARTE1_REMOVE=false, CARTE2_FILE=null, CARTE2_REMOVE=false;
 let MEDIA_OFFRE_ID=null, DOSSIER_PHOTOS=[], DOSSIER_PLANS=[];
 
+/* Charge à la demande le décodeur HEIC (libheif à jour, asm.js synchrone après chargement) */
+let _libheifP=null;
+function chargerLibheif(){
+  if(window.libheif) return Promise.resolve(window.libheif);
+  if(_libheifP) return _libheifP;
+  _libheifP=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/libheif-js@1.18.2/libheif/libheif.js';
+    s.onload=()=>window.libheif?resolve(window.libheif):reject(new Error('libheif non disponible'));
+    s.onerror=()=>reject(new Error('chargement du décodeur'));
+    document.head.appendChild(s);
+  });
+  return _libheifP;
+}
 /* Convertit une photo HEIC/HEIF (format iPhone, illisible par les navigateurs) en JPEG.
    Laisse tout autre fichier (jpg, png, pdf…) inchangé. */
 async function convertHeic(file){
   if(!file) return file;
   const heic = /\.(heic|heif)$/i.test(file.name||'') || /image\/hei[cf]/i.test(file.type||'');
   if(!heic) return file;
-  if(typeof heic2any!=='function'){ alert('Conversion HEIC indisponible (réseau ?). Réessayez ou importez en JPEG.'); return file; }
+  let lib;
+  try{ lib=await chargerLibheif(); }catch(e){ alert('Conversion HEIC indisponible (réseau ?). Réessayez.'); return file; }
   try{
-    const out=await heic2any({ blob:file, toType:'image/jpeg', quality:0.85 });
-    const blob=Array.isArray(out)?out[0]:out;
+    const buf=new Uint8Array(await file.arrayBuffer());
+    const data=new lib.HeifDecoder().decode(buf);
+    if(!data || !data.length) throw new Error('aucune image dans le fichier');
+    const image=data[0];
+    const width=image.get_width(), height=image.get_height();
+    const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
+    const ctx=canvas.getContext('2d');
+    const imageData=ctx.createImageData(width,height);
+    await new Promise((res,rej)=>{ image.display(imageData,d=>{ d?res():rej(new Error('rendu HEIF')); }); });
+    ctx.putImageData(imageData,0,0);
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.85));
+    if(!blob) throw new Error('encodage JPEG');
     return new File([blob], (file.name||'photo').replace(/\.(heic|heif)$/i,'.jpg'), {type:'image/jpeg'});
   }catch(e){ alert('Conversion de la photo HEIC impossible : '+(e.message||e)); return file; }
 }
