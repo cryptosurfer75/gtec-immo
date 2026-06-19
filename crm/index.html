@@ -1132,8 +1132,8 @@ function formOffre(rec){
         </select>
       </div>
       <div id="o-loyer-an" style="font-size:.8rem;font-weight:600;color:var(--teal-dark);margin-top:4px"></div></div>
-    ${fNum('o-charges','Charges (€)',rec.charges)}
-    ${fNum('o-tf','Taxe foncière (€)',rec.taxe_fonciere)}
+    ${fNum('o-charges','Charges (€ / mensuel)',rec.charges)}
+    ${fNum('o-tf','Taxe foncière (€ / mensuel)',rec.taxe_fonciere)}
     ${fNum('o-dab','Droit au bail (€)',rec.droit_au_bail)}
     <div class="f full"><label>Honoraires</label>
       <select id="o-hono-type" onchange="majHonoraires()">
