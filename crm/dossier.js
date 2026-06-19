@@ -110,7 +110,7 @@
     if(!GMAPS_KEY || !geo) return null;
     const isAir = variant==='aerienne';
     const type = isAir ? 'hybrid' : 'roadmap';   // hybrid = satellite + noms d'enseignes
-    const zoom = isAir ? 18 : 16;                // 16 = on voit les commerces voisins
+    const zoom = isAir ? 16 : 15;                // un peu de hauteur tout en voyant les commerces voisins
     const center = geo.lat+','+geo.lon;
     const marker = 'color:0x3D8074%7C'+center;   // pin vert GTEC sur le bien
     return 'https://maps.googleapis.com/maps/api/staticmap?center='+center
@@ -118,19 +118,30 @@
       + '&markers='+marker+'&language=fr&key='+GMAPS_KEY;
   }
 
+  // Étiquette « Locaux disponibles » + flèche reliée au pointeur (centre de la carte).
+  // Repère en mm : zone carte = 252 × 135, pointeur au centre (126 ; 67.5).
+  function locOverlay(num){
+    const id = 'ah-'+num;
+    return `<svg class="loc-arrow" viewBox="0 0 252 135" preserveAspectRatio="none">`
+      + `<defs><marker id="${id}" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="5" refY="3.2" orient="auto">`
+      + `<path d="M0,0 L7,3.2 L0,6.4 Z" fill="#3D8074"/></marker></defs>`
+      + `<line x1="200" y1="60" x2="135" y2="66.5" stroke="#3D8074" stroke-width="1.5" marker-end="url(#${id})"/>`
+      + `</svg><span class="loc-tag">Locaux disponibles</span>`;
+  }
+
   function pageLocalisation(o, src, num, label, geo, variant){
     let inner;
     const gUrl = googleStaticUrl(geo, variant);
+    const ov = locOverlay(num);
     if(src){
       // Capture importée à la main dans la fiche : elle reste prioritaire
-      inner = `<div class="loc-img"><img src="${esc(src)}" alt=""><span class="loc-tag">Locaux disponibles</span></div>`;
+      inner = `<div class="loc-img"><img src="${esc(src)}" alt="">${ov}</div>`;
     } else if(gUrl){
       // Carte Google générée depuis l'adresse (commerces / enseignes voisines visibles)
-      inner = `<div class="loc-img"><img src="${esc(gUrl)}" alt=""><span class="loc-tag">Locaux disponibles</span></div>`;
+      inner = `<div class="loc-img"><img src="${esc(gUrl)}" alt="">${ov}</div>`;
     } else if(geo){
       // Secours sans clé : carte libre
-      const id = 'locmap-'+num;
-      inner = `<div class="loc-img"><div id="${id}" class="loc-leaflet" data-lat="${geo.lat}" data-lon="${geo.lon}" data-variant="${esc(variant)}"></div><span class="loc-tag">Locaux disponibles</span></div>`;
+      inner = `<div class="loc-img"><div id="locmap-${num}" class="loc-leaflet" data-lat="${geo.lat}" data-lon="${geo.lon}" data-variant="${esc(variant)}"></div>${ov}</div>`;
     } else {
       inner = `<div class="loc-img ph">${esc(label)}<br><small>(adresse à renseigner dans la fiche pour la carte automatique)</small></div>`;
     }
@@ -288,6 +299,7 @@
       .loc-leaflet{ width:100%; height:100%; }
       .loc-leaflet .leaflet-control-attribution{ font-size:8pt; }
       .loc-img.ph{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9aa0a6; font-size:13pt; text-align:center; }
+      .loc-arrow{ position:absolute; inset:0; width:100%; height:100%; z-index:480; pointer-events:none; }
       .loc-tag{ position:absolute; right:10mm; top:38%; z-index:500; background:var(--teal); color:#fff; padding:6px 14px; border-radius:4px; font-size:12pt; }
       /* Descriptif */
       .descr{ font-size:15pt; line-height:1.6; color:#222; padding-top:6mm; }
