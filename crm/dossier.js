@@ -47,6 +47,95 @@
     return out;
   }
 
+  // -- Rédaction automatique du descriptif (prose d'agent, sans IA) ------------
+  const nbFr = v => new Intl.NumberFormat('fr-FR').format(v);
+  function joinFr(arr){ if(arr.length<=1) return arr.join(''); return arr.slice(0,-1).join(', ')+' et '+arr[arr.length-1]; }
+  function etagePhrase(e){
+    if(!e) return '';
+    if(/sous-sol/i.test(e)) return 'en sous-sol';
+    if(/rez/i.test(e)) return 'en rez-de-chaussée';
+    const m=/R\+(\d+)/i.exec(e); if(m){ const n=+m[1]; return `au ${n===1?'1er':n+'e'} étage`; }
+    return 'à l’étage '+e;
+  }
+  function descType(t){
+    const m = {
+      'bureaux':           {np:'des bureaux',          ac:'s'},
+      'commerce':          {np:'un local commercial',  ac:''},
+      'local-activite':    {np:'un local d’activité',  ac:''},
+      'entrepot':          {np:'un entrepôt',          ac:''},
+      'terrain':           {np:'un terrain',           ac:''},
+      'fonds-de-commerce': {np:'un fonds de commerce', ac:''}
+    };
+    return m[t] || {np:'un bien', ac:''};
+  }
+  function genererDescriptif(o){
+    const ti = descType(o.type_bien);
+    const terrain = o.type_bien==='terrain';
+    const loc = o.secteur ? `${o.ville||''}${o.ville?' ':''}(secteur ${o.secteur})`.trim() : (o.ville||'');
+    const vente = o.transaction==='vente' || (!o.transaction && o.prix_vente && !o.loyer_annuel_m2);
+    const both  = o.transaction==='les_deux';
+    const tx = both ? 'à la vente ou à la location' : vente ? 'à la vente' : 'à la location';
+
+    const paras = [];
+    // 1) Accroche + situation + surface
+    const p1 = [];
+    let s1 = `GTEC Immobilier vous propose, ${tx}, ${ti.np}`;
+    if(loc) s1 += ` idéalement situé${ti.ac} à ${loc}`;
+    p1.push(s1 + '.');
+    if(o.surface_m2){
+      let s = terrain ? `Le terrain présente une superficie de ${nbFr(o.surface_m2)} m²`
+                      : `L’ensemble développe une surface de ${nbFr(o.surface_m2)} m²`;
+      if(o.divisible && o.surface_min_m2) s += `, divisible à partir de ${nbFr(o.surface_min_m2)} m²`;
+      else if(o.surface_min_m2 && o.surface_max_m2 && o.surface_min_m2!==o.surface_max_m2) s += ` (surfaces modulables de ${nbFr(o.surface_min_m2)} à ${nbFr(o.surface_max_m2)} m²)`;
+      if(o.nb_lots>1) s += `, réparti en ${o.nb_lots} lots`;
+      p1.push(s + '.');
+    } else if(o.surface_min_m2 || o.surface_max_m2){
+      const a=o.surface_min_m2, b=o.surface_max_m2;
+      p1.push(`Les surfaces proposées s’échelonnent ${a&&b?`de ${nbFr(a)} à ${nbFr(b)} m²`:a?`à partir de ${nbFr(a)} m²`:`jusqu’à ${nbFr(b)} m²`}.`);
+    }
+    paras.push(p1.join(' '));
+
+    // 2) Configuration, état, accessibilité, équipements, DPE
+    const p2 = [];
+    if(!terrain){
+      const cl = [];
+      const ep = etagePhrase(o.etage); if(ep) cl.push(`se situe ${ep}`);
+      if(o.nb_niveaux) cl.push(`se déploie sur ${o.nb_niveaux} niveau${o.nb_niveaux>1?'x':''}`);
+      if(o.parkings) cl.push(`dispose de ${o.parkings} place${o.parkings>1?'s':''} de stationnement`);
+      if(cl.length) p2.push('Le bien ' + joinFr(cl) + '.');
+      const etatM = { neuf:'Il se présente en parfait état et ne nécessite aucuns travaux',
+                      bon:'Il se présente en bon état général',
+                      a_renover:'À rénover, il offre un beau potentiel pour un aménagement sur-mesure' };
+      if(o.etat && etatM[o.etat]){ let e=etatM[o.etat]; if(o.annee) e+=` (construction de ${o.annee})`; p2.push(e+'.'); }
+      else if(o.annee) p2.push(`Construction datant de ${o.annee}.`);
+      const acc=[];
+      if(o.norme_pmr) acc.push('accessible aux personnes à mobilité réduite');
+      if(o.norme_erp) acc.push('conforme aux normes ERP (établissement recevant du public)');
+      if(acc.length) p2.push('Le bien est ' + joinFr(acc) + '.');
+      const eq = equipListe(o.equipements);
+      if(eq.length){ const top=eq.slice(0,8); p2.push('Il bénéficie notamment de : ' + top.join(', ') + (eq.length>8?'…':'') + '.'); }
+      if(o.dpe) p2.push(`Diagnostic de performance énergétique : classe ${o.dpe}.`);
+    } else if(o.secteur || o.ville){
+      p2.push('Terrain offrant de belles possibilités, à étudier selon votre projet.');
+    }
+    if(p2.length) paras.push(p2.join(' '));
+
+    // 3) Conditions + appel à l’action
+    const p3 = [];
+    if((vente||both) && o.prix_vente) p3.push(`Prix de vente : ${nbFr(o.prix_vente)} €.`);
+    if((!vente||both) && o.loyer_annuel_m2){
+      const sfx = o.loyer_type==='NET HC' ? 'NET HC' : 'HT HC';
+      let l = `Loyer mensuel : ${nbFr(o.loyer_annuel_m2)} € ${sfx}`;
+      if(o.charges) l += `, charges ${nbFr(o.charges)} €/mois`;
+      p3.push(l + '.');
+    }
+    if(o.disponibilite){ const d=o.disponibilite.trim(); p3.push(/^disponibilit/i.test(d) ? d+'.' : `Disponibilité : ${d}.`); }
+    p3.push('Pour toute information complémentaire ou pour organiser une visite, l’équipe GTEC Immobilier se tient à votre entière disposition.');
+    paras.push(p3.join(' '));
+
+    return paras.filter(Boolean);
+  }
+
   // -- Récupération des données ------------------------------------------------
   async function charger(offreId){
     const { data:o, error } = await sb.from('offres').select('*').eq('id', offreId).single();
@@ -169,8 +258,10 @@
 
   function pageDescriptif(o){
     const txt = (o.description||'').trim();
-    const body = txt
-      ? txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')
+    // Description saisie à la main = prioritaire ; sinon rédaction automatique depuis la fiche
+    const paras = txt ? txt.split(/\n+/) : genererDescriptif(o);
+    const body = paras.length
+      ? paras.map(p=>`<p>${esc(p)}</p>`).join('')
       : '<p class="ph">Descriptif à renseigner dans la fiche du bien.</p>';
     return page('Descriptif du bien', `<div class="descr">${body}</div>`, {actif:'Descriptif du bien', num:5});
   }
