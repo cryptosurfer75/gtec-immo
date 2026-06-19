@@ -266,7 +266,7 @@ function refBadge(ref, type){
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:700">${esc(ref||'—')}</span>`;
 }
 /* ----- Agent rédacteur (FB / VDM) ----- */
-const AGENTS_OPTS = [['VDM','VDM — Valéry de Martelaere'],['FB','FB — Florent Bourdiec']];
+const AGENTS_OPTS = [['VDM','VDM'],['FB','FB']];
 let ME_AGENT = 'FB';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
 function agentBadge(a){
   if(a!=='VDM' && a!=='FB') return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
