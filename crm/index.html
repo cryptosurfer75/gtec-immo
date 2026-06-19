@@ -81,9 +81,9 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 .tag.green{background:rgba(61,128,116,.14);color:var(--teal-dark)}
 .tag.blue{background:rgba(26,39,56,.1);color:var(--bleu)}
 /* Cadre coloré autour du nom dans le fichier clients (écriture noire conservée) */
-.cli-nom{display:inline-block;padding:3px 11px;border-radius:9px;border:1px solid transparent;font-weight:700;color:var(--noir)}
-.cli-nom.soc{background:rgba(61,128,116,.24);border-color:rgba(61,128,116,.5)}
-.cli-nom.part{background:rgba(58,124,191,.26);border-color:rgba(58,124,191,.5)}
+.cli-nom{display:inline-block;padding:3px 11px;border-radius:9px;border:1px solid transparent;font-weight:700}
+.cli-nom.soc{background:rgba(61,128,116,.16);border-color:rgba(61,128,116,.5);color:#2E6357}
+.cli-nom.part{background:rgba(30,80,140,.14);border-color:rgba(30,80,140,.5);color:#1e508c}
 .empty{padding:40px;text-align:center;color:var(--gris-fonce)}
 .loading{padding:40px;text-align:center;color:var(--gris-fonce)}
 
@@ -453,7 +453,10 @@ async function compteursActions(cibleType){
   const m={}; (data||[]).forEach(a=>{ m[a.cible_id]=(m[a.cible_id]||0)+1; }); return m;
 }
 function btnAction(type,id,ref,n){
-  return `<td onclick="event.stopPropagation()"><button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
+  const dossier = type==='offre'
+    ? `<button type="button" class="btn btn-ghost btn-sm" title="Générer le dossier de présentation" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
+    : '';
+  return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
 }
 async function ouvrirActions(cibleType, cibleId, ref){
   const titre=(cibleType==='offre'?'Suivi du bien':'Suivi de la demande')+(ref?' '+ref:'');
@@ -972,6 +975,103 @@ async function supprimerCoverStorage(url){
   const parts=(url||'').split('/offres/'); const path=parts[1];
   if(path) await sb.storage.from('offres').remove([decodeURIComponent(path)]);
 }
+
+/* ===== Médias du dossier : cartes, photos, plans ===== */
+let CARTE1_FILE=null, CARTE1_REMOVE=false, CARTE2_FILE=null, CARTE2_REMOVE=false;
+let MEDIA_OFFRE_ID=null, DOSSIER_PHOTOS=[], DOSSIER_PLANS=[];
+
+/* envoie un fichier dans le bucket "offres" et renvoie son URL publique */
+async function uploadMediaOffre(file){
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const path='media_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+  const up=await sb.storage.from('offres').upload(path, file, {cacheControl:'3600'});
+  if(up.error) throw up.error;
+  return sb.storage.from('offres').getPublicUrl(path).data.publicUrl;
+}
+function thumbMini(src,onDel){
+  return `<div style="position:relative;display:inline-block;margin:4px">
+    <img src="${esc(src)}" style="height:70px;width:90px;object-fit:cover;border-radius:6px;display:block">
+    <button type="button" onclick="${onDel}" title="Supprimer"
+      style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border:none;border-radius:50%;background:#b3261e;color:#fff;cursor:pointer;font-size:14px;line-height:22px">×</button></div>`;
+}
+function apercuCarte(n){
+  const f=document.getElementById('o-carte'+n).files[0];
+  if(n===1){ CARTE1_FILE=f||null; CARTE1_REMOVE=false; } else { CARTE2_FILE=f||null; CARTE2_REMOVE=false; }
+  showCartePreview(n, f?URL.createObjectURL(f):null);
+}
+function showCartePreview(n,src){
+  const p=document.getElementById('o-carte'+n+'-preview'); if(!p) return;
+  p.innerHTML = src ? thumbMini(src, `removeCarte(${n})`) : '';
+}
+function removeCarte(n){
+  if(n===1){ CARTE1_FILE=null; CARTE1_REMOVE=true; } else { CARTE2_FILE=null; CARTE2_REMOVE=true; }
+  const i=document.getElementById('o-carte'+n); if(i) i.value='';
+  showCartePreview(n,null);
+}
+function initMediaDossier(offreId, plansUrls){
+  MEDIA_OFFRE_ID = offreId || null;
+  DOSSIER_PLANS = Array.isArray(plansUrls) ? plansUrls.slice() : [];
+  DOSSIER_PHOTOS = [];
+  renderMediaDossier();
+  if(MEDIA_OFFRE_ID){
+    sb.from('offre_photos').select('id,url').eq('offre_id',MEDIA_OFFRE_ID).then(({data})=>{
+      DOSSIER_PHOTOS = data||[]; renderMediaDossier();
+    });
+  }
+}
+function renderMediaDossier(){
+  const w=document.getElementById('o-media-dossier'); if(!w) return;
+  if(!MEDIA_OFFRE_ID){
+    w.innerHTML = '<p style="color:#888;font-style:italic">Enregistrez d\'abord le bien, puis rouvrez-le pour ajouter photos et plans.</p>';
+    return;
+  }
+  const galP = DOSSIER_PHOTOS.map(p=>thumbMini(p.url,`supprimerPhotoDossier('${p.id}')`)).join('') || '<span style="color:#888;font-style:italic">aucune photo</span>';
+  const galPl = DOSSIER_PLANS.map((u,i)=>thumbMini(u,`supprimerPlanDossier(${i})`)).join('') || '<span style="color:#888;font-style:italic">aucun plan</span>';
+  w.innerHTML = `
+    <label>Photos du bien</label>
+    <div style="margin:6px 0">${galP}</div>
+    <input id="o-photos-add" type="file" accept="image/*" multiple onchange="ajouterPhotosDossier()">
+    <label style="margin-top:14px;display:block">Plans</label>
+    <div style="margin:6px 0">${galPl}</div>
+    <input id="o-plans-add" type="file" accept="image/*" multiple onchange="ajouterPlansDossier()">`;
+}
+async function ajouterPhotosDossier(){
+  if(!MEDIA_OFFRE_ID) return;
+  const files=[...document.getElementById('o-photos-add').files]; if(!files.length) return;
+  try{
+    for(const f of files){
+      const url=await uploadMediaOffre(f);
+      const {data,error}=await sb.from('offre_photos')
+        .insert({offre_id:MEDIA_OFFRE_ID,url,est_principale:false,ordre:DOSSIER_PHOTOS.length})
+        .select('id,url').single();
+      if(error) throw error; DOSSIER_PHOTOS.push(data);
+    }
+  }catch(e){ alert('Échec de l\'ajout : '+(e.message||e)); }
+  renderMediaDossier();
+}
+async function supprimerPhotoDossier(id){
+  const p=DOSSIER_PHOTOS.find(x=>x.id===id); if(!p) return;
+  if(!confirm('Supprimer cette photo ?')) return;
+  try{ await supprimerCoverStorage(p.url); await sb.from('offre_photos').delete().eq('id',id);
+    DOSSIER_PHOTOS=DOSSIER_PHOTOS.filter(x=>x.id!==id); renderMediaDossier();
+  }catch(e){ alert('Échec : '+(e.message||e)); }
+}
+async function ajouterPlansDossier(){
+  if(!MEDIA_OFFRE_ID) return;
+  const files=[...document.getElementById('o-plans-add').files]; if(!files.length) return;
+  try{
+    for(const f of files){ const url=await uploadMediaOffre(f); DOSSIER_PLANS.push(url); }
+    await save('offres', MEDIA_OFFRE_ID, {plans_urls:DOSSIER_PLANS});
+  }catch(e){ alert('Échec de l\'ajout : '+(e.message||e)); }
+  renderMediaDossier();
+}
+async function supprimerPlanDossier(i){
+  const url=DOSSIER_PLANS[i]; if(url==null) return;
+  if(!confirm('Supprimer ce plan ?')) return;
+  try{ await supprimerCoverStorage(url); DOSSIER_PLANS.splice(i,1);
+    await save('offres', MEDIA_OFFRE_ID, {plans_urls:DOSSIER_PLANS}); renderMediaDossier();
+  }catch(e){ alert('Échec : '+(e.message||e)); }
+}
 async function nouvelleOffre(){ await chargerClients(); formOffre(); }
 async function editOffre(id){ await chargerClients();
   let rec=OFFRES.find(o=>o.id===id);
@@ -983,6 +1083,7 @@ function formOffre(rec){
   rec=rec||{};
   EQUIP_SEL = (rec.equipements && typeof rec.equipements==='object') ? JSON.parse(JSON.stringify(rec.equipements)) : {}; EQUIP_OPEN=null;
   COVER_FILE=null; COVER_REMOVE=false;
+  CARTE1_FILE=null; CARTE1_REMOVE=false; CARTE2_FILE=null; CARTE2_REMOVE=false;
   let honoType='', honoMontant='';
   if(rec.honoraires===HONO_30) honoType='p30';
   else if(rec.honoraires===HONO_20) honoType='p20';
@@ -1039,6 +1140,10 @@ function formOffre(rec){
       <label>Montant forfaitaire (€)</label><input id="o-hono-montant" type="number" value="${honoMontant}"></div>
     ${fSel('o-hono-charge','Honoraires à la charge de',rec.honoraires_charge||'',[['','—'],['preneur_acquereur','Preneur / Acquéreur'],['bailleur_vendeur','Bailleur / Vendeur']])}
     ${fSel('o-depot','Dépôt de garantie',rec.depot_garantie||'',[['','—'],['1 mois de loyer hors-taxes, hors charges','1 mois de loyer HT HC'],['2 mois de loyer hors-taxes, hors charges','2 mois de loyer HT HC'],['3 mois de loyer hors-taxes, hors charges','3 mois de loyer HT HC']])}
+    ${fSel('o-bail','Type de bail',rec.bail||'Commercial 3/6/9 ans',[['Commercial 3/6/9 ans','Commercial 3/6/9 ans'],['Dérogatoire (précaire)','Dérogatoire (précaire)'],['Professionnel','Professionnel']])}
+    ${fSel('o-indexation','Indexation annuelle',rec.indexation||'ILAT',[['ILAT','ILAT'],['ILC','ILC'],['ICC','ICC']])}
+    ${fSel('o-regime','Régime fiscal',rec.regime_fiscal||'TVA',[['TVA','Assujetti TVA'],['Exonéré de TVA','Exonéré de TVA']])}
+    ${fSel('o-periodicite','Périodicité de paiement',rec.periodicite_paiement||'Trimestriellement ou mensuellement',[['Trimestriellement ou mensuellement','Trimestriellement ou mensuellement'],['Mensuellement','Mensuellement'],['Trimestriellement','Trimestriellement']],{full:true})}
     ${fSep('Équipements')}
     <div class="full"><button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirEquip()">＋ Gérer les équipements</button>
       <div id="o-equip-summary" style="margin-top:10px;font-size:.9rem"></div></div>
@@ -1053,6 +1158,15 @@ function formOffre(rec){
       <input id="o-cover-file" type="file" accept="image/*" onchange="apercuCover()">
       <div id="o-cover-preview" style="margin-top:10px"></div>
     </div>
+    ${fSep('Dossier — Localisation (cartes Google Maps)')}
+    <div class="f"><label>Carte — plan de localisation</label>
+      <input id="o-carte1" type="file" accept="image/*" onchange="apercuCarte(1)">
+      <div id="o-carte1-preview" style="margin-top:8px"></div></div>
+    <div class="f"><label>Carte — vue aérienne</label>
+      <input id="o-carte2" type="file" accept="image/*" onchange="apercuCarte(2)">
+      <div id="o-carte2-preview" style="margin-top:8px"></div></div>
+    ${fSep('Dossier — Photos & plans')}
+    <div class="full" id="o-media-dossier"></div>
   </div>`;
   ouvrirForm(rec.id?'Modifier le bien':'Nouveau bien', corps, async()=>{
     const ht=val('o-hono-type'), mt=numVal('o-hono-montant');
@@ -1070,7 +1184,16 @@ function formOffre(rec){
       if(rec.cover_url) await supprimerCoverStorage(rec.cover_url);
       cover_url = null;
     }
+    // Cartes de localisation du dossier
+    let carte_plan_url = rec.carte_plan_url || null;
+    if(CARTE1_FILE){ if(rec.carte_plan_url) await supprimerCoverStorage(rec.carte_plan_url); carte_plan_url = await uploadMediaOffre(CARTE1_FILE); }
+    else if(CARTE1_REMOVE){ if(rec.carte_plan_url) await supprimerCoverStorage(rec.carte_plan_url); carte_plan_url = null; }
+    let carte_aerienne_url = rec.carte_aerienne_url || null;
+    if(CARTE2_FILE){ if(rec.carte_aerienne_url) await supprimerCoverStorage(rec.carte_aerienne_url); carte_aerienne_url = await uploadMediaOffre(CARTE2_FILE); }
+    else if(CARTE2_REMOVE){ if(rec.carte_aerienne_url) await supprimerCoverStorage(rec.carte_aerienne_url); carte_aerienne_url = null; }
     await save('offres', rec.id, { type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
+      bail:val('o-bail'), indexation:val('o-indexation'), regime_fiscal:val('o-regime'), periodicite_paiement:val('o-periodicite'),
+      carte_plan_url, carte_aerienne_url,
       titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:val('o-secteur'),
       surface_m2:numVal('o-surf'), surface_min_m2:numVal('o-smin'), surface_max_m2:numVal('o-smax'), nb_lots:numVal('o-lots'),
       parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'), annee:numVal('o-annee'),
@@ -1088,6 +1211,9 @@ function formOffre(rec){
   brancherAdresseAuto(document.getElementById('o-adresse'));
   majEquipSummary();
   if(rec.cover_url) showCoverPreview(rec.cover_url);
+  if(rec.carte_plan_url) showCartePreview(1, rec.carte_plan_url);
+  if(rec.carte_aerienne_url) showCartePreview(2, rec.carte_aerienne_url);
+  initMediaDossier(rec.id, rec.plans_urls);
   draftApply('offre:'+(rec.id||'new'));
   majAnnuel('o-loyer','o-loyer-an');
 }
@@ -1244,5 +1370,6 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
+<script src="dossier.js"></script>
 </body>
 </html>
