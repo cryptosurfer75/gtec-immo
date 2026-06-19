@@ -1165,12 +1165,20 @@ let MEDIA_OFFRE_ID=null, DOSSIER_PHOTOS=[], DOSSIER_PLANS=[];
 /* Charge à la demande le décodeur HEIC (libheif à jour, asm.js synchrone après chargement) */
 let _libheifP=null;
 function chargerLibheif(){
-  if(window.libheif) return Promise.resolve(window.libheif);
+  if(window.__libheifMod) return Promise.resolve(window.__libheifMod);
   if(_libheifP) return _libheifP;
   _libheifP=new Promise((resolve,reject)=>{
     const s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/libheif-js@1.18.2/libheif/libheif.js';
-    s.onload=()=>window.libheif?resolve(window.libheif):reject(new Error('libheif non disponible'));
+    s.onload=async ()=>{
+      try{
+        let m=window.libheif;
+        if(typeof m==='function' && !m.HeifDecoder) m=m();   // « fabrique » Emscripten : à appeler
+        if(m && typeof m.then==='function') m=await m;       // certaines versions renvoient une promesse
+        if(!m || typeof m.HeifDecoder!=='function') throw new Error('HeifDecoder indisponible');
+        window.__libheifMod=m; resolve(m);
+      }catch(e){ reject(e); }
+    };
     s.onerror=()=>reject(new Error('chargement du décodeur'));
     document.head.appendChild(s);
   });
