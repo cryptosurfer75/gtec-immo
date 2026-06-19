@@ -275,7 +275,7 @@ const URGENCE = {
   faible:{label:'Faible (6 mois et +)',color:'#a98300', bg:'rgba(180,140,0,.18)'},
 };
 function urgenceBadge(u){ const U=URGENCE[u]; return U
-  ? `<span class="tag" style="background:${U.bg};color:${U.color};font-weight:700">${U.label}</span>` : '—'; }
+  ? `<span class="tag" style="background:${U.bg};color:${U.color};font-weight:700">${U.label.replace(/\s*\(.*\)\s*/,'')}</span>` : '—'; }
 const AMIENS_METRO = [
   ['Amiens','80000'],['Longueau','80330'],['Camon','80450'],['Dury','80480'],['Boves','80440'],
   ['Cagny','80330'],['Saleux','80480'],['Salouël','80480'],['Pont-de-Metz','80480'],['Rivery','80136']
