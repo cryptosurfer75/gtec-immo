@@ -575,7 +575,7 @@ async function rapprocherOffre(offreId){
 function fermerModal(){ document.getElementById('modal-root').innerHTML=''; CURRENT_FORM_KEY=null; draftClear(); }
 
 /* ===== SUIVI / ACTIONS (notes datées sur offres & demandes) ===== */
-const TYPES_ACTION = [['appel','Appel'],['email','E-mail'],['visite','Visite'],['rdv','Rendez-vous'],['relance','Relance'],['proposition','Proposition'],['autre','Autre']];
+const TYPES_ACTION = [['appel','Appel'],['sms','SMS'],['email','E-mail'],['visite','Visite'],['rdv','Rendez-vous'],['relance','Relance'],['proposition','Proposition'],['autre','Autre']];
 function libelleTypeAction(v){ const t=TYPES_ACTION.find(x=>x[0]===v); return t?t[1]:(v||'—'); }
 async function compteursActions(cibleType){
   const { data } = await sb.from('actions').select('cible_id').eq('cible_type',cibleType);
