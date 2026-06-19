@@ -288,6 +288,33 @@ function localitesResume(locs){
 const HONO_30 = '30 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_20 = '20 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_15 = '15 % HT du montant du loyer annuel hors-taxes, hors charges';
+/* Honoraires : texte stocké <-> [type, montant forfaitaire] */
+function honoParse(h){
+  if(h===HONO_30) return ['p30',''];
+  if(h===HONO_20) return ['p20',''];
+  if(h===HONO_15) return ['p15',''];
+  if(h) return ['forfait',(String(h).match(/[\d.,]+/)||[''])[0].replace(/\s/g,'').replace(',','.')];
+  return ['',''];
+}
+function honoText(type,mt){
+  return type==='p30'?HONO_30 : type==='p20'?HONO_20 : type==='p15'?HONO_15
+    : type==='forfait'?(mt!=null?'Forfait : '+new Intl.NumberFormat('fr-FR').format(mt)+' €':'Montant forfaitaire') : null;
+}
+/* Une ligne honoraires (taux/forfait + à la charge de) — dupliquée pour gérer un partage */
+function honoLigne(n,type,mt,charge){
+  return `
+    <div class="f"><label>Honoraires${n==='2'?' (2)':''}</label>
+      <select id="o-hono-type${n}" onchange="majHonoraires()">
+        <option value="" ${type===''?'selected':''}>—</option>
+        <option value="p15" ${type==='p15'?'selected':''}>15 % HT du loyer annuel HT HC</option>
+        <option value="p20" ${type==='p20'?'selected':''}>20 % HT du loyer annuel HT HC</option>
+        <option value="p30" ${type==='p30'?'selected':''}>30 % HT du loyer annuel HT HC</option>
+        <option value="forfait" ${type==='forfait'?'selected':''}>Montant forfaitaire</option>
+      </select></div>
+    ${fSel('o-hono-charge'+n,'À la charge de',charge||'',[['','—'],['preneur_acquereur','Preneur / Acquéreur'],['bailleur_vendeur','Bailleur / Vendeur']])}
+    <div class="f full" id="o-hono-forfait-wrap${n}" style="display:${type==='forfait'?'':'none'}">
+      <label>Montant forfaitaire (€)${n==='2'?' (2)':''}</label><input id="o-hono-montant${n}" type="number" value="${mt}"></div>`;
+}
 const nomClient = c => !c ? '—' : (c.type_client==='societe' ? (c.raison_sociale||'Société')
   : [c.prenom,c.nom].filter(Boolean).join(' ')||'Client');
 /* Nom-prénom du gérant / contact enregistré sur la fiche (société surtout) */
@@ -789,7 +816,7 @@ function draftApply(key){
     const list=document.getElementById('loc-list'); list.innerHTML='';
     (d.extra.locs.length?d.extra.locs:[{}]).forEach(l=>ajouterLoc(l.ville,l.cp));
   }
-  if(document.getElementById('o-hono-type')) majHonoraires();
+  if(document.getElementById('o-hono-type1')) majHonoraires();
 }
 function reouvrirDraft(){
   const d=draftGet(); if(!d || !d.key) return;
@@ -1085,17 +1112,13 @@ async function editOffre(id){ await chargerClients();
   if(!rec){ const { data } = await sb.from('offres').select('*').eq('id',id).single(); rec=data; }
   formOffre(rec);
 }
-function majHonoraires(){ document.getElementById('o-hono-forfait-wrap').style.display = document.getElementById('o-hono-type').value==='forfait'?'':'none'; }
+function majHonoraires(){ ['1','2'].forEach(n=>{ const t=document.getElementById('o-hono-type'+n), w=document.getElementById('o-hono-forfait-wrap'+n); if(t&&w) w.style.display=t.value==='forfait'?'':'none'; }); }
 function formOffre(rec){
   rec=rec||{};
   EQUIP_SEL = (rec.equipements && typeof rec.equipements==='object') ? JSON.parse(JSON.stringify(rec.equipements)) : {}; EQUIP_OPEN=null;
   COVER_FILE=null; COVER_REMOVE=false;
   CARTE1_FILE=null; CARTE1_REMOVE=false; CARTE2_FILE=null; CARTE2_REMOVE=false;
-  let honoType='', honoMontant='';
-  if(rec.honoraires===HONO_30) honoType='p30';
-  else if(rec.honoraires===HONO_20) honoType='p20';
-  else if(rec.honoraires===HONO_15) honoType='p15';
-  else if(rec.honoraires){ honoType='forfait'; honoMontant=((String(rec.honoraires).match(/[\d.,]+/)||[''])[0]).replace(/\s/g,'').replace(',','.'); }
+  const [ht1,hm1]=honoParse(rec.honoraires), [ht2,hm2]=honoParse(rec.honoraires_2);
   const corps=`<div class="form-grid">
     ${fSep('Identité')}
     ${fSel('o-type','Type de bien',rec.type_bien||'bureaux',Object.entries(LABELS))}
@@ -1135,17 +1158,8 @@ function formOffre(rec){
     ${fNum('o-charges','Charges (€ / mensuel)',rec.charges)}
     ${fNum('o-tf','Taxe foncière (€ / mensuel)',rec.taxe_fonciere)}
     ${fNum('o-dab','Droit au bail (€)',rec.droit_au_bail)}
-    <div class="f full"><label>Honoraires</label>
-      <select id="o-hono-type" onchange="majHonoraires()">
-        <option value="" ${honoType===''?'selected':''}>—</option>
-        <option value="p15" ${honoType==='p15'?'selected':''}>15 % HT du loyer annuel HT HC</option>
-        <option value="p20" ${honoType==='p20'?'selected':''}>20 % HT du loyer annuel HT HC</option>
-        <option value="p30" ${honoType==='p30'?'selected':''}>30 % HT du loyer annuel HT HC</option>
-        <option value="forfait" ${honoType==='forfait'?'selected':''}>Montant forfaitaire</option>
-      </select></div>
-    <div class="f full" id="o-hono-forfait-wrap" style="display:${honoType==='forfait'?'':'none'}">
-      <label>Montant forfaitaire (€)</label><input id="o-hono-montant" type="number" value="${honoMontant}"></div>
-    ${fSel('o-hono-charge','Honoraires à la charge de',rec.honoraires_charge||'',[['','—'],['preneur_acquereur','Preneur / Acquéreur'],['bailleur_vendeur','Bailleur / Vendeur']])}
+    ${honoLigne('1',ht1,hm1,rec.honoraires_charge)}
+    ${honoLigne('2',ht2,hm2,rec.honoraires_charge_2)}
     ${fSel('o-depot','Dépôt de garantie',rec.depot_garantie||'',[['','—'],['1 mois de loyer hors-taxes, hors charges','1 mois de loyer HT HC'],['2 mois de loyer hors-taxes, hors charges','2 mois de loyer HT HC'],['3 mois de loyer hors-taxes, hors charges','3 mois de loyer HT HC']])}
     ${fSel('o-bail','Type de bail',rec.bail||'Commercial 3/6/9 ans',[['Commercial 3/6/9 ans','Commercial 3/6/9 ans'],['Dérogatoire (précaire)','Dérogatoire (précaire)'],['Professionnel','Professionnel']])}
     ${fSel('o-indexation','Indexation annuelle',rec.indexation||'ILAT',[['ILAT','ILAT'],['ILC','ILC'],['ICC','ICC']])}
@@ -1176,9 +1190,8 @@ function formOffre(rec){
     <div class="full" id="o-media-dossier"></div>
   </div>`;
   ouvrirForm(rec.id?'Modifier le bien':'Nouveau bien', corps, async()=>{
-    const ht=val('o-hono-type'), mt=numVal('o-hono-montant');
-    const honoraires = ht==='p30'?HONO_30 : ht==='p20'?HONO_20 : ht==='p15'?HONO_15
-      : ht==='forfait'?(mt!=null?'Forfait : '+new Intl.NumberFormat('fr-FR').format(mt)+' €':'Montant forfaitaire') : null;
+    const honoraires = honoText(val('o-hono-type1'), numVal('o-hono-montant1'));
+    const honoraires_2 = honoText(val('o-hono-type2'), numVal('o-hono-montant2'));
     let cover_url = rec.cover_url || null;
     if(COVER_FILE){
       if(rec.cover_url) await supprimerCoverStorage(rec.cover_url);   // remplace l'ancienne
@@ -1206,8 +1219,8 @@ function formOffre(rec){
       parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'), annee:numVal('o-annee'),
       dpe:val('o-dpe'), etat:val('o-etat'), divisible:val('o-div'), norme_pmr:val('o-pmr'), norme_erp:val('o-erp'),
       prix_vente:numVal('o-prix'), loyer_annuel_m2:numVal('o-loyer'), charges:numVal('o-charges'),
-      taxe_fonciere:numVal('o-tf'), droit_au_bail:numVal('o-dab'), honoraires,
-      honoraires_charge:val('o-hono-charge'), depot_garantie:val('o-depot'),
+      taxe_fonciere:numVal('o-tf'), droit_au_bail:numVal('o-dab'), honoraires, honoraires_2,
+      honoraires_charge:val('o-hono-charge1'), honoraires_charge_2:val('o-hono-charge2'), depot_garantie:val('o-depot'),
       description:val('o-desc'), disponibilite:val('o-dispo'), plan_url:val('o-plan'),
       loyer_type:val('o-loyer-type'),
       client_id:val('o-client'), publie:val('o-pub'), equipements:EQUIP_SEL, cover_url });
