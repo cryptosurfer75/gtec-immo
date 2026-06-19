@@ -258,11 +258,10 @@
 
   function pageDescriptif(o){
     const txt = (o.description||'').trim();
-    // Description saisie à la main = prioritaire ; sinon rédaction automatique depuis la fiche
-    const paras = txt ? txt.split(/\n+/) : genererDescriptif(o);
-    const body = paras.length
-      ? paras.map(p=>`<p>${esc(p)}</p>`).join('')
-      : '<p class="ph">Descriptif à renseigner dans la fiche du bien.</p>';
+    // On n'affiche QUE la description de la fiche (générée via le bouton puis éventuellement corrigée)
+    const body = txt
+      ? txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')
+      : '<p class="ph">Descriptif à renseigner dans la fiche du bien (bouton « Générer le descriptif »).</p>';
     return page('Descriptif du bien', `<div class="descr">${body}</div>`, {actif:'Descriptif du bien', num:5});
   }
 
@@ -521,5 +520,5 @@
     w.document.open(); w.document.write(html); w.document.close();
   }
 
-  window.GTEC_DOSSIER = { generer };
+  window.GTEC_DOSSIER = { generer, genererDescriptif };
 })();

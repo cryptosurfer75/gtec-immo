@@ -1256,6 +1256,24 @@ async function editOffre(id){ await chargerClients();
   formOffre(rec);
 }
 function majHonoraires(){ ['1','2'].forEach(n=>{ const t=document.getElementById('o-hono-type'+n), w=document.getElementById('o-hono-forfait-wrap'+n); if(t&&w) w.style.display=t.value==='forfait'?'':'none'; }); }
+/* Rédige la description dans le champ (modifiable) à partir des champs saisis du formulaire */
+function genererDescriptifOffre(){
+  if(!window.GTEC_DOSSIER || !GTEC_DOSSIER.genererDescriptif){ alert('Le module dossier n’est pas chargé.'); return; }
+  const o = {
+    type_bien:val('o-type'), transaction:val('o-trans'),
+    ville:val('o-ville'), secteur:val('o-secteur'),
+    surface_m2:numVal('o-surf'), surface_min_m2:numVal('o-smin'), surface_max_m2:numVal('o-smax'),
+    nb_lots:numVal('o-lots'), parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'),
+    annee:numVal('o-annee'), dpe:val('o-dpe'), etat:val('o-etat'),
+    divisible:val('o-div'), norme_pmr:val('o-pmr'), norme_erp:val('o-erp'),
+    prix_vente:numVal('o-prix'), loyer_annuel_m2:numVal('o-loyer'), loyer_type:val('o-loyer-type'),
+    charges:numVal('o-charges'), disponibilite:val('o-dispo'), equipements:EQUIP_SEL
+  };
+  const ta=document.getElementById('o-desc'); if(!ta) return;
+  if(ta.value.trim() && !confirm('Remplacer le texte actuel de la description ?')) return;
+  ta.value = GTEC_DOSSIER.genererDescriptif(o).join('\n\n');
+  if(typeof draftCollect==='function' && typeof CURRENT_FORM_KEY!=='undefined') draftCollect(CURRENT_FORM_KEY);
+}
 function formOffre(rec){
   rec=rec||{};
   EQUIP_SEL = (rec.equipements && typeof rec.equipements==='object') ? JSON.parse(JSON.stringify(rec.equipements)) : {}; EQUIP_OPEN=null;
@@ -1314,6 +1332,10 @@ function formOffre(rec){
       <div id="o-equip-summary" style="margin-top:10px;font-size:.9rem"></div></div>
     ${fSep('Vitrine & rattachement')}
     ${fArea('o-desc','Description',rec.description)}
+    <div class="full" style="margin-top:-8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="genererDescriptifOffre()">✍️ Générer le descriptif</button>
+      <span style="font-size:.8rem;color:var(--gris-fonce)">Rédige la description à partir des infos saisies — modifiable ensuite.</span>
+    </div>
     ${fSel('o-dispo','Disponibilité',rec.disponibilite||'',[['','—'],['Disponibilité immédiate','Disponibilité immédiate'],['Nous consulter','Nous consulter']],{full:true})}
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
     <div class="f full"><label>Client propriétaire</label><select id="o-client">${optClients(rec.client_id)}</select></div>
