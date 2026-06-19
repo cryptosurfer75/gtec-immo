@@ -1244,13 +1244,42 @@ function renderMediaDossier(){
   }
   const galP = DOSSIER_PHOTOS.map(p=>thumbMini(p.url,`supprimerPhotoDossier('${p.id}')`)).join('') || '<span style="color:#888;font-style:italic">aucune photo</span>';
   const galPl = DOSSIER_PLANS.map((u,i)=>thumbMini(u,`supprimerPlanDossier(${i})`)).join('') || '<span style="color:#888;font-style:italic">aucun plan</span>';
+  const nbHeic = DOSSIER_PHOTOS.filter(p=>/\.(heic|heif)$/i.test(p.url||'')).length;
+  const repBtn = nbHeic ? `<div style="margin:8px 0">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="reparerPhotosHeic()">🔧 Convertir ${nbHeic} photo(s) HEIC en JPEG</button>
+      <span style="font-size:.8rem;color:#b3261e;margin-left:8px">Photos iPhone non affichables tant qu'elles ne sont pas converties.</span>
+    </div>` : '';
   w.innerHTML = `
     <label>Photos du bien</label>
     <div style="margin:6px 0">${galP}</div>
+    ${repBtn}
     <input id="o-photos-add" type="file" accept="image/*" multiple onchange="ajouterPhotosDossier()">
     <label style="margin-top:14px;display:block">Plans</label>
     <div style="margin:6px 0">${galPl}</div>
     <input id="o-plans-add" type="file" accept="image/*" multiple onchange="ajouterPlansDossier()">`;
+}
+/* Convertit en JPEG les photos HEIC déjà en ligne (sans avoir à les ré-importer) */
+async function reparerPhotosHeic(){
+  if(!MEDIA_OFFRE_ID) return;
+  const cibles = DOSSIER_PHOTOS.filter(p=>/\.(heic|heif)$/i.test(p.url||''));
+  if(!cibles.length){ alert('Aucune photo HEIC à convertir.'); return; }
+  if(!confirm(cibles.length+' photo(s) HEIC vont être converties en JPEG. Cela peut prendre quelques secondes.')) return;
+  let ok=0;
+  for(const p of cibles){
+    try{
+      const resp=await fetch(p.url); if(!resp.ok) throw new Error('téléchargement '+resp.status);
+      const blob=await resp.blob();
+      const file=new File([blob], 'photo.heic', {type:'image/heic'});
+      const newUrl=await uploadMediaOffre(file);                 // convertit (heic2any) puis ré-upload
+      if(/\.(heic|heif)$/i.test(newUrl)) throw new Error('conversion non effectuée');
+      const {error}=await sb.from('offre_photos').update({url:newUrl}).eq('id',p.id);
+      if(error) throw error;
+      try{ await supprimerCoverStorage(p.url); }catch(e){}        // retire l'ancien HEIC du stockage
+      p.url=newUrl; ok++;
+    }catch(e){ console.error('HEIC repair', e); }
+  }
+  renderMediaDossier();
+  alert(ok+' / '+cibles.length+' photo(s) converties. Régénérez le dossier pour les voir en page 8.');
 }
 async function ajouterPhotosDossier(){
   if(!MEDIA_OFFRE_ID) return;
