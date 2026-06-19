@@ -234,6 +234,7 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 <div id="modal-root2"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script>
 /* ===== CONFIG (même projet Supabase que la vitrine) ===== */
 const SUPABASE_URL      = 'https://rqeyadmapekiwzyjtyhv.supabase.co';
@@ -1145,9 +1146,11 @@ function showCoverPreview(src){
       style="position:absolute;top:-8px;right:-8px;width:24px;height:24px;border:none;border-radius:50%;background:#b3261e;color:#fff;cursor:pointer;font-size:15px;line-height:24px">×</button>
   </div>` : '';
 }
-function apercuCover(){
-  const f=document.getElementById('o-cover-file').files[0]; COVER_FILE=f||null; COVER_REMOVE=false;
-  if(f) showCoverPreview(URL.createObjectURL(f));
+async function apercuCover(){
+  const f=document.getElementById('o-cover-file').files[0];
+  const conv = f ? await convertHeic(f) : null;   // HEIC iPhone -> JPEG (aperçu + enregistrement)
+  COVER_FILE=conv||null; COVER_REMOVE=false;
+  if(conv) showCoverPreview(URL.createObjectURL(conv));
 }
 function removeCover(){ COVER_FILE=null; COVER_REMOVE=true; const i=document.getElementById('o-cover-file'); if(i) i.value=''; showCoverPreview(null); }
 /* supprime le fichier dans le stockage à partir de son URL publique */
@@ -1160,8 +1163,22 @@ async function supprimerCoverStorage(url){
 let CARTE1_FILE=null, CARTE1_REMOVE=false, CARTE2_FILE=null, CARTE2_REMOVE=false;
 let MEDIA_OFFRE_ID=null, DOSSIER_PHOTOS=[], DOSSIER_PLANS=[];
 
+/* Convertit une photo HEIC/HEIF (format iPhone, illisible par les navigateurs) en JPEG.
+   Laisse tout autre fichier (jpg, png, pdf…) inchangé. */
+async function convertHeic(file){
+  if(!file) return file;
+  const heic = /\.(heic|heif)$/i.test(file.name||'') || /image\/hei[cf]/i.test(file.type||'');
+  if(!heic) return file;
+  if(typeof heic2any!=='function'){ alert('Conversion HEIC indisponible (réseau ?). Réessayez ou importez en JPEG.'); return file; }
+  try{
+    const out=await heic2any({ blob:file, toType:'image/jpeg', quality:0.85 });
+    const blob=Array.isArray(out)?out[0]:out;
+    return new File([blob], (file.name||'photo').replace(/\.(heic|heif)$/i,'.jpg'), {type:'image/jpeg'});
+  }catch(e){ alert('Conversion de la photo HEIC impossible : '+(e.message||e)); return file; }
+}
 /* envoie un fichier dans le bucket "offres" et renvoie son URL publique */
 async function uploadMediaOffre(file){
+  file=await convertHeic(file);
   const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
   const path='media_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
   const up=await sb.storage.from('offres').upload(path, file, {cacheControl:'3600'});
@@ -1391,9 +1408,10 @@ function formOffre(rec){
     let cover_url = rec.cover_url || null;
     if(COVER_FILE){
       if(rec.cover_url) await supprimerCoverStorage(rec.cover_url);   // remplace l'ancienne
-      const ext=(COVER_FILE.name.split('.').pop()||'jpg').toLowerCase();
+      const coverFile = await convertHeic(COVER_FILE);   // HEIC iPhone -> JPEG
+      const ext=(coverFile.name.split('.').pop()||'jpg').toLowerCase();
       const path='cover_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-      const up=await sb.storage.from('offres').upload(path, COVER_FILE, {cacheControl:'3600'});
+      const up=await sb.storage.from('offres').upload(path, coverFile, {cacheControl:'3600'});
       if(up.error) throw up.error;
       cover_url = sb.storage.from('offres').getPublicUrl(path).data.publicUrl;
     } else if(COVER_REMOVE){
