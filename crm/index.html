@@ -389,20 +389,9 @@ async function vueDashboard(){
 }
 
 /* ===== OFFRES ===== */
-let OFFRES = [];
-let OFF_ARCH = false;
-async function vueOffres(){
-  charge();
-  const { data, error } = await sb.from('offres')
-    .select('*, clients(type_client,nom,prenom,raison_sociale)')
-    .order('created_at',{ascending:false});
-  if(error) return erreur(error);
-  OFFRES = data||[];
-  const archivees = OFFRES.filter(o=>o.archive);
-  const liste = OFFRES.filter(o=> OFF_ARCH ? o.archive : !o.archive);
-  const cpt = await compteursActions('offre');
-  const lignes = liste.map(o=>`
-    <tr style="cursor:pointer" onclick="editOffre('${o.id}')">
+let OFFRES = [], OFF_ARCH = false, OFF_CPT = {}, OFF_LISTE = [];
+function ligneOffre(o){
+  return `<tr style="cursor:pointer" onclick="editOffre('${o.id}')">
       <td>${refBadge(o.reference, o.type_bien)}${o.cover_url?`<img src="${esc(o.cover_url)}" class="ref-thumb">`:''}</td>
       <td><b>${esc(o.titre||LABELS[o.type_bien]||'Bien')}</b></td>
       <td>${typeBadge(o.type_bien)}</td>
@@ -413,31 +402,51 @@ async function vueOffres(){
       <td>${o.publie?'<span class="tag green">en ligne</span>':'<span class="tag">brouillon</span>'}</td>
       <td>${esc(nomClient(o.clients))}</td>
       <td><button class="btn btn-sm" title="Rapprocher : candidats pour ce bien" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocherOffre('${o.id}')">R</button></td>
-      ${btnAction('offre',o.id,o.reference,cpt[o.id]||0)}
-    </tr>`).join('');
-  C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${liste.length} bien(s)`,
-    liste.length
-      ? `<table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead><tbody>${lignes}</tbody></table>`
-      : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.'),
+      ${btnAction('offre',o.id,o.reference,OFF_CPT[o.id]||0)}
+    </tr>`;
+}
+function offreRecherche(o){
+  return normTxt([o.reference, o.titre, LABELS[o.type_bien], o.ville, o.code_postal, o.secteur,
+    nomClient(o.clients), o.statut].filter(Boolean).join(' '));
+}
+function filtrerOffres(q){
+  const t = normTxt(q).trim();
+  const liste = t ? OFF_LISTE.filter(o=>offreRecherche(o).includes(t)) : OFF_LISTE;
+  const tb = document.getElementById('offres-tbody');
+  if(tb) tb.innerHTML = liste.length ? liste.map(ligneOffre).join('')
+    : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
+  const cnt = document.getElementById('offres-count');
+  if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
+}
+async function vueOffres(){
+  charge();
+  const { data, error } = await sb.from('offres')
+    .select('*, clients(type_client,nom,prenom,raison_sociale)')
+    .order('created_at',{ascending:false});
+  if(error) return erreur(error);
+  OFFRES = data||[];
+  const archivees = OFFRES.filter(o=>o.archive);
+  OFF_LISTE = OFFRES.filter(o=> OFF_ARCH ? o.archive : !o.archive);
+  OFF_CPT = await compteursActions('offre');
+  const corps = OFF_LISTE.length
+    ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+         <input id="offres-search" type="search" autocomplete="off" placeholder="🔎 Rechercher un bien (réf., titre, ville, secteur, propriétaire…)"
+           oninput="filtrerOffres(this.value)"
+           style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+         <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultats</span>
+       </div>
+       <table><thead><tr><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>Vitrine</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
+       <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table>`
+    : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.');
+  C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
      <button class="btn btn-ghost btn-sm" onclick="OFF_ARCH=!OFF_ARCH;vueOffres()">${OFF_ARCH?'← Biens actifs':'Archivés ('+archivees.length+')'}</button>`);
 }
 
 /* ===== DEMANDES (+ matching) ===== */
-let DEMANDES = [];
-let DEM_ARCH = false;
-async function vueDemandes(){
-  charge();
-  const { data, error } = await sb.from('demandes')
-    .select('*, clients(type_client,nom,prenom,raison_sociale), demande_localites(ville,code_postal)')
-    .order('date_demande',{ascending:false});
-  if(error) return erreur(error);
-  DEMANDES = data||[];
-  const archivees = DEMANDES.filter(d=>d.archive);
-  const liste = DEMANDES.filter(d=> DEM_ARCH ? d.archive : !d.archive);
-  const cptD = await compteursActions('demande');
-  const lignes = liste.map(d=>`
-    <tr style="cursor:pointer" onclick="editDemande('${d.id}')">
+let DEMANDES = [], DEM_ARCH = false, DEM_CPT = {}, DEM_LISTE = [];
+function ligneDemande(d){
+  return `<tr style="cursor:pointer" onclick="editDemande('${d.id}')">
       <td>${refBadge(d.reference, (d.types_bien||[])[0])}</td>
       <td><b>${esc(nomClient(d.clients))}</b></td>
       <td>${(d.types_bien||[]).map(t=>typeBadge(t)).join(' ')||'—'}</td>
@@ -447,12 +456,44 @@ async function vueDemandes(){
       <td>${d.budget_max?(d.transaction==='location'?euro(d.budget_max*12)+' / an':euro(d.budget_max)):'—'}</td>
       <td>${esc(localitesResume(d.demande_localites))}</td>
       <td><button class="btn btn-sm" title="Rapprocher" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocher('${d.id}')">R</button></td>
-      ${btnAction('demande',d.id,d.reference,cptD[d.id]||0)}
-    </tr>`).join('');
-  C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${liste.length} demande(s)`,
-    liste.length
-      ? `<table><thead><tr><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead><tbody>${lignes}</tbody></table>`
-      : vide(DEM_ARCH?'Aucune demande archivée.':'Aucune demande pour le moment.'),
+      ${btnAction('demande',d.id,d.reference,DEM_CPT[d.id]||0)}
+    </tr>`;
+}
+function demandeRecherche(d){
+  return normTxt([d.reference, nomClient(d.clients),
+    (d.types_bien||[]).map(t=>LABELS[t]||t).join(' '), d.transaction, d.urgence,
+    (d.demande_localites||[]).map(l=>(l.ville||'')+' '+(l.code_postal||'')).join(' ')].filter(Boolean).join(' '));
+}
+function filtrerDemandes(q){
+  const t = normTxt(q).trim();
+  const liste = t ? DEM_LISTE.filter(d=>demandeRecherche(d).includes(t)) : DEM_LISTE;
+  const tb = document.getElementById('demandes-tbody');
+  if(tb) tb.innerHTML = liste.length ? liste.map(ligneDemande).join('')
+    : `<tr><td colspan="10" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ne correspond à « ${esc(q)} ».</td></tr>`;
+  const cnt = document.getElementById('demandes-count');
+  if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
+}
+async function vueDemandes(){
+  charge();
+  const { data, error } = await sb.from('demandes')
+    .select('*, clients(type_client,nom,prenom,raison_sociale), demande_localites(ville,code_postal)')
+    .order('date_demande',{ascending:false});
+  if(error) return erreur(error);
+  DEMANDES = data||[];
+  const archivees = DEMANDES.filter(d=>d.archive);
+  DEM_LISTE = DEMANDES.filter(d=> DEM_ARCH ? d.archive : !d.archive);
+  DEM_CPT = await compteursActions('demande');
+  const corps = DEM_LISTE.length
+    ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+         <input id="demandes-search" type="search" autocomplete="off" placeholder="🔎 Rechercher une demande (réf., client, type, ville, sens…)"
+           oninput="filtrerDemandes(this.value)"
+           style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+         <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultats</span>
+       </div>
+       <table><thead><tr><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
+       <tbody id="demandes-tbody">${DEM_LISTE.map(ligneDemande).join('')}</tbody></table>`
+    : vide(DEM_ARCH?'Aucune demande archivée.':'Aucune demande pour le moment.');
+  C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${DEM_LISTE.length} demande(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleDemande()">+ Ajouter une demande</button>
      <button class="btn btn-ghost btn-sm" onclick="DEM_ARCH=!DEM_ARCH;vueDemandes()">${DEM_ARCH?'← Demandes actives':'Archivées ('+archivees.length+')'}</button>`);
 }
