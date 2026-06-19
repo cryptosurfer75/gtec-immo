@@ -288,16 +288,18 @@ function localitesResume(locs){
 const HONO_30 = '30 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_20 = '20 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_15 = '15 % HT du montant du loyer annuel hors-taxes, hors charges';
+const HONO_10 = '10 % HT du montant du loyer annuel hors-taxes, hors charges';
 /* Honoraires : texte stocké <-> [type, montant forfaitaire] */
 function honoParse(h){
   if(h===HONO_30) return ['p30',''];
   if(h===HONO_20) return ['p20',''];
   if(h===HONO_15) return ['p15',''];
+  if(h===HONO_10) return ['p10',''];
   if(h) return ['forfait',(String(h).match(/[\d.,]+/)||[''])[0].replace(/\s/g,'').replace(',','.')];
   return ['',''];
 }
 function honoText(type,mt){
-  return type==='p30'?HONO_30 : type==='p20'?HONO_20 : type==='p15'?HONO_15
+  return type==='p30'?HONO_30 : type==='p20'?HONO_20 : type==='p15'?HONO_15 : type==='p10'?HONO_10
     : type==='forfait'?(mt!=null?'Forfait : '+new Intl.NumberFormat('fr-FR').format(mt)+' €':'Montant forfaitaire') : null;
 }
 /* Une ligne honoraires (taux/forfait + à la charge de) — dupliquée pour gérer un partage */
@@ -307,6 +309,7 @@ function honoLigne(n,type,mt,charge){
       <div class="f"><label>Honoraires${n==='2'?' (2)':''}</label>
         <select id="o-hono-type${n}" onchange="majHonoraires()">
           <option value="" ${type===''?'selected':''}>—</option>
+          <option value="p10" ${type==='p10'?'selected':''}>10 % HT du loyer annuel HT HC</option>
           <option value="p15" ${type==='p15'?'selected':''}>15 % HT du loyer annuel HT HC</option>
           <option value="p20" ${type==='p20'?'selected':''}>20 % HT du loyer annuel HT HC</option>
           <option value="p30" ${type==='p30'?'selected':''}>30 % HT du loyer annuel HT HC</option>
