@@ -634,7 +634,6 @@ function btnAction(type,id,ref,n,pdfUrl){
       + (pdfUrl
           ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
             + `<button type="button" class="btn btn-ghost btn-sm" title="Remplacer le dossier rattaché (écrase l'ancien)" onclick="rattacherDossierPdf('${id}')">♻️</button>`
-            + `<button type="button" class="btn btn-ghost btn-sm" style="color:#b3261e" title="Supprimer le dossier rattaché" onclick="supprimerDossierPdf('${id}')">🗑️</button>`
           : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`);
   }
   return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
@@ -657,17 +656,6 @@ function rattacherDossierPdf(offreId){
     }catch(e){ alert('Erreur : '+(e.message||e)); }
   };
   inp.click();
-}
-async function supprimerDossierPdf(offreId){
-  if(!confirm('Supprimer le dossier PDF rattaché à ce bien ?')) return;
-  const o = OFFRES.find(x=>String(x.id)===String(offreId));
-  try{
-    if(o && o.dossier_pdf_url) await supprimerCoverStorage(o.dossier_pdf_url);
-    const { error } = await sb.from('offres').update({dossier_pdf_url:null}).eq('id',offreId);
-    if(error) throw error;
-    if(o) o.dossier_pdf_url = null;
-    filtrerOffres((document.getElementById('offres-search')||{}).value || '');
-  }catch(e){ alert('Erreur : '+(e.message||e)); }
 }
 async function ouvrirActions(cibleType, cibleId, ref){
   const titre=(cibleType==='offre'?'Suivi du bien':'Suivi de la demande')+(ref?' '+ref:'');
