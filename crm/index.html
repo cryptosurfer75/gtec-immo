@@ -628,13 +628,46 @@ async function compteursActions(cibleType){
   const m={}; (data||[]).forEach(a=>{ m[a.cible_id]=(m[a.cible_id]||0)+1; }); return m;
 }
 function btnAction(type,id,ref,n,pdfUrl){
-  const dossier = type==='offre'
-    ? `<button type="button" class="btn btn-ghost btn-sm" title="Générer le dossier de présentation" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
-    : '';
-  const pdf = (type==='offre' && pdfUrl)
-    ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
-    : '';
-  return `<td onclick="event.stopPropagation()">${dossier}${pdf}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
+  let dossier = '';
+  if(type==='offre'){
+    dossier = `<button type="button" class="btn btn-ghost btn-sm" title="1) Générer le dossier (aperçu à enregistrer en PDF sur l'ordinateur)" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
+      + (pdfUrl
+          ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
+            + `<button type="button" class="btn btn-ghost btn-sm" title="Remplacer le dossier rattaché (écrase l'ancien)" onclick="rattacherDossierPdf('${id}')">♻️</button>`
+            + `<button type="button" class="btn btn-ghost btn-sm" style="color:#b3261e" title="Supprimer le dossier rattaché" onclick="supprimerDossierPdf('${id}')">🗑️</button>`
+          : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`);
+  }
+  return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
+}
+/* Rattache (ou remplace) le dossier PDF d'un bien en un clic, depuis le tableau — sans ouvrir la fiche. Écrase l'ancien. */
+function rattacherDossierPdf(offreId){
+  let inp = document.getElementById('dossier-pdf-picker');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,.pdf'; inp.id='dossier-pdf-picker'; inp.style.display='none'; document.body.appendChild(inp); }
+  inp.value='';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    const o = OFFRES.find(x=>String(x.id)===String(offreId));
+    try{
+      const url = await uploadMediaOffre(f);
+      if(o && o.dossier_pdf_url) await supprimerCoverStorage(o.dossier_pdf_url);
+      const { error } = await sb.from('offres').update({dossier_pdf_url:url}).eq('id',offreId);
+      if(error) throw error;
+      if(o) o.dossier_pdf_url = url;
+      filtrerOffres((document.getElementById('offres-search')||{}).value || '');
+    }catch(e){ alert('Erreur : '+(e.message||e)); }
+  };
+  inp.click();
+}
+async function supprimerDossierPdf(offreId){
+  if(!confirm('Supprimer le dossier PDF rattaché à ce bien ?')) return;
+  const o = OFFRES.find(x=>String(x.id)===String(offreId));
+  try{
+    if(o && o.dossier_pdf_url) await supprimerCoverStorage(o.dossier_pdf_url);
+    const { error } = await sb.from('offres').update({dossier_pdf_url:null}).eq('id',offreId);
+    if(error) throw error;
+    if(o) o.dossier_pdf_url = null;
+    filtrerOffres((document.getElementById('offres-search')||{}).value || '');
+  }catch(e){ alert('Erreur : '+(e.message||e)); }
 }
 async function ouvrirActions(cibleType, cibleId, ref){
   const titre=(cibleType==='offre'?'Suivi du bien':'Suivi de la demande')+(ref?' '+ref:'');
