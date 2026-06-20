@@ -419,6 +419,17 @@ async function vueDashboard(){
 
 /* ===== OFFRES ===== */
 let OFFRES = [], OFF_ARCH = false, OFF_CPT = {}, OFF_LISTE = [];
+/* Pastille couleur du statut : vert=disponible, orange=sous compromis, rouge=vendu/loué, gris=retiré */
+function statutPastille(s){
+  const M = {
+    disponible:     ['var(--teal)','rgba(61,128,116,.22)','Disponible'],
+    sous_compromis: ['#e8912d','rgba(232,145,45,.25)','Sous compromis'],
+    vendu_loue:     ['#d23f3f','rgba(210,63,63,.20)','Vendu / loué'],
+    retire:         ['#9aa3ab','rgba(154,163,171,.22)','Retiré'],
+  };
+  const [bg,glow,lib] = M[s] || ['#fff','transparent', (s||'—')];
+  return `<span title="${esc(lib)}" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${bg};box-shadow:0 0 0 3px ${glow}"></span>`;
+}
 function ligneOffre(o){
   return `<tr style="cursor:pointer" onclick="editOffre('${o.id}')">
       <td style="text-align:center">${agentBadge(o.agent)}</td>
@@ -428,9 +439,7 @@ function ligneOffre(o){
       <td>${esc(o.ville||'—')}</td>
       <td>${o.surface_m2?esc(o.surface_m2)+' m²':'—'}</td>
       <td>${o.transaction==='vente'||o.prix_vente?euro(o.prix_vente):o.loyer_annuel_m2?euro(o.loyer_annuel_m2)+'/mois '+esc(o.loyer_type||'HT HC'):'—'}</td>
-      <td>${o.statut==='disponible'
-        ? `<span title="Disponible" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(61,128,116,.22)"></span>`
-        : `<span class="tag">${esc(o.statut||'—')}</span>`}</td>
+      <td style="text-align:center">${statutPastille(o.statut)}</td>
       <td><span title="${o.publie===true?'En ligne — cliquer pour retirer':o.publie===false?'Hors ligne — cliquer pour remettre en ligne':'Non défini — cliquer pour mettre en ligne'}"
         onclick="event.stopPropagation();toggleVitrine('${o.id}',${o.publie===true?'true':o.publie===false?'false':'null'})"
         style="cursor:pointer;display:inline-block;width:13px;height:13px;border-radius:50%;background:${o.publie===true?'var(--teal)':o.publie===false?'#d23f3f':'#fff'};border:1.5px solid ${o.publie===true?'var(--teal-dark)':o.publie===false?'#b3261e':'var(--gris-clair)'};box-shadow:0 0 0 3px ${o.publie===true?'rgba(61,128,116,.22)':o.publie===false?'rgba(210,63,63,.18)':'transparent'}"></span></td>
