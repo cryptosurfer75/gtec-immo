@@ -77,7 +77,9 @@ button{font:inherit;cursor:pointer}
 .panel-h{padding:16px 20px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;justify-content:space-between}
 .panel-h h3{font-size:1.05rem;color:var(--bleu)}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
-th,td{text-align:left;padding:12px 20px;border-bottom:1px solid var(--gris-bg)}
+th,td{text-align:left;padding:12px 20px;border-bottom:1px solid var(--gris-bg);white-space:nowrap}
+/* conteneur scrollable horizontalement : tout reste sur une ligne, on défile vers la droite */
+.tscroll{width:100%;overflow-x:auto}
 th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--gris-fonce);background:var(--gris-bg)}
 tr:last-child td{border-bottom:none}
 tbody tr:hover{background:#fafcfc}
@@ -501,8 +503,8 @@ async function vueOffres(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultats</span>
        </div>
-       <table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Mandat</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
-       <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table>`
+       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Mandat</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
+       <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table></div>`
     : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
@@ -557,8 +559,8 @@ async function vueDemandes(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultats</span>
        </div>
-       <table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
-       <tbody id="demandes-tbody">${DEM_LISTE.map(ligneDemande).join('')}</tbody></table>`
+       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
+       <tbody id="demandes-tbody">${DEM_LISTE.map(ligneDemande).join('')}</tbody></table></div>`
     : vide(DEM_ARCH?'Aucune demande archivée.':'Aucune demande pour le moment.');
   C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${DEM_LISTE.length} demande(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleDemande()">+ Ajouter une demande</button>
@@ -725,8 +727,8 @@ async function vueClients(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="clients-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${CLIENTS_FULL.length} résultats</span>
        </div>
-       <table><thead><tr><th>Nom</th><th>Contact</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead>
-       <tbody id="clients-tbody">${CLIENTS_FULL.map(ligneClient).join('')}</tbody></table>`
+       <div class="tscroll"><table><thead><tr><th>Nom</th><th>Contact</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead>
+       <tbody id="clients-tbody">${CLIENTS_FULL.map(ligneClient).join('')}</tbody></table></div>`
     : vide('Aucun client pour le moment.');
   C().innerHTML = panel('Fichier clients', `${CLIENTS_FULL.length} client(s)`, corps,
     `<button class="btn btn-sm" onclick="nouveauClient()">+ Ajouter un client</button>`);
@@ -752,7 +754,7 @@ async function vueMandats(){
     </tr>`).join('');
   C().innerHTML = panel('Mandats', `${MANDATS.length} mandat(s)`,
     MANDATS.length
-      ? `<table><thead><tr><th>N°</th><th>Type</th><th>Bien</th><th>Mandant</th><th>Commission</th><th>Statut</th></tr></thead><tbody>${lignes}</tbody></table>`
+      ? `<div class="tscroll"><table><thead><tr><th>N°</th><th>Type</th><th>Bien</th><th>Mandant</th><th>Commission</th><th>Statut</th></tr></thead><tbody>${lignes}</tbody></table></div>`
       : vide('Aucun mandat pour le moment.'),
     `<button class="btn btn-sm" onclick="nouveauMandat()">+ Ajouter un mandat</button>`);
 }
