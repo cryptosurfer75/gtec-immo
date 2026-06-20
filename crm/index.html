@@ -434,6 +434,10 @@ function ligneOffre(o){
       <td><span title="${o.publie===true?'En ligne — cliquer pour retirer':o.publie===false?'Hors ligne — cliquer pour remettre en ligne':'Non défini — cliquer pour mettre en ligne'}"
         onclick="event.stopPropagation();toggleVitrine('${o.id}',${o.publie===true?'true':o.publie===false?'false':'null'})"
         style="cursor:pointer;display:inline-block;width:13px;height:13px;border-radius:50%;background:${o.publie===true?'var(--teal)':o.publie===false?'#d23f3f':'#fff'};border:1.5px solid ${o.publie===true?'var(--teal-dark)':o.publie===false?'#b3261e':'var(--gris-clair)'};box-shadow:0 0 0 3px ${o.publie===true?'rgba(61,128,116,.22)':o.publie===false?'rgba(210,63,63,.18)':'transparent'}"></span></td>
+      <td style="text-align:center;${o.mandat?'':'background:rgba(210,63,63,.07)'}"><input type="checkbox" ${o.mandat?'checked':''}
+        onclick="event.stopPropagation();toggleMandat('${o.id}',this.checked)"
+        title="${o.mandat?'Mandat présent — cliquer pour décocher':'Mandat manquant — cocher quand le mandat est signé'}"
+        style="width:17px;height:17px;cursor:pointer;accent-color:var(--teal)"></td>
       <td>${nomClientLien(o.clients, o.client_id)}</td>
       <td><button class="btn btn-sm" title="Rapprocher : candidats pour ce bien" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocherOffre('${o.id}')">R</button></td>
       ${btnAction('offre',o.id,o.reference,OFF_CPT[o.id]||0,o.dossier_pdf_url)}
@@ -447,6 +451,13 @@ async function toggleVitrine(id, cur){
   const o = OFFRES.find(x=>String(x.id)===String(id)); if(o) o.publie = next;
   filtrerOffres((document.getElementById('offres-search')||{}).value || '');
 }
+/* Coche/décoche « Mandat » directement depuis le tableau des biens */
+async function toggleMandat(id, val){
+  const { error } = await sb.from('offres').update({mandat:val}).eq('id',id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  const o = OFFRES.find(x=>String(x.id)===String(id)); if(o) o.mandat = val;
+  filtrerOffres((document.getElementById('offres-search')||{}).value || '');
+}
 function offreRecherche(o){
   return normTxt([o.reference, o.titre, LABELS[o.type_bien], o.ville, o.code_postal, o.secteur,
     nomClient(o.clients), o.statut, o.agent].filter(Boolean).join(' '));
@@ -456,7 +467,7 @@ function filtrerOffres(q){
   const liste = t ? OFF_LISTE.filter(o=>offreRecherche(o).includes(t)) : OFF_LISTE;
   const tb = document.getElementById('offres-tbody');
   if(tb) tb.innerHTML = liste.length ? liste.map(ligneOffre).join('')
-    : `<tr><td colspan="12" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
+    : `<tr><td colspan="13" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
   const cnt = document.getElementById('offres-count');
   if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
 }
@@ -477,7 +488,7 @@ async function vueOffres(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultats</span>
        </div>
-       <table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
+       <table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Mandat</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
        <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table>`
     : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.');
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
