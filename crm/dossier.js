@@ -21,8 +21,11 @@
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;   // anciens biens sans agent renseigné
-  const SECTIONS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',
+  const SECTIONS_AVEC_PLANS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',
                     'Conditions juridiques et financières','Photos','Plans'];
+  // La page « Plans » n'apparaît que si une photo de plan est jointe au bien ;
+  // SECTIONS (sommaire + navigation) est recalculé à chaque génération.
+  let SECTIONS = SECTIONS_AVEC_PLANS.slice();
 
   // -- Petites aides -----------------------------------------------------------
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -483,6 +486,10 @@
     let geo = null;
     if(!o.carte_plan_url || !o.carte_aerienne_url){ geo = await geocoder(o); }
 
+    // La page « Plans » n'est générée que si au moins une photo de plan est jointe au bien.
+    const aDesPlans = Array.isArray(o.plans_urls) && o.plans_urls.filter(Boolean).length > 0;
+    SECTIONS = aDesPlans ? SECTIONS_AVEC_PLANS.slice() : SECTIONS_AVEC_PLANS.filter(s=>s!=='Plans');
+
     const pages = [
       pageCouverture(o),
       pageSommaire(),
@@ -492,7 +499,7 @@
       pageEquipements(o),
       pageSurfaces(o),
       pagePhotos(o, photos),
-      pagePlans(o, photos),
+      aDesPlans ? pagePlans(o, photos) : '',
       pageConditions(o),
       pageContact(o),
     ].join('');
