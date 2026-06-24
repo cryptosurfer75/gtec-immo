@@ -635,6 +635,7 @@ function btnAction(type,id,ref,n,pdfUrl){
           ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
             + `<button type="button" class="btn btn-ghost btn-sm" title="Remplacer le dossier rattaché (écrase l'ancien)" onclick="rattacherDossierPdf('${id}')">♻️</button>`
           : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`);
+    dossier += `<button type="button" class="btn btn-ghost btn-sm" title="Avis de valeur (fiche d'expertise + aperçu PDF)" onclick="GTEC_AVIS.editer('${id}')">💶</button>`;
   }
   return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
 }
@@ -1719,5 +1720,6 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 init();
 </script>
 <script src="dossier.js"></script>
+<script src="avis-valeur.js"></script>
 </body>
 </html>
