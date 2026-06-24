@@ -336,7 +336,11 @@
     const plans = Array.isArray(o.plans_urls) ? o.plans_urls.filter(Boolean) : [];
     let body;
     if(plans.length){
-      body = `<div class="grid-photos">${plans.slice(0,4).map(u=>`<div class="gp"><img src="${esc(u)}" alt=""></div>`).join('')}</div>`;
+      // Mise en page automatique selon le nombre de plans : 1 = pleine page,
+      // 2 = moitié/moitié, 3 = un grand + deux, 4 = quatre quadrants.
+      // Les plans sont affichés ENTIERS (non rognés) pour rester lisibles.
+      const n = Math.min(plans.length, 4);
+      body = `<div class="plans-wrap plans-${n}">${plans.slice(0,4).map(u=>`<div class="gp2"><img src="${esc(u)}" alt=""></div>`).join('')}</div>`;
     } else if(o.plan_url){
       body = `<p class="ph">Plans disponibles sur demande.<br><small>${esc(o.plan_url)}</small></p>`;
     } else {
@@ -434,6 +438,15 @@
       .grid-photos{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; padding-top:4mm; }
       .gp{ height:62mm; background:#eef0f2; border-radius:3px; overflow:hidden; }
       .gp img{ width:100%; height:100%; object-fit:cover; }
+      /* Page Plans : mise en page automatique selon le nombre (plans entiers, non rognés) */
+      .plans-wrap{ display:grid; gap:6mm; height:100%; padding-top:2mm; }
+      .plans-1{ grid-template-columns:1fr; }
+      .plans-2{ grid-template-columns:1fr 1fr; }
+      .plans-3{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      .plans-3 .gp2:first-child{ grid-column:1 / -1; }
+      .plans-4{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      .gp2{ background:#eef0f2; border-radius:3px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+      .gp2 img{ width:100%; height:100%; object-fit:contain; }
       /* Contact */
       .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; gap:6mm; }
       .contact-logo-block{ display:flex; flex-direction:column; align-items:center; margin-top:26mm; }
