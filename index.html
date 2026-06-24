@@ -362,6 +362,25 @@ function verifierCode(e){
 let TOUS = [];          // tous les biens chargés
 const euro = n => n==null ? '—' : new Intl.NumberFormat('fr-FR').format(Math.round(n))+' €';
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+/* Localité affichée sur le SITE PUBLIC : les communes d'Amiens Métropole (hors Amiens) sont regroupées
+   sous « Amiens métropole », sans code postal ni secteur, pour rester discret sur l'emplacement exact.
+   Amiens et toute commune hors agglo gardent leur nom précis. Les données du CRM restent exactes. */
+const AMIENS_METRO = new Set([
+  'allonville','bertangles','blangy tronville','bovelles','boves','cagny','camon','cardonnette',
+  'clairy saulchoix','creuse','dreuil les amiens','dury','estrees sur noye','ferrieres','glisy',
+  'grattepanche','guignemicourt','hebecourt','longueau','pissy','pont de metz','poulainville',
+  'querrieu','remiencourt','revelles','rivery','rumigny','sains en amienois','saint fuscien',
+  'saint sauflieu','saint vaast en chaussee','saleux','salouel','saveuse','seux','thezy glimont',
+  'vaux en amienois','vers sur selle']);
+const normVille = s => (s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s\-']+/g,' ').trim();
+/* HTML (déjà échappé) de la localité publique. withSecteur=true pour la fiche détaillée. */
+function localitePublique(b, withSecteur){
+  if(AMIENS_METRO.has(normVille(b && b.ville))) return 'Amiens métropole';
+  const v = esc((b&&b.ville)||'');
+  const cp = (b&&b.code_postal) ? ' ('+esc(b.code_postal)+')' : '';
+  const sect = (withSecteur && b && b.secteur) ? ' — '+esc(b.secteur) : '';
+  return v+cp+sect;
+}
 
 /* Fiche produit (ouverte par « En savoir + ») */
 function ouvrirFiche(id){
@@ -380,7 +399,7 @@ function ouvrirFiche(id){
       <div class="fiche-c">
         <div class="ref">${esc(b.reference||'')} · ${LABELS[b.type_bien]||''}</div>
         <h2>${esc(b.titre||LABELS[b.type_bien]||'Bien')}</h2>
-        <div class="ville">📍 ${esc(b.ville||'')}${b.code_postal?' ('+esc(b.code_postal)+')':''}${b.secteur?' — '+esc(b.secteur):''}</div>
+        <div class="ville">📍 ${localitePublique(b, true)}</div>
         <div class="fiche-prix">${prixHtml(b)}${(!(b.transaction==='vente'||(b.transaction==='les_deux'&&b.prix_vente)) && b.loyer_annuel_m2)?`<small style="display:block;margin-top:4px">(soit ${euro(b.loyer_annuel_m2*12)} / an ${esc(b.loyer_type||'HT HC')})</small>`:''}</div>
         ${b.description?`<div class="fiche-h">Descriptif</div><div class="fiche-desc">${esc(b.description)}</div>`:''}
         <div class="fiche-h">Caractéristiques &amp; modalités</div>
@@ -437,7 +456,7 @@ function carte(b){
     <div class="body">
       <div class="ref">${b.reference}</div>
       <h3>${b.titre||LABELS[b.type_bien]||'Bien'}</h3>
-      <div class="ville">📍 ${b.ville||''}${b.code_postal? ' ('+b.code_postal+')':''}</div>
+      <div class="ville">📍 ${localitePublique(b, false)}</div>
       <div class="meta">
         ${b.surface_m2? `<span>📐 <b>${b.surface_m2} m²</b></span>`:''}
         ${b.divisible? `<span>✂️ divisible</span>`:''}
