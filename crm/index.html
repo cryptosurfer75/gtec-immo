@@ -428,7 +428,7 @@ async function vueDashboard(){
 }
 
 /* ===== OFFRES ===== */
-let OFFRES = [], OFF_ARCH = false, OFF_CPT = {}, OFF_LISTE = [];
+let OFFRES = [], OFF_ARCH = false, OFF_CPT = {}, OFF_LISTE = [], OFF_TYPE = '';   // OFF_TYPE = '' → tous les types
 /* Pastille couleur du statut : vert=disponible, orange=sous compromis, rouge=vendu/loué, gris=retiré */
 function statutPastille(s){
   const M = {
@@ -497,19 +497,40 @@ async function vueOffres(){
     .order('created_at',{ascending:false});
   if(error) return erreur(error);
   OFFRES = data||[];
-  const archivees = OFFRES.filter(o=>o.archive);
-  OFF_LISTE = OFFRES.filter(o=> OFF_ARCH ? o.archive : !o.archive);
   OFF_CPT = await compteursActions('offre');
-  const corps = OFF_LISTE.length
-    ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  renderOffres();
+}
+function setOffType(v){ OFF_TYPE=v; renderOffres(); }
+/* Onglets par type de bien (couleurs = mêmes codes que le badge réf). '' = Tous. */
+const OFF_TABS = [
+  ['',                    'Tous',                '#4A5A5E'],
+  ['bureaux',             'Bureaux',             '#1e508c'],
+  ['activite',            'Activités',           '#8a6d00'],
+  ['local_commercial',    'Locaux commerciaux',  '#2e7d32'],
+  ['terrain',             'Terrains',            '#6d28d9'],
+  ['entrepot_logistique', 'Entrepôts',           '#566270']
+];
+function renderOffres(){
+  const archivees = OFFRES.filter(o=>o.archive);
+  const base = OFFRES.filter(o=> OFF_ARCH ? o.archive : !o.archive);     // selon archives/actifs
+  OFF_LISTE = OFF_TYPE ? base.filter(o=>o.type_bien===OFF_TYPE) : base;  // selon l'onglet de type
+  const onglet = (v,label,col)=>{
+    const n = v ? base.filter(o=>o.type_bien===v).length : base.length;
+    return `<button type="button" onclick="setOffType('${v}')" style="border:1.5px solid ${col};border-bottom:none;border-radius:10px 10px 0 0;padding:9px 16px;font-weight:700;font-size:.86rem;cursor:pointer;${OFF_TYPE===v?`background:${col};color:#fff`:`background:#fff;color:${col}`}">${label} <span style="opacity:.8;font-weight:600">(${n})</span></button>`;
+  };
+  const tabs = `<div style="display:flex;gap:8px;padding:14px 16px 0;flex-wrap:wrap">${OFF_TABS.map(t=>onglet(t[0],t[1],t[2])).join('')}</div>`;
+  const accent = (OFF_TABS.find(t=>t[0]===OFF_TYPE)||OFF_TABS[0])[2];
+  const corps = `${tabs}
+    <div style="padding:14px 16px;border-top:2px solid ${accent};display:flex;align-items:center;gap:14px;flex-wrap:wrap">
          <input id="offres-search" type="search" autocomplete="off" placeholder="🔎 Rechercher un bien (réf., titre, ville, secteur, propriétaire…)"
            oninput="filtrerOffres(this.value)"
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
-         <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultats</span>
+         <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultat${OFF_LISTE.length>1?'s':''}</span>
        </div>
        <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Mandat</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
-       <tbody id="offres-tbody">${OFF_LISTE.map(ligneOffre).join('')}</tbody></table></div>`
-    : vide(OFF_ARCH?'Aucun bien archivé.':'Aucun bien pour le moment.');
+       <tbody id="offres-tbody">${OFF_LISTE.length
+          ? OFF_LISTE.map(ligneOffre).join('')
+          : `<tr><td colspan="13" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ${OFF_TYPE?'dans cette catégorie':(OFF_ARCH?'archivé':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
      <button class="btn btn-ghost btn-sm" onclick="OFF_ARCH=!OFF_ARCH;vueOffres()">${OFF_ARCH?'← Biens actifs':'Archivés ('+archivees.length+')'}</button>`);
