@@ -62,10 +62,12 @@
   // -- Géocodage + carte -------------------------------------------------------
   function googleStaticUrl(geo, variant){
     if(!GMAPS_KEY || !geo) return null;
-    const isAir = variant==='aerienne';
+    // Satellite/hybride bloqués pour les comptes UE (Google Static Maps EEA) :
+    // l'aérienne bascule sur l'imagerie Esri (Leaflet). Google ne sert que le plan.
+    if(variant==='aerienne') return null;
     const center = geo.lat+','+geo.lon;
     return 'https://maps.googleapis.com/maps/api/staticmap?center='+center
-      + '&zoom='+(isAir?16:14)+'&size=640x400&scale=2&maptype='+(isAir?'hybrid':'roadmap')
+      + '&zoom=14&size=640x400&scale=2&maptype=roadmap'
       + '&markers=color:0x3D8074%7C'+center+'&language=fr&key='+GMAPS_KEY;
   }
   async function geocoder(a){

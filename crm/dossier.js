@@ -212,13 +212,15 @@
   // URL d'une carte statique Google (plan routier ou vue aérienne avec enseignes)
   function googleStaticUrl(geo, variant){
     if(!GMAPS_KEY || !geo) return null;
-    const isAir = variant==='aerienne';
-    const type = isAir ? 'hybrid' : 'roadmap';   // hybrid = satellite + noms d'enseignes
-    const zoom = isAir ? 16 : 15;                // un peu de hauteur tout en voyant les commerces voisins
+    // Les vues satellite / hybride des cartes statiques Google ne sont plus
+    // disponibles pour les comptes de l'UE (restriction EEA, réponse 403).
+    // → l'aérienne bascule sur l'imagerie Esri (rendue via Leaflet).
+    //   Google ne sert plus que le plan (roadmap), qui reste autorisé.
+    if(variant==='aerienne') return null;
     const center = geo.lat+','+geo.lon;
     const marker = 'color:0x3D8074%7C'+center;   // pin vert GTEC sur le bien
     return 'https://maps.googleapis.com/maps/api/staticmap?center='+center
-      + '&zoom='+zoom+'&size=640x400&scale=2&maptype='+type
+      + '&zoom=15&size=640x400&scale=2&maptype=roadmap'
       + '&markers='+marker+'&language=fr&key='+GMAPS_KEY;
   }
 
