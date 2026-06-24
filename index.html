@@ -432,7 +432,7 @@ function prixHtml(b){
   if(b.transaction==='vente' || (b.transaction==='les_deux' && b.prix_vente))
     return `${euro(b.prix_vente)} <small>FAI</small>`;
   if(b.loyer_annuel_m2){
-    return `${euro(b.loyer_annuel_m2)} <small>/mois ${b.loyer_type||'HT HC'}</small>`;
+    return `Loyer : ${euro(b.loyer_annuel_m2)} <small>/mois ${b.loyer_type||'HT HC'}</small>`;
   }
   return '<small>Sur demande</small>';
 }
