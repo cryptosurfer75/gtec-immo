@@ -15,6 +15,8 @@
   // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
   const LOGO = 'https://gtec-immobilier.fr/logo-gtec.png';
+  // Bloc logo + signature « Immobilier d'entreprise » (taille homogène partout)
+  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
   // Signatures par agent (le bien porte une initiale FB / VDM)
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
@@ -80,25 +82,26 @@
     const tx = both ? 'à la vente ou à la location' : vente ? 'à la vente' : 'à la location';
 
     const paras = [];
-    // 1) Accroche + situation + surface
+    // 1) Accroche + situation + surface (toujours annoncée comme approximative)
     const p1 = [];
     let s1 = `GTEC Immobilier vous propose, ${tx}, ${ti.np}`;
     if(loc) s1 += ` idéalement situé${ti.ac} à ${loc}`;
     p1.push(s1 + '.');
     if(o.surface_m2){
-      let s = terrain ? `Le terrain présente une superficie de ${nbFr(o.surface_m2)} m²`
-                      : `L’ensemble développe une surface de ${nbFr(o.surface_m2)} m²`;
-      if(o.divisible && o.surface_min_m2) s += `, divisible à partir de ${nbFr(o.surface_min_m2)} m²`;
-      else if(o.surface_min_m2 && o.surface_max_m2 && o.surface_min_m2!==o.surface_max_m2) s += ` (surfaces modulables de ${nbFr(o.surface_min_m2)} à ${nbFr(o.surface_max_m2)} m²)`;
+      let s = terrain ? `Le terrain présente une superficie approximative de ${nbFr(o.surface_m2)} m²`
+                      : `L’ensemble développe une surface approximative de ${nbFr(o.surface_m2)} m²`;
+      if(o.divisible && o.surface_min_m2) s += `, divisible à partir d’environ ${nbFr(o.surface_min_m2)} m²`;
+      else if(o.surface_min_m2 && o.surface_max_m2 && o.surface_min_m2!==o.surface_max_m2) s += ` (surfaces modulables d’environ ${nbFr(o.surface_min_m2)} à ${nbFr(o.surface_max_m2)} m²)`;
       if(o.nb_lots>1) s += `, réparti en ${o.nb_lots} lots`;
       p1.push(s + '.');
     } else if(o.surface_min_m2 || o.surface_max_m2){
       const a=o.surface_min_m2, b=o.surface_max_m2;
-      p1.push(`Les surfaces proposées s’échelonnent ${a&&b?`de ${nbFr(a)} à ${nbFr(b)} m²`:a?`à partir de ${nbFr(a)} m²`:`jusqu’à ${nbFr(b)} m²`}.`);
+      p1.push(`Les surfaces proposées, approximatives, s’échelonnent ${a&&b?`de ${nbFr(a)} à ${nbFr(b)} m²`:a?`à partir de ${nbFr(a)} m²`:`jusqu’à ${nbFr(b)} m²`}.`);
     }
+    if(o.surface_m2 || o.surface_min_m2 || o.surface_max_m2) p1.push('Les surfaces sont communiquées à titre indicatif.');
     paras.push(p1.join(' '));
 
-    // 2) Configuration, état, accessibilité, équipements, DPE
+    // 2) Configuration, état, accessibilité (sans équipements ni conditions financières — détaillés dans le dossier)
     const p2 = [];
     if(!terrain){
       const cl = [];
@@ -115,26 +118,22 @@
       if(o.norme_pmr) acc.push('accessible aux personnes à mobilité réduite');
       if(o.norme_erp) acc.push('conforme aux normes ERP (établissement recevant du public)');
       if(acc.length) p2.push('Le bien est ' + joinFr(acc) + '.');
-      const eq = equipListe(o.equipements);
-      if(eq.length){ const top=eq.slice(0,8); p2.push('Il bénéficie notamment de : ' + top.join(', ') + (eq.length>8?'…':'') + '.'); }
-      if(o.dpe) p2.push(`Diagnostic de performance énergétique : classe ${o.dpe}.`);
     } else if(o.secteur || o.ville){
       p2.push('Terrain offrant de belles possibilités, à étudier selon votre projet.');
     }
     if(p2.length) paras.push(p2.join(' '));
 
-    // 3) Conditions + appel à l’action
-    const p3 = [];
-    if((vente||both) && o.prix_vente) p3.push(`Prix de vente : ${nbFr(o.prix_vente)} €.`);
-    if((!vente||both) && o.loyer_annuel_m2){
-      const sfx = o.loyer_type==='NET HC' ? 'NET HC' : 'HT HC';
-      let l = `Loyer mensuel : ${nbFr(o.loyer_annuel_m2)} € ${sfx}`;
-      if(o.charges) l += `, charges ${nbFr(o.charges)} €/mois`;
-      p3.push(l + '.');
-    }
-    if(o.disponibilite){ const d=o.disponibilite.trim(); p3.push(/^disponibilit/i.test(d) ? d+'.' : `Disponibilité : ${d}.`); }
-    p3.push('Pour toute information complémentaire ou pour organiser une visite, l’équipe GTEC Immobilier se tient à votre entière disposition.');
-    paras.push(p3.join(' '));
+    // 3) Environnement / ville / secteur
+    const where = o.ville ? `au cœur de ${o.ville}${o.secteur?` (secteur ${o.secteur})`:''}` : (o.secteur ? `au sein du secteur ${o.secteur}` : '');
+    paras.push(
+      `Le bien bénéficie d’un environnement particulièrement porteur${where?`, ${where}`:''} : un secteur recherché et dynamique, animé par un tissu d’entreprises actif et facilement accessible. Un emplacement stratégique, idéal pour implanter ou développer votre activité.`
+    );
+
+    // 4) Disponibilité + appel à l’action (sans conditions financières — voir dossier)
+    const p4 = [];
+    if(o.disponibilite){ const d=o.disponibilite.trim(); p4.push(/^disponibilit/i.test(d) ? d+'.' : `Disponibilité : ${d}.`); }
+    p4.push('Pour toute information complémentaire ou pour organiser une visite, l’équipe GTEC Immobilier se tient à votre entière disposition.');
+    paras.push(p4.join(' '));
 
     return paras.filter(Boolean);
   }
@@ -165,7 +164,7 @@
     return `<section class="pg">
       <header class="pg-h">
         <h1>${esc(titre)}</h1>
-        <img class="pg-logo" src="${LOGO}" alt="GTEC">
+        ${logoBlock('pg-logo')}
       </header>
       <div class="pg-body">${contenu}</div>
       <footer class="pg-f">
@@ -183,7 +182,7 @@
     return `<section class="pg cover">
       <div class="cover-top">
         <div class="cover-cat">${typeLabel(o.type_bien)}<br><b>${transactionLabel(o.transaction)}</b></div>
-        <img class="cover-logo" src="${LOGO}" alt="GTEC">
+        ${logoBlock('cover-logo')}
       </div>
       <div class="cover-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo de couverture à ajouter</div>'}</div>
       <div class="cover-band">
@@ -196,7 +195,7 @@
   function pageSommaire(){
     const items = SECTIONS.map((s,i)=>`<li><span class="num">${i+1}</span>${esc(s)}</li>`).join('');
     return `<section class="pg">
-      <header class="pg-h center"><h1>Sommaire</h1><img class="pg-logo" src="${LOGO}" alt="GTEC"></header>
+      <header class="pg-h center"><h1>Sommaire</h1>${logoBlock('pg-logo')}</header>
       <div class="pg-body"><ol class="sommaire">${items}</ol></div>
       <footer class="pg-f"><div class="pg-num">2</div></footer>
     </section>`;
@@ -341,7 +340,7 @@
   function pageContact(o){
     const c = (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg contact">
-      <img class="contact-logo" src="${LOGO}" alt="GTEC">
+      ${logoBlock('contact-logo')}
       <div class="contact-nom">${esc(c.nom)}</div>
       <div class="contact-tel">${esc(c.tel)}</div>
       <div class="contact-mail">${esc(c.mail)}</div>
@@ -364,9 +363,11 @@
         box-shadow:0 6px 24px rgba(0,0,0,.35); display:flex; flex-direction:column; }
       .pg-h{ display:flex; align-items:center; justify-content:space-between; padding:14mm 14mm 4mm; }
       .pg-h.center{ justify-content:center; position:relative; }
-      .pg-h.center .pg-logo{ position:absolute; right:14mm; top:10mm; }
+      .pg-h.center .pg-logo-wrap{ position:absolute; right:14mm; top:10mm; }
       .pg-h h1{ font-size:30pt; font-weight:600; margin:0; color:#222; }
-      .pg-logo{ height:16mm; }
+      .pg-logo{ height:22mm; }
+      .logo-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:1.5mm; }
+      .logo-tag{ font-size:8pt; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-weight:600; white-space:nowrap; }
       .pg-body{ flex:1; padding:2mm 14mm; }
       .pg-f{ display:flex; align-items:flex-end; justify-content:space-between; padding:0 12mm 7mm; }
       .pg-f .nav{ display:flex; gap:6px; flex:1; }
@@ -421,7 +422,9 @@
       .gp img{ width:100%; height:100%; object-fit:cover; }
       /* Contact */
       .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:center; gap:6mm; }
-      .contact-logo{ height:50mm; margin-top:30mm; }
+      .contact-logo{ height:50mm; }
+      .contact-logo-wrap{ margin-top:30mm; gap:4mm; }
+      .contact-logo-wrap .logo-tag{ font-size:13pt; letter-spacing:.18em; color:#7fc8bb; }
       .contact-nom{ font-size:24pt; margin-top:6mm; }
       .contact-tel,.contact-mail{ font-size:18pt; color:#7fc8bb; }
       .ph{ color:#9aa0a6; font-style:italic; }
