@@ -454,16 +454,21 @@
       .grid-photos{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; padding-top:4mm; }
       .gp{ height:62mm; background:#eef0f2; border-radius:3px; overflow:hidden; }
       .gp img{ width:100%; height:100%; object-fit:cover; }
-      /* Page Plans : mise en page automatique selon le nombre (plans entiers, non rognés) */
-      .plans-wrap{ display:grid; gap:6mm; height:100%; padding-top:2mm; }
-      .plans-1{ grid-template-columns:1fr; grid-template-rows:1fr; }
-      .plans-2{ grid-template-columns:1fr 1fr; grid-template-rows:1fr; }
-      .plans-3{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      /* Page Plans : mise en page automatique selon le nombre (plans entiers, non rognés).
+         La hauteur est plafonnée en mm (valeur fixe liée à la page de 202 mm) car la
+         hauteur en % ne se résout pas de façon fiable dans la page flex → sinon un plan
+         en pleine largeur devient trop haut et déborde (coupé en bas). */
+      .plans-wrap{ display:grid; gap:6mm; padding-top:2mm; justify-items:center; align-items:start; }
+      .plans-1{ grid-template-columns:1fr; }
+      .plans-2{ grid-template-columns:1fr 1fr; }
+      .plans-3{ grid-template-columns:1fr 1fr; }
       .plans-3 .gp2:first-child{ grid-column:1 / -1; }
-      .plans-4{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
-      .gp2{ background:#eef0f2; border-radius:3px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-      /* Plan affiché ENTIER : on le réduit jusqu'à tenir dans la case, jamais rogné ni zoomé */
-      .gp2 img{ max-width:100%; max-height:100%; width:auto; height:auto; display:block; }
+      .plans-4{ grid-template-columns:1fr 1fr; }
+      .gp2{ background:#eef0f2; border-radius:3px; display:flex; align-items:center; justify-content:center; max-width:100%; }
+      /* Plan affiché ENTIER : réduit jusqu'à tenir dans la page, jamais rogné ni zoomé */
+      .gp2 img{ max-width:100%; width:auto; height:auto; display:block; }
+      .plans-1 .gp2 img, .plans-2 .gp2 img{ max-height:134mm; }   /* 1 rangée */
+      .plans-3 .gp2 img, .plans-4 .gp2 img{ max-height:62mm; }    /* 2 rangées */
       /* Contact */
       .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; gap:6mm; }
       .contact-logo-block{ display:flex; flex-direction:column; align-items:center; margin-top:26mm; }
