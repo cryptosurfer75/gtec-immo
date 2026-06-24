@@ -826,13 +826,16 @@ async function vueMandats(){
       <td>${esc(nomClient(m.clients))}</td>
       <td>${esc(m.commission||'—')}</td>
       <td><span class="tag ${m.statut==='actif'?'green':''}">${esc(m.statut||'—')}</span></td>
+      <td><button class="btn btn-sm" title="Générer le document de mandat, pré-rempli avec ce bien et ce propriétaire" onclick="event.stopPropagation();genererDocMandat('${m.id}')">📄 Document</button></td>
     </tr>`).join('');
   C().innerHTML = panel('Mandats', `${MANDATS.length} mandat(s)`,
     MANDATS.length
-      ? `<div class="tscroll"><table><thead><tr><th>N°</th><th>Type</th><th>Bien</th><th>Mandant</th><th>Commission</th><th>Statut</th></tr></thead><tbody>${lignes}</tbody></table></div>`
+      ? `<div class="tscroll"><table><thead><tr><th>N°</th><th>Type</th><th>Bien</th><th>Mandant</th><th>Commission</th><th>Statut</th><th></th></tr></thead><tbody>${lignes}</tbody></table></div>`
       : vide('Aucun mandat pour le moment.'),
     `<button class="btn btn-sm" onclick="nouveauMandat()">+ Ajouter un mandat</button>`);
 }
+/* Ouvre le générateur de mandats (page à part), pré-rempli depuis ce mandat (bien + propriétaire + conditions) */
+function genererDocMandat(id){ window.open('generateur-mandats.html?m='+encodeURIComponent(id), '_blank'); }
 
 /* ===== Helpers UI ===== */
 function panel(titre, info, corps, action){
