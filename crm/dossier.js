@@ -112,7 +112,7 @@
       if(o.nb_niveaux) cl.push(`se déploie sur ${o.nb_niveaux} niveau${o.nb_niveaux>1?'x':''}`);
       if(o.parkings) cl.push(`dispose de ${o.parkings} place${o.parkings>1?'s':''} de stationnement`);
       if(cl.length) p2.push('Le bien ' + joinFr(cl) + '.');
-      const etatM = { neuf:'Il s’agit d’une construction neuve, livrée sans aucuns travaux à prévoir',
+      const etatM = { neuf:'Il s’agit d’une construction nouvelle',
                       etat_neuf:'Bien existant en parfait état, comme neuf, il ne nécessite aucuns travaux',
                       bon:'Il se présente en bon état général',
                       a_renover:'À rénover, il offre un beau potentiel pour un aménagement sur-mesure' };
