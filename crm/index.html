@@ -221,6 +221,7 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
       <a data-vue="clients" onclick="aller('clients')">👤 Clients</a>
       <a data-vue="mandats" onclick="aller('mandats')">📄 Mandats</a>
       <a data-vue="avis" onclick="aller('avis')">💶 Avis de valeur</a>
+      <a data-vue="teams" onclick="aller('teams')">🗂️ Teams</a>
     </nav>
     <div class="who">
       <span class="mail" id="who-mail">…</span>
@@ -393,11 +394,11 @@ function ouvrirApp(session){
 }
 
 /* ===== NAVIGATION ===== */
-const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats'};
+const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams'};
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -1864,5 +1865,6 @@ init();
 </script>
 <script src="dossier.js?v=3"></script>
 <script src="avis-valeur.js?v=3"></script>
+<script src="teams.js?v=1"></script>
 </body>
 </html>
