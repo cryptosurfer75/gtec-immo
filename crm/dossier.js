@@ -352,6 +352,7 @@
         <img class="contact-logo" src="${LOGO_CONTACT}" alt="GTEC">
         <div class="contact-logo-sub">Immobilier d’entreprise</div>
       </div>
+      <div class="contact-sep"></div>
       <div class="contact-nom">${esc(c.nom)}</div>
       <div class="contact-tel">${esc(c.tel)}</div>
       <div class="contact-mail">${esc(c.mail)}</div>
@@ -434,11 +435,12 @@
       .gp{ height:62mm; background:#eef0f2; border-radius:3px; overflow:hidden; }
       .gp img{ width:100%; height:100%; object-fit:cover; }
       /* Contact */
-      .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:center; gap:6mm; }
-      .contact-logo-block{ display:flex; flex-direction:column; align-items:center; margin-top:22mm; }
+      .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; gap:6mm; }
+      .contact-logo-block{ display:flex; flex-direction:column; align-items:center; margin-top:26mm; }
       .contact-logo{ height:50mm; }
       .contact-logo-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
-      .contact-nom{ font-size:24pt; margin-top:6mm; }
+      .contact-sep{ width:55mm; height:0.8mm; background:var(--teal); border-radius:2px; margin:20mm 0 14mm; }
+      .contact-nom{ font-size:24pt; margin-top:0; }
       .contact-tel,.contact-mail{ font-size:18pt; color:#7fc8bb; }
       .ph{ color:#9aa0a6; font-style:italic; }
       @media print{
