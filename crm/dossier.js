@@ -150,8 +150,8 @@
       const { data } = await sb.from('offre_photos').select('*').eq('offre_id', offreId);
       photos = data || [];
     }catch(e){ photos=[]; }
-    // tri : principale d'abord, puis ordre
-    photos.sort((a,b)=>((b.est_principale?1:0)-(a.est_principale?1:0)) || ((a.ordre||0)-(b.ordre||0)));
+    // tri strict par rang choisi dans la fiche (photo 1, 2, 3, 4…), principale en cas d'égalité
+    photos.sort((a,b)=>((a.ordre||0)-(b.ordre||0)) || ((b.est_principale?1:0)-(a.est_principale?1:0)));
     return { o, photos };
   }
 

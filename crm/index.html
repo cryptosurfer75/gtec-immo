@@ -1367,10 +1367,41 @@ function initMediaDossier(offreId, plansUrls){
   DOSSIER_PHOTOS = [];
   renderMediaDossier();
   if(MEDIA_OFFRE_ID){
-    sb.from('offre_photos').select('id,url').eq('offre_id',MEDIA_OFFRE_ID).then(({data})=>{
-      DOSSIER_PHOTOS = data||[]; renderMediaDossier();
-    });
+    sb.from('offre_photos').select('id,url,ordre').eq('offre_id',MEDIA_OFFRE_ID)
+      .order('ordre',{ascending:true,nullsFirst:false}).then(({data})=>{
+        DOSSIER_PHOTOS = data||[]; renderMediaDossier();
+      });
   }
+}
+/* Vignette numérotée + flèches de réordonnancement pour les photos du dossier */
+function thumbPhoto(p,i){
+  const n=DOSSIER_PHOTOS.length;
+  return `<div style="position:relative;display:inline-block;margin:4px">
+    <img src="${esc(p.url)}" style="height:80px;width:108px;object-fit:cover;border-radius:6px;display:block;border:2px solid var(--teal)">
+    <span style="position:absolute;top:-8px;left:-8px;min-width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px">${i+1}</span>
+    <button type="button" onclick="supprimerPhotoDossier('${p.id}')" title="Supprimer"
+      style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border:none;border-radius:50%;background:#b3261e;color:#fff;cursor:pointer;font-size:14px;line-height:22px">×</button>
+    <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:rgba(26,39,56,.6);border-radius:0 0 4px 4px">
+      <button type="button" title="Reculer (numéro plus petit)" ${i===0?'disabled':''} onclick="deplacerPhotoDossier('${p.id}',-1)"
+        style="flex:1;border:0;background:none;color:#fff;font-size:13px;cursor:pointer;${i===0?'opacity:.3;cursor:default':''}">◀</button>
+      <button type="button" title="Avancer (numéro plus grand)" ${i===n-1?'disabled':''} onclick="deplacerPhotoDossier('${p.id}',1)"
+        style="flex:1;border:0;background:none;color:#fff;font-size:13px;cursor:pointer;${i===n-1?'opacity:.3;cursor:default':''}">▶</button>
+    </div></div>`;
+}
+/* Renumérote les rangs (0,1,2,…) selon l'ordre affiché et persiste ceux qui ont changé */
+async function persistOrdrePhotos(){
+  for(let k=0;k<DOSSIER_PHOTOS.length;k++){
+    const p=DOSSIER_PHOTOS[k];
+    if(p.ordre!==k){ p.ordre=k; try{ await sb.from('offre_photos').update({ordre:k}).eq('id',p.id); }catch(e){} }
+  }
+}
+async function deplacerPhotoDossier(id, dir){
+  const i=DOSSIER_PHOTOS.findIndex(x=>String(x.id)===String(id));
+  const j=i+dir;
+  if(i<0 || j<0 || j>=DOSSIER_PHOTOS.length) return;
+  const tmp=DOSSIER_PHOTOS[i]; DOSSIER_PHOTOS[i]=DOSSIER_PHOTOS[j]; DOSSIER_PHOTOS[j]=tmp;
+  renderMediaDossier();
+  await persistOrdrePhotos();
 }
 function renderMediaDossier(){
   const w=document.getElementById('o-media-dossier'); if(!w) return;
@@ -1378,7 +1409,10 @@ function renderMediaDossier(){
     w.innerHTML = '<p style="color:#888;font-style:italic">Enregistrez d\'abord le bien, puis rouvrez-le pour ajouter photos et plans.</p>';
     return;
   }
-  const galP = DOSSIER_PHOTOS.map(p=>thumbMini(p.url,`supprimerPhotoDossier('${p.id}')`)).join('') || '<span style="color:#888;font-style:italic">aucune photo</span>';
+  const galP = DOSSIER_PHOTOS.length
+    ? `<div style="display:flex;flex-wrap:wrap">${DOSSIER_PHOTOS.map((p,i)=>thumbPhoto(p,i)).join('')}</div>
+       <p style="font-size:.8rem;color:var(--gris-fonce);margin:6px 0 0">Le numéro détermine la place dans le dossier : <b>1</b> en haut à gauche, <b>2</b> en haut à droite, <b>3</b> en bas à gauche, <b>4</b> en bas à droite. Utilisez ◀ ▶ pour réordonner.</p>`
+    : '<span style="color:#888;font-style:italic">aucune photo</span>';
   const galPl = DOSSIER_PLANS.map((u,i)=>thumbMini(u,`supprimerPlanDossier(${i})`)).join('') || '<span style="color:#888;font-style:italic">aucun plan</span>';
   const nbHeic = DOSSIER_PHOTOS.filter(p=>/\.(heic|heif)$/i.test(p.url||'')).length;
   const repBtn = nbHeic ? `<div style="margin:8px 0">
@@ -1425,7 +1459,7 @@ async function ajouterPhotosDossier(){
       const url=await uploadMediaOffre(f);
       const {data,error}=await sb.from('offre_photos')
         .insert({offre_id:MEDIA_OFFRE_ID,url,est_principale:false,ordre:DOSSIER_PHOTOS.length})
-        .select('id,url').single();
+        .select('id,url,ordre').single();
       if(error) throw error; DOSSIER_PHOTOS.push(data);
     }
   }catch(e){ alert('Échec de l\'ajout : '+(e.message||e)); }
@@ -1436,6 +1470,7 @@ async function supprimerPhotoDossier(id){
   if(!confirm('Supprimer cette photo ?')) return;
   try{ await supprimerCoverStorage(p.url); await sb.from('offre_photos').delete().eq('id',id);
     DOSSIER_PHOTOS=DOSSIER_PHOTOS.filter(x=>x.id!==id); renderMediaDossier();
+    await persistOrdrePhotos();   // renumérote les photos restantes (1,2,3…)
   }catch(e){ alert('Échec : '+(e.message||e)); }
 }
 async function ajouterPlansDossier(){
