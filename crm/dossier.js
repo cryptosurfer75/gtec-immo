@@ -15,8 +15,9 @@
   // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
   const LOGO = 'https://gtec-immobilier.fr/logo-gtec.png?v=2';
-  // Logo « GTEC Immobilier » fond transparent (verso sombre) — réservé à la dernière page
-  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-immobilier.png?v=1';
+  // Marque « bâtiment + GTEC » fond transparent (sans wordmark) — dernière page ;
+  // le sous-titre « IMMOBILIER D'ENTREPRISE » est rendu en texte juste en dessous.
+  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=1';
   // Bloc logo + signature « Immobilier d'entreprise » (taille homogène partout)
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
   // Signatures par agent (le bien porte une initiale FB / VDM)
@@ -347,7 +348,10 @@
   function pageContact(o){
     const c = (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg contact">
-      <img class="contact-logo" src="${LOGO_CONTACT}" alt="GTEC Immobilier">
+      <div class="contact-logo-block">
+        <img class="contact-logo" src="${LOGO_CONTACT}" alt="GTEC">
+        <div class="contact-logo-sub">Immobilier d’entreprise</div>
+      </div>
       <div class="contact-nom">${esc(c.nom)}</div>
       <div class="contact-tel">${esc(c.tel)}</div>
       <div class="contact-mail">${esc(c.mail)}</div>
@@ -431,7 +435,9 @@
       .gp img{ width:100%; height:100%; object-fit:cover; }
       /* Contact */
       .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:center; gap:6mm; }
-      .contact-logo{ height:62mm; margin-top:22mm; }
+      .contact-logo-block{ display:flex; flex-direction:column; align-items:center; margin-top:22mm; }
+      .contact-logo{ height:50mm; }
+      .contact-logo-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
       .contact-nom{ font-size:24pt; margin-top:6mm; }
       .contact-tel,.contact-mail{ font-size:18pt; color:#7fc8bb; }
       .ph{ color:#9aa0a6; font-style:italic; }
