@@ -27,7 +27,7 @@
   };
   const CONTACT_DEFAUT = AGENTS.FB;   // anciens biens sans agent renseigné
   const SECTIONS_AVEC_PLANS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',
-                    'Photos','Conditions juridiques et financières','Plans'];
+                    'Photos','Plans','Conditions juridiques et financières'];
   // La page « Plans » n'apparaît que si une photo de plan est jointe au bien ;
   // SECTIONS (sommaire + navigation) est recalculé à chaque génération.
   let SECTIONS = SECTIONS_AVEC_PLANS.slice();
@@ -224,6 +224,19 @@
       + '&markers='+marker+'&language=fr&key='+GMAPS_KEY;
   }
 
+  // Vue aérienne : image satellite UNIQUE exportée par Esri (pas de tuiles → pas de
+  // quadrillage, pas de mention d'attribution). Remplace l'hybride Google bloqué en UE.
+  function esriAerialUrl(geo){
+    if(!geo) return null;
+    const R = 20037508.34;                 // demi-circonférence Web Mercator (m)
+    const x = geo.lon*R/180;
+    const y = Math.log(Math.tan((90+geo.lat)*Math.PI/360))/(Math.PI/180)*R/180;
+    const dx = 350, dy = dx*800/1280;      // ~700 m de large, ratio image 1280×800
+    const bbox = [x-dx, y-dy, x+dx, y+dy].join(',');
+    return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
+      + '?bbox='+bbox+'&bboxSR=3857&imageSR=3857&size=1280,800&format=jpg&f=image';
+  }
+
   // Étiquette « Locaux disponibles » + flèche reliée au pointeur (centre de la carte).
   // Repère en mm : zone carte = 252 × 135, pointeur au centre (126 ; 67.5).
   function locOverlay(num){
@@ -237,14 +250,15 @@
 
   function pageLocalisation(o, src, num, label, geo, variant){
     let inner;
-    const gUrl = googleStaticUrl(geo, variant);
+    // Plan = carte Google (roadmap, enseignes voisines) ; aérienne = image Esri unique
+    const autoUrl = (variant==='aerienne') ? esriAerialUrl(geo) : googleStaticUrl(geo, variant);
     const ov = locOverlay(num);
     if(src){
       // Capture importée à la main dans la fiche : elle reste prioritaire
       inner = `<div class="loc-img"><img src="${esc(src)}" alt="">${ov}</div>`;
-    } else if(gUrl){
-      // Carte Google générée depuis l'adresse (commerces / enseignes voisines visibles)
-      inner = `<div class="loc-img"><img src="${esc(gUrl)}" alt="">${ov}</div>`;
+    } else if(autoUrl){
+      // Carte générée automatiquement depuis l'adresse
+      inner = `<div class="loc-img"><img src="${esc(autoUrl)}" alt="">${ov}</div>`;
     } else if(geo){
       // Secours sans clé : carte libre
       inner = `<div class="loc-img"><div id="locmap-${num}" class="loc-leaflet" data-lat="${geo.lat}" data-lon="${geo.lon}" data-variant="${esc(variant)}"></div>${ov}</div>`;
@@ -305,7 +319,7 @@
     return page('Détail des surfaces', body, {actif:'Détail des surfaces', num:7});
   }
 
-  function pageConditions(o){
+  function pageConditions(o, num){
     const sfx = (o.loyer_type==='NET HC') ? 'NET' : 'HT';
     const rows = [
       ['BAIL', o.bail || 'Commercial 3/6/9 ans'],
@@ -319,7 +333,7 @@
     ];
     if(o.honoraires) rows.push(['Honoraires preneur', o.honoraires]);
     const body = `<table class="cond">${rows.map(r=>`<tr><th>${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')}</table>`;
-    return page('Conditions juridiques et financières', body, {actif:'Conditions juridiques et financières', num:9});
+    return page('Conditions juridiques et financières', body, {actif:'Conditions juridiques et financières', num:num||9});
   }
 
   function pagePhotos(o, photos){
@@ -348,7 +362,7 @@
     } else {
       body = '<p class="ph">Plans à ajouter à la fiche du bien.</p>';
     }
-    return page('Plans', body, {actif:'Plans', num:10});
+    return page('Plans', body, {actif:'Plans', num:9});
   }
 
   function pageContact(o){
@@ -442,8 +456,8 @@
       .gp img{ width:100%; height:100%; object-fit:cover; }
       /* Page Plans : mise en page automatique selon le nombre (plans entiers, non rognés) */
       .plans-wrap{ display:grid; gap:6mm; height:100%; padding-top:2mm; }
-      .plans-1{ grid-template-columns:1fr; }
-      .plans-2{ grid-template-columns:1fr 1fr; }
+      .plans-1{ grid-template-columns:1fr; grid-template-rows:1fr; }
+      .plans-2{ grid-template-columns:1fr 1fr; grid-template-rows:1fr; }
       .plans-3{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
       .plans-3 .gp2:first-child{ grid-column:1 / -1; }
       .plans-4{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
@@ -481,7 +495,7 @@
           var lat=parseFloat(el.dataset.lat), lon=parseFloat(el.dataset.lon);
           if(isNaN(lat)||isNaN(lon)) return;
           var t=tuiles(el.dataset.variant);
-          var map=L.map(el,{zoomControl:false,attributionControl:true,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false}).setView([lat,lon],t.zoom);
+          var map=L.map(el,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false}).setView([lat,lon],t.zoom);
           var opts={attribution:t.attribution,maxZoom:19};
           if(t.sub) opts.subdomains=t.sub;
           L.tileLayer(t.url,opts).addTo(map);
@@ -532,8 +546,8 @@
       pageEquipements(o),
       pageSurfaces(o),
       pagePhotos(o, photos),
-      pageConditions(o),
       aDesPlans ? pagePlans(o, photos) : '',
+      pageConditions(o, aDesPlans ? 10 : 9),
       pageContact(o),
     ].join('');
 
