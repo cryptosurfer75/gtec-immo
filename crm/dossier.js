@@ -538,21 +538,18 @@
   }
 
   // -- Assemblage + ouverture --------------------------------------------------
-  async function generer(offreId){
-    if(!offreId){ alert('Aucun bien sélectionné.'); return; }
-    let data;
-    try{ data = await charger(offreId); }
-    catch(e){ alert('Impossible de charger le bien : '+(e.message||e)); return; }
-    const { o, photos } = data;
-
-    // Coordonnées du bien (utilisées seulement si aucune carte n'a été importée à la main)
+  // Charge le bien + géocodage éventuel (commun à l'aperçu et au lien web)
+  async function preparer(offreId){
+    const { o, photos } = await charger(offreId);
     let geo = null;
     if(!o.carte_plan_url || !o.carte_aerienne_url){ geo = await geocoder(o); }
+    return { o, photos, geo };
+  }
 
-    // La page « Plans » n'est générée que si au moins une photo de plan est jointe au bien.
+  // Construit le document HTML complet. shared=true → version « client » sans barre d'outils.
+  function construireDoc(o, photos, geo, shared){
     const aDesPlans = Array.isArray(o.plans_urls) && o.plans_urls.filter(Boolean).length > 0;
     SECTIONS = aDesPlans ? SECTIONS_AVEC_PLANS.slice() : SECTIONS_AVEC_PLANS.filter(s=>s!=='Plans');
-
     const pages = [
       pageCouverture(o),
       pageSommaire(),
@@ -566,10 +563,18 @@
       pageConditions(o, aDesPlans ? 10 : 9),
       pageContact(o),
     ].join('');
-
     const titre = `Dossier — ${o.titre || typeLabel(o.type_bien)} ${o.ville||''}`.trim();
+    const toolbar = shared ? '' : `<div class="toolbar">
+          <b>${esc(titre)}</b>
+          <div class="acts">
+            <button class="btn-print" onclick="window.print()">📄 Enregistrer en PDF / Imprimer</button>
+            <button class="btn-close" onclick="window.close()">Fermer</button>
+          </div>
+        </div>`;
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${esc(titre)}</title>
+      <link rel="icon" href="https://gtec-immobilier.fr/favicon.png">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -577,21 +582,63 @@
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
       <style>${styles()}</style></head>
       <body>
-        <div class="toolbar">
-          <b>${esc(titre)}</b>
-          <div class="acts">
-            <button class="btn-print" onclick="window.print()">📄 Enregistrer en PDF / Imprimer</button>
-            <button class="btn-close" onclick="window.close()">Fermer</button>
-          </div>
-        </div>
+        ${toolbar}
         <div class="sheet">${pages}</div>
         <script>${initCartesScript()}<\/script>
       </body></html>`;
+    return { html, titre };
+  }
 
+  // Aperçu dans une nouvelle fenêtre (avec barre d'outils → impression / PDF)
+  async function generer(offreId){
+    if(!offreId){ alert('Aucun bien sélectionné.'); return; }
+    let p;
+    try{ p = await preparer(offreId); }
+    catch(e){ alert('Impossible de charger le bien : '+(e.message||e)); return; }
+    const { html } = construireDoc(p.o, p.photos, p.geo, false);
     const w = window.open('', '_blank');
     if(!w){ alert('La fenêtre a été bloquée. Autorisez les pop-ups pour ce site.'); return; }
     w.document.open(); w.document.write(html); w.document.close();
   }
 
-  window.GTEC_DOSSIER = { generer, genererDescriptif };
+  // Publie le dossier en ligne (version client, pleine qualité) et copie le lien.
+  // Lien stable par bien : on réécrit toujours le même fichier.
+  async function publierLien(offreId){
+    if(!offreId){ alert('Aucun bien sélectionné.'); return; }
+    let p;
+    try{ p = await preparer(offreId); }
+    catch(e){ alert('Impossible de charger le bien : '+(e.message||e)); return; }
+    const { html } = construireDoc(p.o, p.photos, p.geo, true);
+    const path = 'dossier-public/'+offreId+'.html';
+    try{
+      const blob = new Blob([html], { type:'text/html; charset=utf-8' });
+      const up = await sb.storage.from('offres').upload(path, blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
+      if(up.error) throw up.error;
+    }catch(e){ alert('Impossible de publier le dossier : '+(e.message||e)); return; }
+    const url = sb.storage.from('offres').getPublicUrl(path).data.publicUrl;
+    afficherLien(url);
+  }
+
+  // Petite fenêtre : lien copié, copier / ouvrir
+  function afficherLien(url){
+    try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(e){}
+    const old = document.getElementById('dos-lien-bg'); if(old) old.remove();
+    const bg = document.createElement('div'); bg.id='dos-lien-bg';
+    bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
+    bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
+      <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du dossier à envoyer au client</div>
+      <div style="padding:18px 20px">
+        <p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Le lien a été copié. Collez-le dans votre e-mail : le client verra le dossier en pleine qualité, sans rien télécharger.</p>
+        <input id="dos-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="padding:0 20px 18px;display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="var i=document.getElementById('dos-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#3D8074;color:#fff">📋 Copier</button>
+        <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
+        <button onclick="document.getElementById('dos-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
+      </div></div>`;
+    bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+    document.body.appendChild(bg);
+  }
+
+  window.GTEC_DOSSIER = { generer, genererDescriptif, publierLien };
 })();

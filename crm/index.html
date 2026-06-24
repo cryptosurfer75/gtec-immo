@@ -725,7 +725,8 @@ function btnAction(type,id,ref,n,pdfUrl){
     dossier = `<button type="button" class="btn btn-ghost btn-sm" title="1) Générer le dossier (aperçu à enregistrer en PDF sur l'ordinateur)" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
       + (pdfUrl
           ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
-          : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`);
+          : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`)
+      + `<button type="button" class="btn btn-ghost btn-sm" title="Lien web du dossier (pleine qualité) à envoyer au client" onclick="GTEC_DOSSIER.publierLien('${id}')">🔗</button>`;
   }
   return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
 }
@@ -1875,7 +1876,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
-<script src="dossier.js?v=3"></script>
+<script src="dossier.js?v=4"></script>
 <script src="avis-valeur.js?v=3"></script>
 <script src="teams.js?v=2"></script>
 </body>
