@@ -591,7 +591,7 @@ async function vueAvis(){
 }
 
 /* ===== DEMANDES (+ matching) ===== */
-let DEMANDES = [], DEM_ARCH = false, DEM_CPT = {}, DEM_LISTE = [];
+let DEMANDES = [], DEM_ARCH = false, DEM_CPT = {}, DEM_LISTE = [], DEM_TYPE = '';   // DEM_TYPE = '' → tous les types
 function ligneDemande(d){
   return `<tr style="cursor:pointer" onclick="editDemande('${d.id}')">
       <td style="text-align:center">${agentBadge(d.agent)}</td>
@@ -628,19 +628,32 @@ async function vueDemandes(){
     .order('date_demande',{ascending:false});
   if(error) return erreur(error);
   DEMANDES = data||[];
-  const archivees = DEMANDES.filter(d=>d.archive);
-  DEM_LISTE = DEMANDES.filter(d=> DEM_ARCH ? d.archive : !d.archive);
   DEM_CPT = await compteursActions('demande');
-  const corps = DEM_LISTE.length
-    ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  renderDemandes();
+}
+function setDemType(v){ DEM_TYPE=v; renderDemandes(); }
+function renderDemandes(){
+  const archivees = DEMANDES.filter(d=>d.archive);
+  const base = DEMANDES.filter(d=> DEM_ARCH ? d.archive : !d.archive);                    // selon archives/actives
+  // une demande peut avoir plusieurs types → elle apparaît dans chaque onglet correspondant
+  DEM_LISTE = DEM_TYPE ? base.filter(d=>(d.types_bien||[]).includes(DEM_TYPE)) : base;
+  const onglet = (v,label,col)=>{
+    const n = v ? base.filter(d=>(d.types_bien||[]).includes(v)).length : base.length;
+    return `<button type="button" onclick="setDemType('${v}')" style="border:1.5px solid ${col};border-bottom:none;border-radius:10px 10px 0 0;padding:9px 16px;font-weight:700;font-size:.86rem;cursor:pointer;${DEM_TYPE===v?`background:${col};color:#fff`:`background:#fff;color:${col}`}">${label} <span style="opacity:.8;font-weight:600">(${n})</span></button>`;
+  };
+  const tabs = `<div style="display:flex;gap:8px;padding:14px 16px 0;flex-wrap:wrap">${OFF_TABS.map(t=>onglet(t[0],t[1],t[2])).join('')}</div>`;
+  const accent = (OFF_TABS.find(t=>t[0]===DEM_TYPE)||OFF_TABS[0])[2];
+  const corps = `${tabs}
+    <div style="padding:14px 16px;border-top:2px solid ${accent};display:flex;align-items:center;gap:14px;flex-wrap:wrap">
          <input id="demandes-search" type="search" autocomplete="off" placeholder="🔎 Rechercher une demande (réf., client, type, ville, sens…)"
            oninput="filtrerDemandes(this.value)"
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
-         <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultats</span>
+         <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultat${DEM_LISTE.length>1?'s':''}</span>
        </div>
        <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Sens</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
-       <tbody id="demandes-tbody">${DEM_LISTE.map(ligneDemande).join('')}</tbody></table></div>`
-    : vide(DEM_ARCH?'Aucune demande archivée.':'Aucune demande pour le moment.');
+       <tbody id="demandes-tbody">${DEM_LISTE.length
+          ? DEM_LISTE.map(ligneDemande).join('')
+          : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ${DEM_TYPE?'dans cette catégorie':(DEM_ARCH?'archivée':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
   C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${DEM_LISTE.length} demande(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleDemande()">+ Ajouter une demande</button>
      <button class="btn btn-ghost btn-sm" onclick="DEM_ARCH=!DEM_ARCH;vueDemandes()">${DEM_ARCH?'← Demandes actives':'Archivées ('+archivees.length+')'}</button>`);
