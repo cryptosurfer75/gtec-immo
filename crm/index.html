@@ -214,6 +214,7 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
     <nav>
       <a data-vue="dashboard" class="on" onclick="aller('dashboard')">📊 Tableau de bord</a>
       <a data-vue="offres" onclick="aller('offres')">🏢 Offres</a>
+      <a data-vue="avis" onclick="aller('avis')">💶 Avis de valeur</a>
       <a data-vue="demandes" onclick="aller('demandes')">🔎 Demandes</a>
       <a data-vue="clients" onclick="aller('clients')">👤 Clients</a>
       <a data-vue="mandats" onclick="aller('mandats')">📄 Mandats</a>
@@ -389,11 +390,11 @@ function ouvrirApp(session){
 }
 
 /* ===== NAVIGATION ===== */
-const TITRES = {dashboard:'Tableau de bord', offres:'Offres', demandes:'Demandes', clients:'Clients', mandats:'Mandats'};
+const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats'};
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, demandes:vueDemandes, clients:vueClients, mandats:vueMandats}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -509,6 +510,70 @@ async function vueOffres(){
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
      <button class="btn btn-ghost btn-sm" onclick="OFF_ARCH=!OFF_ARCH;vueOffres()">${OFF_ARCH?'← Biens actifs':'Archivés ('+archivees.length+')'}</button>`);
+}
+
+/* ===== AVIS DE VALEUR ===== */
+let AVIS_BIENS = [];
+/* Un bien « a un avis » dès qu'au moins une donnée d'expertise est saisie */
+function avisAFait(o){
+  return (Array.isArray(o.av_loyer_lignes) && o.av_loyer_lignes.length>0)
+      || (Array.isArray(o.av_comparables) && o.av_comparables.length>0)
+      || o.av_valeur_estimee!=null || o.av_taux_rendement!=null;
+}
+function avisLigneHisto(o){
+  const r = window.GTEC_AVIS ? GTEC_AVIS.resume(o) : {valeur:null,m2:null};
+  const d = o.av_updated_at ? new Date(o.av_updated_at).toLocaleDateString('fr-FR') : '—';
+  const nom = esc(o.av_enseigne||o.titre||LABELS[o.type_bien]||'Bien');
+  return `<tr style="cursor:pointer" onclick="GTEC_AVIS.editer('${o.id}')">
+      <td>${d}</td>
+      <td>${refBadge(o.reference, o.type_bien)}</td>
+      <td><b>${nom}</b></td>
+      <td>${esc(o.ville||'—')}</td>
+      <td>${r.valeur!=null?euro(r.valeur)+' HDHH':'—'}${r.m2!=null?` <small style="color:var(--gris-fonce)">(${euro(r.m2)}/m²)</small>`:''}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" title="Modifier la fiche d'expertise" onclick="GTEC_AVIS.editer('${o.id}')">💶 Modifier</button>
+        <button class="btn btn-ghost btn-sm" title="Ouvrir l'aperçu (à enregistrer en PDF)" onclick="GTEC_AVIS.generer('${o.id}')">📄 Aperçu</button>
+      </td></tr>`;
+}
+function avisLigneBien(o){
+  const fait = avisAFait(o);
+  return `<tr style="cursor:pointer" onclick="GTEC_AVIS.editer('${o.id}')">
+      <td>${refBadge(o.reference, o.type_bien)}</td>
+      <td><b>${esc(o.titre||LABELS[o.type_bien]||'Bien')}</b></td>
+      <td>${esc(o.ville||'—')}</td>
+      <td>${o.surface_m2?esc(o.surface_m2)+' m²':'—'}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="GTEC_AVIS.editer('${o.id}')">💶 ${fait?'Ouvrir l’avis':'Créer l’avis'}</button></td></tr>`;
+}
+function filtrerAvisBiens(q){
+  const t = normTxt(q).trim();
+  const liste = t ? AVIS_BIENS.filter(o=>offreRecherche(o).includes(t)) : AVIS_BIENS;
+  const tb = document.getElementById('avis-biens-tbody');
+  if(tb) tb.innerHTML = liste.length ? liste.map(avisLigneBien).join('')
+    : `<tr><td colspan="5" style="text-align:center;color:var(--gris-fonce);padding:18px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
+}
+async function vueAvis(){
+  charge();
+  const { data, error } = await sb.from('offres')
+    .select('*, clients(type_client,nom,prenom,raison_sociale)')
+    .order('created_at',{ascending:false});
+  if(error) return erreur(error);
+  const all = (data||[]).filter(o=>!o.archive);
+  AVIS_BIENS = all;
+  const histo = all.filter(avisAFait)
+    .sort((a,b)=>String(b.av_updated_at||b.created_at||'').localeCompare(String(a.av_updated_at||a.created_at||'')));
+  const histoCorps = histo.length
+    ? `<div class="tscroll"><table><thead><tr><th>Mis à jour</th><th>Réf.</th><th>Bien</th><th>Ville</th><th>Valeur retenue</th><th>Actions</th></tr></thead>
+       <tbody>${histo.map(avisLigneHisto).join('')}</tbody></table></div>`
+    : vide('Aucun avis de valeur réalisé pour le moment. Choisissez un bien ci-dessous pour en démarrer un.');
+  const biensCorps = `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair)">
+         <input id="avis-biens-search" type="search" autocomplete="off" placeholder="🔎 Choisir un bien pour démarrer ou ouvrir son avis de valeur…"
+           oninput="filtrerAvisBiens(this.value)"
+           style="width:100%;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit"></div>
+       <div class="tscroll"><table><thead><tr><th>Réf.</th><th>Bien</th><th>Ville</th><th>Surface</th><th>Avis de valeur</th></tr></thead>
+       <tbody id="avis-biens-tbody">${all.map(avisLigneBien).join('')}</tbody></table></div>`;
+  C().innerHTML = panel('Avis de valeur réalisés', `${histo.length} avis`, histoCorps)
+    + `<div style="height:18px"></div>`
+    + panel('Démarrer ou ouvrir un avis de valeur', `${all.length} bien(s)`, biensCorps);
 }
 
 /* ===== DEMANDES (+ matching) ===== */

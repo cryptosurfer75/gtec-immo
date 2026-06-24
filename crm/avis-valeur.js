@@ -683,7 +683,8 @@
       av_valeur_estimee:gn('av-valest'),
       av_comparables:collect('#av-comp-rows'),
       av_zone_chalandise:g('av-chalandise'), av_accessibilite:g('av-acces'),
-      av_commentaire_marche:g('av-commarche'), av_commentaire_conclusion:g('av-ccl')
+      av_commentaire_marche:g('av-commarche'), av_commentaire_conclusion:g('av-ccl'),
+      av_updated_at:new Date().toISOString()
     };
     try{
       const { error } = await sb.from('offres').update(payload).eq('id', A.id);
@@ -693,6 +694,9 @@
     if(genApres) generer(id);
   }
 
-  window.GTEC_AVIS = { generer, editer,
+  // Résumé chiffré d'un bien (pour l'onglet « Avis de valeur » : historique)
+  function resume(o){ const f = finance(o); return { valeur:f.valeurRetenue, m2:f.valeurM2 }; }
+
+  window.GTEC_AVIS = { generer, editer, resume,
     _calc, _addLoyer, _addComp, _delLoyer, _delComp, _fermer:fermer, _save:save };
 })();
