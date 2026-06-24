@@ -1347,6 +1347,13 @@ function thumbMini(src,onDel){
     <button type="button" onclick="${onDel}" title="Supprimer"
       style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border:none;border-radius:50%;background:#b3261e;color:#fff;cursor:pointer;font-size:14px;line-height:22px">×</button></div>`;
 }
+/* Vignette de PLAN : on montre le plan EN ENTIER (contain), pas rogné comme une miniature photo */
+function thumbPlan(src,onDel){
+  return `<div style="position:relative;display:inline-block;margin:4px">
+    <img src="${esc(src)}" style="height:120px;width:170px;object-fit:contain;background:#eef0f2;border:1px solid var(--gris-clair);border-radius:6px;display:block">
+    <button type="button" onclick="${onDel}" title="Supprimer"
+      style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border:none;border-radius:50%;background:#b3261e;color:#fff;cursor:pointer;font-size:14px;line-height:22px">×</button></div>`;
+}
 function apercuCarte(n){
   const f=document.getElementById('o-carte'+n).files[0];
   if(n===1){ CARTE1_FILE=f||null; CARTE1_REMOVE=false; } else { CARTE2_FILE=f||null; CARTE2_REMOVE=false; }
@@ -1413,7 +1420,7 @@ function renderMediaDossier(){
     ? `<div style="display:flex;flex-wrap:wrap">${DOSSIER_PHOTOS.map((p,i)=>thumbPhoto(p,i)).join('')}</div>
        <p style="font-size:.8rem;color:var(--gris-fonce);margin:6px 0 0">Le numéro détermine la place dans le dossier : <b>1</b> en haut à gauche, <b>2</b> en haut à droite, <b>3</b> en bas à gauche, <b>4</b> en bas à droite. Utilisez ◀ ▶ pour réordonner.</p>`
     : '<span style="color:#888;font-style:italic">aucune photo</span>';
-  const galPl = DOSSIER_PLANS.map((u,i)=>thumbMini(u,`supprimerPlanDossier(${i})`)).join('') || '<span style="color:#888;font-style:italic">aucun plan</span>';
+  const galPl = DOSSIER_PLANS.map((u,i)=>thumbPlan(u,`supprimerPlanDossier(${i})`)).join('') || '<span style="color:#888;font-style:italic">aucun plan</span>';
   const nbHeic = DOSSIER_PHOTOS.filter(p=>/\.(heic|heif)$/i.test(p.url||'')).length;
   const repBtn = nbHeic ? `<div style="margin:8px 0">
       <button type="button" class="btn btn-ghost btn-sm" onclick="reparerPhotosHeic()">🔧 Convertir ${nbHeic} photo(s) HEIC en JPEG</button>
