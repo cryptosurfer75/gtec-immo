@@ -462,7 +462,8 @@
       .plans-3 .gp2:first-child{ grid-column:1 / -1; }
       .plans-4{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
       .gp2{ background:#eef0f2; border-radius:3px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-      .gp2 img{ width:100%; height:100%; object-fit:contain; }
+      /* Plan affiché ENTIER : on le réduit jusqu'à tenir dans la case, jamais rogné ni zoomé */
+      .gp2 img{ max-width:100%; max-height:100%; width:auto; height:auto; display:block; }
       /* Contact */
       .contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; gap:6mm; }
       .contact-logo-block{ display:flex; flex-direction:column; align-items:center; margin-top:26mm; }
