@@ -760,7 +760,8 @@ async function supprimerAction(id, cibleType, cibleId){
 }
 
 /* ===== CLIENTS ===== */
-let CLIENTS_FULL = [];
+let CLIENTS_FULL = [], CLI_VUE = 'part';   // 'part' = particuliers (bleu) · 'soc' = sociétés (vert)
+const clientsDuType = () => CLIENTS_FULL.filter(c => CLI_VUE==='soc' ? c.type_client==='societe' : c.type_client!=='societe');
 /* normalisation pour la recherche : minuscules + sans accents */
 const normTxt = s => (s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function ligneClient(c){
@@ -781,32 +782,50 @@ function clientRecherche(c){
 }
 function filtrerClients(q){
   const t = normTxt(q).trim();
-  const liste = t ? CLIENTS_FULL.filter(c=>clientRecherche(c).includes(t)) : CLIENTS_FULL;
+  const base = clientsDuType();
+  const liste = t ? base.filter(c=>clientRecherche(c).includes(t)) : base;
   const tb = document.getElementById('clients-tbody');
   if(tb) tb.innerHTML = liste.length
     ? liste.map(ligneClient).join('')
-    : `<tr><td colspan="6" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun client ne correspond à « ${esc(q)} ».</td></tr>`;
+    : `<tr><td colspan="6" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun${CLI_VUE==='soc'?'e société':' client'} ne correspond${t?' à « '+esc(q)+' »':''}.</td></tr>`;
   const cnt = document.getElementById('clients-count');
   if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
 }
+function setCliVue(v){ CLI_VUE=v; renderClients(); }
 async function vueClients(){
   charge();
   const { data, error } = await sb.from('clients').select('*');
   if(error) return erreur(error);
   /* tri alphabétique sur le nom affiché (société ou particulier), insensible aux accents/casse */
   CLIENTS_FULL = (data||[]).sort((a,b)=> nomClient(a).localeCompare(nomClient(b),'fr',{sensitivity:'base'}));
-  const corps = CLIENTS_FULL.length
-    ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-         <input id="clients-search" type="search" autocomplete="off" placeholder="🔎 Rechercher un client (nom, société, e-mail, téléphone…)"
+  renderClients();
+}
+/* Affiche le fichier selon l'onglet courant (Clients bleu / Sociétés vert) — sans recharger la base */
+function renderClients(){
+  const nPart = CLIENTS_FULL.filter(c=>c.type_client!=='societe').length;
+  const nSoc  = CLIENTS_FULL.filter(c=>c.type_client==='societe').length;
+  const estSoc = CLI_VUE==='soc';
+  const liste = clientsDuType();
+  const onglet = (v,label,n,col,colD) =>
+    `<button type="button" onclick="setCliVue('${v}')" style="border:1.5px solid ${col};border-bottom:none;border-radius:10px 10px 0 0;padding:9px 20px;font-weight:700;font-size:.9rem;cursor:pointer;${CLI_VUE===v?`background:${col};color:#fff`:`background:#fff;color:${colD}`}">${label} <span style="opacity:.8;font-weight:600">(${n})</span></button>`;
+  const tabs = `<div style="display:flex;gap:8px;padding:14px 16px 0">
+      ${onglet('part','👤 Clients',nPart,'var(--bleu)','var(--bleu)')}
+      ${onglet('soc','🏢 Sociétés',nSoc,'var(--teal)','var(--teal-dark)')}
+    </div>`;
+  const accent = estSoc ? 'var(--teal)' : 'var(--bleu)';
+  const corps = `${tabs}
+    <div style="padding:14px 16px;border-top:2px solid ${accent};display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+         <input id="clients-search" type="search" autocomplete="off" placeholder="🔎 Rechercher ${estSoc?'une société':'un client'} (nom, e-mail, téléphone…)"
            oninput="filtrerClients(this.value)"
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
-         <span id="clients-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${CLIENTS_FULL.length} résultats</span>
+         <span id="clients-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${liste.length} résultat${liste.length>1?'s':''}</span>
        </div>
-       <div class="tscroll"><table><thead><tr><th>Nom</th><th>Contact</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead>
-       <tbody id="clients-tbody">${CLIENTS_FULL.map(ligneClient).join('')}</tbody></table></div>`
-    : vide('Aucun client pour le moment.');
-  C().innerHTML = panel('Fichier clients', `${CLIENTS_FULL.length} client(s)`, corps,
-    `<button class="btn btn-sm" onclick="nouveauClient()">+ Ajouter un client</button>`);
+       <div class="tscroll"><table><thead><tr><th>${estSoc?'Société':'Nom'}</th><th>Contact</th><th>Fonction</th><th>Rôle</th><th>Téléphone</th><th>E-mail</th></tr></thead>
+       <tbody id="clients-tbody">${liste.length
+          ? liste.map(ligneClient).join('')
+          : `<tr><td colspan="6" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun${estSoc?'e société':' client'} pour le moment.</td></tr>`}</tbody></table></div>`;
+  C().innerHTML = panel('Fichier clients / sociétés', `${CLIENTS_FULL.length} contact(s)`, corps,
+    `<button class="btn btn-sm" onclick="nouveauClient('${estSoc?'societe':'particulier'}')">+ Ajouter ${estSoc?'une société':'un client'}</button>`);
 }
 
 /* ===== MANDATS ===== */
@@ -1128,7 +1147,7 @@ async function save(table, id, payload){
 async function del(table, id){ const res = await sb.from(table).delete().eq('id', id); if(res.error) throw res.error; }
 
 /* ----- CLIENT ----- */
-function nouveauClient(){ formClient(); }
+function nouveauClient(type){ formClient(type?{type_client:type}:undefined); }
 async function editClient(id){
   const rec = CLIENTS_FULL.find(c=>c.id===id);
   const [off, dem] = await Promise.all([
