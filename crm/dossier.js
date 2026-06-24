@@ -615,8 +615,10 @@
       const up = await sb.storage.from('offres').upload(path, blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
       if(up.error) throw up.error;
     }catch(e){ alert('Impossible de publier le dossier : '+(e.message||e)); return; }
-    const url = sb.storage.from('offres').getPublicUrl(path).data.publicUrl;
-    afficherLien(url);
+    // Le client ouvre la visionneuse sur le domaine GTEC (qui sert le vrai HTML) ;
+    // elle récupère puis affiche le dossier déposé dans le stockage.
+    const lien = 'https://gtec-immobilier.fr/d/?id=' + encodeURIComponent(offreId);
+    afficherLien(lien);
   }
 
   // Petite fenêtre : lien copié, copier / ouvrir
