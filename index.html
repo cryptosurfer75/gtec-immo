@@ -441,7 +441,7 @@ function prixHtml(b){
 }
 
 /* Une carte */
-const ETATS = {neuf:'Neuf', bon:'Bon état', a_renover:'À rénover'};
+const ETATS = {neuf:'Neuf', etat_neuf:'État neuf', bon:'Bon état', a_renover:'À rénover'};
 function carte(b){
   const photo = (b.offre_photos||[]).sort((a,c)=>(c.est_principale-a.est_principale)||(a.ordre-c.ordre))[0];
   const imgUrl = b.cover_url || (photo && photo.url);
@@ -506,7 +506,7 @@ async function charger(){
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const { data, error } = await sb
     .from('offres')
-    .select('id,reference,titre,type_bien,ville,code_postal,secteur,transaction,prix_vente,loyer_annuel_m2,loyer_type,charges,depot_garantie,honoraires,description,surface_m2,surface_min_m2,surface_max_m2,divisible,etage,nb_niveaux,annee,dpe,equipements,cover_url, offre_photos(url,est_principale,ordre)')
+    .select('id,reference,titre,type_bien,ville,code_postal,secteur,transaction,prix_vente,loyer_annuel_m2,loyer_type,charges,depot_garantie,honoraires,description,surface_m2,surface_min_m2,surface_max_m2,divisible,etat,etage,nb_niveaux,annee,dpe,equipements,cover_url, offre_photos(url,est_principale,ordre)')
     .eq('publie', true)
     .eq('statut', 'disponible')
     .eq('archive', false)

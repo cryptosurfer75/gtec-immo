@@ -1566,7 +1566,7 @@ function formOffre(rec){
     ${fSel('o-secteur','Secteur / quartier',rec.secteur||'',[['','—'],...(rec.secteur&&!SECTEURS.includes(rec.secteur)?[[rec.secteur,rec.secteur]]:[]),...SECTEURS.map(s=>[s,s])],{full:true})}
     ${fSep('Surfaces & caractéristiques')}
     ${fNum('o-surf','Surface (m²)',rec.surface_m2)}
-    ${fSel('o-etat','État',rec.etat||'',[['','—'],['neuf','Neuf'],['bon','Bon état'],['a_renover','À rénover']])}
+    ${fSel('o-etat','État',rec.etat||'',[['','—'],['neuf','Neuf'],['etat_neuf','État neuf'],['bon','Bon état'],['a_renover','À rénover']])}
     ${fNum('o-smin','Surface mini (si divisible)',rec.surface_min_m2)}
     ${fNum('o-smax','Surface maxi',rec.surface_max_m2)}
     ${fNum('o-lots','Nombre de lots',rec.nb_lots)}
