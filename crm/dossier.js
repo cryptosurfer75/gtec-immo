@@ -366,7 +366,7 @@
       .sheet{ padding:24px; display:flex; flex-direction:column; align-items:center; gap:20px; }
       .pg{ width:280mm; height:202mm; background:#fff; position:relative; overflow:hidden;
         box-shadow:0 6px 24px rgba(0,0,0,.35); display:flex; flex-direction:column; }
-      .pg-h{ display:flex; align-items:center; justify-content:space-between; margin:0 14mm 5mm; padding:14mm 0 4mm; border-bottom:0.35mm solid #d9dee3; }
+      .pg-h{ display:flex; align-items:center; justify-content:space-between; margin:0 14mm 5mm; padding:14mm 0 4mm; border-bottom:0.8mm solid var(--teal); }
       .pg-h h1{ font-size:30pt; font-weight:600; margin:0; color:#222; }
       .pg-logo{ height:22mm; }
       .logo-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:1.5mm; }
@@ -374,8 +374,9 @@
       .pg-body{ flex:1; padding:2mm 14mm; }
       .pg-f{ display:flex; align-items:flex-end; justify-content:space-between; padding:0 12mm 7mm; }
       .pg-f .nav{ display:flex; gap:6px; flex:1; }
-      .navcell{ flex:1; text-align:center; }
-      .navcell span{ font-size:7.5pt; color:#444; display:block; margin-bottom:3px; line-height:1.1; }
+      .navcell{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
+      .navcell span{ font-size:7.5pt; color:#444; line-height:1.1; margin-bottom:3px; text-align:center;
+        min-height:2.2em; display:flex; align-items:flex-end; justify-content:center; }
       .navcell i{ display:block; height:7px; background:#bdbdbd; border-radius:2px; }
       .navcell i.on{ background:var(--teal); }
       .pg-num{ font-size:11pt; color:#9aa0a6; padding-left:10px; }
