@@ -179,9 +179,14 @@
     const photo = o.cover_url || '';
     const surf = o.surface_m2 ? `${o.surface_m2} m²` : '';
     const niv = o.etage ? ` en ${esc(o.etage)}` : '';
+    const c = (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg cover">
       <div class="cover-top">
-        <div class="cover-cat">${typeLabel(o.type_bien)}<br><b>${transactionLabel(o.transaction)}</b></div>
+        <div class="cover-coord">
+          <div class="cc-nom">${esc(c.nom)}</div>
+          <div class="cc-tel">${esc(c.tel)}</div>
+          <div class="cc-mail">${esc(c.mail)}</div>
+        </div>
         ${logoBlock('cover-logo')}
       </div>
       <div class="cover-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo de couverture à ajouter</div>'}</div>
@@ -379,7 +384,10 @@
       /* Couverture */
       .cover{ padding:0; }
       .cover-top{ display:flex; justify-content:space-between; align-items:flex-start; padding:10mm 12mm 0; }
-      .cover-cat{ font-size:20pt; color:#222; line-height:1.15; } .cover-cat b{ color:#222; }
+      .cover-coord{ line-height:1.35; color:#222; }
+      .cover-coord .cc-nom{ font-size:15pt; font-weight:700; color:var(--navy); }
+      .cover-coord .cc-tel{ font-size:13pt; font-weight:600; }
+      .cover-coord .cc-mail{ font-size:12pt; color:var(--teal); }
       .cover-logo{ height:22mm; }
       .cover-img{ flex:1; margin:6mm 0 0; background:#eef0f2; }
       .cover-img img{ width:100%; height:120mm; object-fit:cover; display:block; }
