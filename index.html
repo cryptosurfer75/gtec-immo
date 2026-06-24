@@ -103,13 +103,10 @@ section{padding:64px 0}
   background:linear-gradient(135deg,var(--teal-dark),var(--teal));color:rgba(255,255,255,.55);font-size:3.2rem}
 .card .photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .card:hover .photo img{transform:scale(1.06)}
-.badge{position:absolute;top:13px;left:13px;background:#fff;color:var(--teal-dark);font-size:.7rem;font-weight:700;
-  padding:6px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.fav{position:absolute;top:11px;right:11px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.92);
-  cursor:pointer;font-size:1rem;line-height:34px;text-align:center;transition:.15s;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.fav:hover{transform:scale(1.12)}.fav.on{background:var(--teal);color:#fff}
-.typetag{position:absolute;bottom:13px;left:13px;background:rgba(42,51,56,.72);color:#fff;font-size:.74rem;font-weight:600;
-  padding:5px 11px;border-radius:8px;backdrop-filter:blur(4px)}
+.ref-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fav{flex:none;width:30px;height:30px;border:1.5px solid var(--gris-clair);border-radius:50%;background:#fff;color:var(--teal);
+  cursor:pointer;font-size:.95rem;line-height:1;padding:0;transition:.15s}
+.fav:hover{transform:scale(1.12);border-color:var(--teal)}.fav.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 .card .body{padding:17px 17px 18px;display:flex;flex-direction:column;gap:9px;flex:1}
 .card .ref{font-size:.72rem;color:var(--teal);font-weight:700;letter-spacing:.02em}
 .card h3{font-size:1.08rem;font-weight:700;line-height:1.28}
@@ -446,15 +443,13 @@ function carte(b){
   const photo = (b.offre_photos||[]).sort((a,c)=>(c.est_principale-a.est_principale)||(a.ordre-c.ordre))[0];
   const imgUrl = b.cover_url || (photo && photo.url);
   const img = imgUrl ? `<img src="${imgUrl}" alt="">` : (ICONS[b.type_bien]||'🏢');
-  const trans = b.transaction==='vente' ? 'À vendre' : b.transaction==='location' ? 'À louer' : 'Vente / Location';
   return `<div class="card">
-    <div class="photo">${img}
-      <span class="badge">${trans}</span>
-      <button class="fav" title="Ajouter aux favoris" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'♥':'♡'">♡</button>
-      <span class="typetag">${ICONS[b.type_bien]||''} ${LABELS[b.type_bien]||''}</span>
-    </div>
+    <div class="photo">${img}</div>
     <div class="body">
-      <div class="ref">${b.reference}</div>
+      <div class="ref-row">
+        <span class="ref">${b.reference}</span>
+        <button class="fav" title="Ajouter aux favoris" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'♥':'♡'">♡</button>
+      </div>
       <h3>${b.titre||LABELS[b.type_bien]||'Bien'}</h3>
       <div class="ville">📍 ${localitePublique(b, false)}</div>
       <div class="meta">
