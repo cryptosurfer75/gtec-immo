@@ -712,12 +712,11 @@ function btnAction(type,id,ref,n,pdfUrl){
     dossier = `<button type="button" class="btn btn-ghost btn-sm" title="1) Générer le dossier (aperçu à enregistrer en PDF sur l'ordinateur)" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
       + (pdfUrl
           ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
-            + `<button type="button" class="btn btn-ghost btn-sm" title="Remplacer le dossier rattaché (écrase l'ancien)" onclick="rattacherDossierPdf('${id}')">♻️</button>`
           : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`);
   }
   return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
 }
-/* Rattache (ou remplace) le dossier PDF d'un bien en un clic, depuis le tableau — sans ouvrir la fiche. Écrase l'ancien. */
+/* Rattache le dossier PDF (enregistré sur l'ordinateur) à un bien, en un clic depuis le tableau — sans ouvrir la fiche. */
 function rattacherDossierPdf(offreId){
   let inp = document.getElementById('dossier-pdf-picker');
   if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,.pdf'; inp.id='dossier-pdf-picker'; inp.style.display='none'; document.body.appendChild(inp); }
