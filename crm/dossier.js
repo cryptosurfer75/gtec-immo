@@ -178,20 +178,10 @@
   }
 
   // -- Les pages du dossier ----------------------------------------------------
-  // Couleurs du badge référence par type de bien (alignées sur le CRM)
-  const TYPE_COULEUR = {
-    bureaux:            {bg:'rgba(30,80,140,.14)',  color:'#1e508c'},
-    local_commercial:   {bg:'rgba(46,125,50,.15)',  color:'#2e7d32'},
-    fonds_de_commerce:  {bg:'rgba(46,125,50,.15)',  color:'#2e7d32'},
-    activite:           {bg:'rgba(200,160,0,.20)',  color:'#8a6d00'},
-    entrepot_logistique:{bg:'rgba(90,100,112,.16)', color:'#566270'},
-    terrain:            {bg:'rgba(124,58,237,.15)', color:'#6d28d9'}
-  };
-  // Badge « GTEC-0007 » (pastille arrondie colorée selon le type, comme dans le CRM)
+  // Badge « GTEC-0007 » : pastille centrée dans le bandeau vert du bas, liseré + texte blancs
   function refBadge(o){
     if(!o || !o.reference) return '';
-    const c = TYPE_COULEUR[o.type_bien] || {bg:'rgba(61,128,116,.14)', color:'#2f6359'};
-    return `<span class="cover-ref" style="background:${c.bg};color:${c.color}">${esc(o.reference)}</span>`;
+    return `<span class="cover-ref">${esc(o.reference)}</span>`;
   }
 
   function pageCouverture(o){
@@ -206,12 +196,12 @@
           <div class="cc-tel">${esc(c.tel)}</div>
           <div class="cc-mail">${esc(c.mail)}</div>
         </div>
-        ${refBadge(o)}
         ${logoBlock('cover-logo')}
       </div>
       <div class="cover-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo de couverture à ajouter</div>'}</div>
       <div class="cover-band">
         <div class="cover-ville">${esc((o.ville||'').toUpperCase())}</div>
+        ${refBadge(o)}
         <div class="cover-meta">${typeLabel(o.type_bien)} - ${transactionLabel(o.transaction)}<br>${esc(surf)}${niv}</div>
       </div>
     </section>`;
@@ -432,8 +422,8 @@
       .cover-coord .cc-tel{ font-size:13pt; font-weight:600; }
       .cover-coord .cc-mail{ font-size:12pt; color:var(--teal); }
       .cover-logo{ height:22mm; }
-      .cover-ref{ align-self:center; font-size:15pt; font-weight:700; padding:2.5mm 6mm; border-radius:30px;
-        border:1px solid rgba(42,51,56,.14); white-space:nowrap; letter-spacing:.01em; }
+      .cover-ref{ align-self:center; font-size:16pt; font-weight:700; padding:2mm 7mm; border-radius:30px;
+        border:1.5px solid #fff; color:#fff; background:transparent; white-space:nowrap; letter-spacing:.02em; }
       .cover-img{ flex:1; margin:6mm 0 0; background:#eef0f2; }
       .cover-img img{ width:100%; height:120mm; object-fit:cover; display:block; }
       .cover-img .ph{ height:120mm; display:flex; align-items:center; justify-content:center; color:#9aa0a6; font-size:14pt; }
