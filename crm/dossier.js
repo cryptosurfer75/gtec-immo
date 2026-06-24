@@ -423,8 +423,8 @@
       .cover-coord .cc-tel{ font-size:13pt; font-weight:600; }
       .cover-coord .cc-mail{ font-size:12pt; color:var(--teal); }
       .cover-logo{ height:22mm; }
-      .cover-ref{ align-self:center; font-size:16pt; font-weight:700; padding:2mm 7mm; border-radius:30px;
-        border:1.5px solid #fff; color:#fff; background:transparent; white-space:nowrap; letter-spacing:.02em; }
+      .cover-ref{ align-self:center; font-size:11.5pt; font-weight:700; padding:1.3mm 4.5mm; border-radius:30px;
+        border:1px solid #fff; color:#fff; background:transparent; white-space:nowrap; letter-spacing:.02em; }
       .cover-img{ flex:1; margin:6mm 0 0; background:#eef0f2; }
       .cover-img img{ width:100%; height:120mm; object-fit:cover; display:block; }
       .cover-img .ph{ height:120mm; display:flex; align-items:center; justify-content:center; color:#9aa0a6; font-size:14pt; }
