@@ -24,7 +24,7 @@
   };
   const CONTACT_DEFAUT = AGENTS.FB;   // anciens biens sans agent renseigné
   const SECTIONS_AVEC_PLANS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',
-                    'Conditions juridiques et financières','Photos','Plans'];
+                    'Photos','Conditions juridiques et financières','Plans'];
   // La page « Plans » n'apparaît que si une photo de plan est jointe au bien ;
   // SECTIONS (sommaire + navigation) est recalculé à chaque génération.
   let SECTIONS = SECTIONS_AVEC_PLANS.slice();
@@ -314,7 +314,7 @@
     ];
     if(o.honoraires) rows.push(['Honoraires preneur', o.honoraires]);
     const body = `<table class="cond">${rows.map(r=>`<tr><th>${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')}</table>`;
-    return page('Conditions juridiques et financières', body, {actif:'Conditions juridiques et financières', num:10});
+    return page('Conditions juridiques et financières', body, {actif:'Conditions juridiques et financières', num:9});
   }
 
   function pagePhotos(o, photos){
@@ -339,7 +339,7 @@
     } else {
       body = '<p class="ph">Plans à ajouter à la fiche du bien.</p>';
     }
-    return page('Plans', body, {actif:'Plans', num:9});
+    return page('Plans', body, {actif:'Plans', num:10});
   }
 
   function pageContact(o){
@@ -509,8 +509,8 @@
       pageEquipements(o),
       pageSurfaces(o),
       pagePhotos(o, photos),
-      aDesPlans ? pagePlans(o, photos) : '',
       pageConditions(o),
+      aDesPlans ? pagePlans(o, photos) : '',
       pageContact(o),
     ].join('');
 
