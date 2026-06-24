@@ -357,7 +357,7 @@
     return `
       :root{ --navy:#1A2738; --teal:#3D8074; --teal-d:#2f6359; --ink:#1f2a37; }
       *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-      html,body{ margin:0; padding:0; background:#444; font-family:'Segoe UI',Arial,sans-serif; color:var(--ink); }
+      html,body{ margin:0; padding:0; background:#444; font-family:'Inter','Segoe UI',Arial,sans-serif; color:var(--ink); }
       .toolbar{ position:sticky; top:0; z-index:10; background:var(--navy); color:#fff; padding:12px 20px;
         display:flex; gap:12px; align-items:center; justify-content:space-between; }
       .toolbar b{ font-size:15px; } .toolbar .acts{ display:flex; gap:10px; }
@@ -517,6 +517,9 @@
     const titre = `Dossier — ${o.titre || typeLabel(o.type_bien)} ${o.ville||''}`.trim();
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
       <title>${esc(titre)}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
       <style>${styles()}</style></head>
