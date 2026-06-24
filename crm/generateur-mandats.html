@@ -188,7 +188,11 @@
     </div>
     <label>Lots / description complémentaire</label><textarea id="bienLots" placeholder="ex : lots 8 et 14, R+1, 225 m² chacun"></textarea>
     <label>Usage des locaux</label><input id="bienUsage" placeholder="bureaux / activité / stockage">
-    <label>Références cadastrales</label><input id="bienCadastre" placeholder="section AC n° 15 ; ZE n° 51">
+    <label>Références cadastrales</label>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="bienCadastre" placeholder="section AC n° 15 ; ZE n° 51" style="flex:1">
+      <button type="button" class="secondary" style="white-space:nowrap;flex:none" onclick="ouvrirCadastreBouton()" title="Ouvre le cadastre centré sur l'adresse du bien pour relever la parcelle">🗺️ Cadastre</button>
+    </div>
 
     <!-- ===== VENTE ===== -->
     <div class="grpVente">
@@ -392,15 +396,32 @@ async function chercherAdresses(q, el){
     fermerAuto();
     generer(); // met à jour l'aperçu tout de suite
     const lon=parseFloat(d.dataset.lon), lat=parseFloat(d.dataset.lat);
-    if(!isNaN(lon)&&!isNaN(lat)) ouvrirCadastre(lat,lon); // ouvre le cadastre centré sur le bien (à vérifier à la main)
+    if(!isNaN(lon)&&!isNaN(lat)){ BIEN_GEO={lat,lon}; ouvrirCadastre(lat,lon); } // mémorise + ouvre le cadastre centré sur le bien
   }));
 }
 
 // -------- Cadastre : ouvre l'explorateur officiel centré sur le bien pour vérifier et relever la parcelle --------
 // (window.open déclenché dans le clic = considéré comme une action utilisateur → pas bloqué par le navigateur)
 // Nom de fenêtre fixe « cadastreGTEC » → réutilise le même onglet à chaque nouvelle adresse (pas d'empilement d'onglets).
+let BIEN_GEO = null; // coordonnées du bien (renseignées via la liste d'adresses, sinon géocodées à la volée)
 function ouvrirCadastre(lat,lon){
   try{ window.open('https://cadastre.data.gouv.fr/map#19/'+lat+'/'+lon, 'cadastreGTEC'); }catch(e){}
+}
+// Bouton « Cadastre » : fonctionne MÊME quand l'adresse a été pré-remplie depuis le CRM (donc pas choisie dans la liste).
+// On ouvre l'onglet tout de suite (le clic = geste utilisateur → pas bloqué), puis on le recentre une fois l'adresse géocodée.
+async function ouvrirCadastreBouton(){
+  const adr=(document.getElementById('bienAdresse').value||'').trim();
+  const w=window.open('about:blank','cadastreGTEC');
+  let geo=BIEN_GEO;
+  if(!geo && adr){
+    try{
+      const r=await fetch('https://api-adresse.data.gouv.fr/search/?limit=1&q='+encodeURIComponent(adr));
+      const j=await r.json(); const f=(j.features||[])[0];
+      if(f&&f.geometry&&f.geometry.coordinates){ const c=f.geometry.coordinates; geo={lat:c[1],lon:c[0]}; BIEN_GEO=geo; }
+    }catch(e){}
+  }
+  if(geo && w){ w.location.href='https://cadastre.data.gouv.fr/map#19/'+geo.lat+'/'+geo.lon; }
+  else { if(w) w.close(); alert("Renseigne d'abord l'adresse du bien pour ouvrir le cadastre au bon endroit."); }
 }
 
 function generer(){
@@ -471,9 +492,10 @@ function generer(){
   let art5;
   if(isExcl){
     art5=`<h3>Article 5 — Durée du mandat et exclusivité</h3>`+
-      `<p>Le présent mandat est consenti <span class="strong">À TITRE EXCLUSIF pour une durée de SIX (6) mois</span> à compter de sa signature. Pendant toute cette durée, le MANDANT confie ${op.operN} du bien au seul MANDATAIRE et s'interdit de confier ${op.operN} à tout autre intermédiaire et de rechercher lui-même, directement ou indirectement, un ${op.role}.</p>`+
-      `<p>Conformément à l'article 78, alinéa 2, du décret n° 72-678 du 20 juillet 1972, passé un délai de trois mois à compter de sa signature, le présent mandat pourra être dénoncé à tout moment par chacune des parties, à charge pour celle qui entend y mettre fin d'en aviser l'autre quinze jours au moins à l'avance par lettre recommandée avec accusé de réception.</p>`+
-      `<p>À défaut de dénonciation, le mandat <span class="strong">prendra fin de plein droit au terme des six mois, sans tacite reconduction.</span></p>`;
+      `<p>Le présent mandat est consenti pour une durée de <span class="strong">UN (1) AN</span> à compter de sa signature.</p>`+
+      `<p>Il est conféré <span class="strong">À TITRE EXCLUSIF pendant les SIX (6) PREMIERS MOIS</span>. Durant cette période d'exclusivité, le MANDANT confie ${op.operN} du bien au seul MANDATAIRE et s'interdit de confier ${op.operN} à tout autre intermédiaire comme de rechercher lui-même, directement ou indirectement, un ${op.role}.</p>`+
+      `<p>À l'expiration de ces six mois, <span class="strong">l'exclusivité prend fin mais le mandat se poursuit jusqu'à son terme d'un an, à titre simple (non exclusif)</span> : le MANDANT recouvre alors la faculté de confier ${op.operN} à d'autres intermédiaires ou de la mener lui-même, sans que cela mette fin au présent mandat.</p>`+
+      `<p>Conformément à l'article 78, alinéa 2, du décret n° 72-678 du 20 juillet 1972, passé un délai de trois mois à compter de sa signature, le présent mandat pourra être dénoncé à tout moment par chacune des parties, à charge pour celle qui entend y mettre fin d'en aviser l'autre quinze jours au moins à l'avance par lettre recommandée avec accusé de réception.</p>`;
   } else {
     const d=F('dureeMandatNonExcl','12');
     art5=`<h3>Article 5 — Durée du mandat</h3>`+
