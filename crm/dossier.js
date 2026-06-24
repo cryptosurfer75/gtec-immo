@@ -200,7 +200,7 @@
   function pageSommaire(){
     const items = SECTIONS.map((s,i)=>`<li><span class="num">${i+1}</span>${esc(s)}</li>`).join('');
     return `<section class="pg">
-      <header class="pg-h center"><h1>Sommaire</h1>${logoBlock('pg-logo')}</header>
+      <header class="pg-h"><h1>Sommaire</h1>${logoBlock('pg-logo')}</header>
       <div class="pg-body"><ol class="sommaire">${items}</ol></div>
       <footer class="pg-f"><div class="pg-num">2</div></footer>
     </section>`;
@@ -366,9 +366,7 @@
       .sheet{ padding:24px; display:flex; flex-direction:column; align-items:center; gap:20px; }
       .pg{ width:280mm; height:202mm; background:#fff; position:relative; overflow:hidden;
         box-shadow:0 6px 24px rgba(0,0,0,.35); display:flex; flex-direction:column; }
-      .pg-h{ display:flex; align-items:center; justify-content:space-between; padding:14mm 14mm 4mm; }
-      .pg-h.center{ justify-content:center; position:relative; }
-      .pg-h.center .pg-logo-wrap{ position:absolute; right:14mm; top:10mm; }
+      .pg-h{ display:flex; align-items:center; justify-content:space-between; margin:0 14mm 5mm; padding:14mm 0 4mm; border-bottom:0.35mm solid #d9dee3; }
       .pg-h h1{ font-size:30pt; font-weight:600; margin:0; color:#222; }
       .pg-logo{ height:22mm; }
       .logo-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:1.5mm; }
@@ -383,7 +381,7 @@
       .pg-num{ font-size:11pt; color:#9aa0a6; padding-left:10px; }
       /* Couverture */
       .cover{ padding:0; }
-      .cover-top{ display:flex; justify-content:space-between; align-items:flex-start; padding:10mm 12mm 0; }
+      .cover-top{ display:flex; justify-content:space-between; align-items:center; padding:10mm 12mm 0; }
       .cover-coord{ line-height:1.35; color:#222; }
       .cover-coord .cc-nom{ font-size:15pt; font-weight:700; color:var(--navy); }
       .cover-coord .cc-tel{ font-size:13pt; font-weight:600; }
