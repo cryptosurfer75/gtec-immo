@@ -398,6 +398,9 @@
       .toolbar b{ font-size:15px; } .toolbar .acts{ display:flex; gap:10px; }
       .toolbar button{ border:0; border-radius:8px; padding:9px 16px; font-size:14px; font-weight:600; cursor:pointer; }
       .btn-print{ background:var(--teal); color:#fff; } .btn-close{ background:#55606e; color:#fff; }
+      .dl-pdf{ position:fixed; top:16px; right:16px; z-index:60; background:var(--teal); color:#fff; border:0;
+        border-radius:10px; padding:11px 18px; font-size:14px; font-weight:600; cursor:pointer;
+        box-shadow:0 6px 18px rgba(0,0,0,.3); font-family:'Inter','Segoe UI',Arial,sans-serif; }
       .sheet{ padding:24px; display:flex; flex-direction:column; align-items:center; gap:20px; }
       .pg{ width:280mm; height:202mm; background:#fff; position:relative; overflow:hidden;
         box-shadow:0 6px 24px rgba(0,0,0,.35); display:flex; flex-direction:column; }
@@ -490,7 +493,7 @@
       .ph{ color:#9aa0a6; font-style:italic; }
       @media print{
         html,body{ background:#fff; }
-        .toolbar{ display:none; }
+        .toolbar, .dl-pdf{ display:none; }
         .sheet{ padding:0; gap:0; }
         .pg{ box-shadow:none; width:100%; height:100vh; page-break-after:always; break-after:page; }
         @page{ size:A4 landscape; margin:0; }
@@ -564,7 +567,9 @@
       pageContact(o),
     ].join('');
     const titre = `Dossier — ${o.titre || typeLabel(o.type_bien)} ${o.ville||''}`.trim();
-    const toolbar = shared ? '' : `<div class="toolbar">
+    const toolbar = shared
+      ? `<button class="dl-pdf" onclick="window.print()">⬇ Télécharger en PDF</button>`
+      : `<div class="toolbar">
           <b>${esc(titre)}</b>
           <div class="acts">
             <button class="btn-print" onclick="window.print()">📄 Enregistrer en PDF / Imprimer</button>
@@ -618,11 +623,23 @@
     // Le client ouvre la visionneuse sur le domaine GTEC (qui sert le vrai HTML) ;
     // elle récupère puis affiche le dossier déposé dans le stockage.
     const lien = 'https://gtec-immobilier.fr/d/?id=' + encodeURIComponent(offreId);
-    afficherLien(lien);
+    afficherLien(lien, offreId);
   }
 
-  // Petite fenêtre : lien copié, copier / ouvrir
-  function afficherLien(url){
+  // Révoque le lien : supprime le dossier publié → le lien ne mène plus à rien.
+  async function revoquerLien(offreId){
+    if(!offreId) return;
+    if(!confirm('Révoquer le lien de ce dossier ? Le client qui l’ouvrira ne verra plus rien. (Vous pourrez toujours en regénérer un nouveau.)')) return;
+    try{
+      const { error } = await sb.storage.from('offres').remove(['dossier-public/'+offreId+'.html']);
+      if(error) throw error;
+      const bg=document.getElementById('dos-lien-bg'); if(bg) bg.remove();
+      alert('Lien révoqué : le dossier en ligne a été supprimé.');
+    }catch(e){ alert('Impossible de révoquer : '+(e.message||e)); }
+  }
+
+  // Petite fenêtre : lien copié, copier / ouvrir / révoquer
+  function afficherLien(url, offreId){
     try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(e){}
     const old = document.getElementById('dos-lien-bg'); if(old) old.remove();
     const bg = document.createElement('div'); bg.id='dos-lien-bg';
@@ -630,10 +647,12 @@
     bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
       <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du dossier à envoyer au client</div>
       <div style="padding:18px 20px">
-        <p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Le lien a été copié. Collez-le dans votre e-mail : le client verra le dossier en pleine qualité, sans rien télécharger.</p>
+        <p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Le lien a été copié. Collez-le dans votre e-mail : le client verra le dossier en pleine qualité (et pourra le télécharger en PDF s'il le souhaite).</p>
         <input id="dos-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
       </div>
-      <div style="padding:0 20px 18px;display:flex;gap:10px;justify-content:flex-end">
+      <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
+        <button onclick="GTEC_DOSSIER.revoquerLien('${esc(offreId||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
+        <span style="flex:1"></span>
         <button onclick="var i=document.getElementById('dos-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#3D8074;color:#fff">📋 Copier</button>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
         <button onclick="document.getElementById('dos-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
@@ -642,5 +661,5 @@
     document.body.appendChild(bg);
   }
 
-  window.GTEC_DOSSIER = { generer, genererDescriptif, publierLien };
+  window.GTEC_DOSSIER = { generer, genererDescriptif, publierLien, revoquerLien };
 })();
