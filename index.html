@@ -385,8 +385,9 @@ function localitePublique(b, withSecteur){
 /* Fiche produit (ouverte par « En savoir + ») */
 function ouvrirFiche(id){
   const b = TOUS.find(x=>String(x.id)===String(id)); if(!b) return;
-  const photo=(b.offre_photos||[]).sort((a,c)=>(c.est_principale-a.est_principale)||(a.ordre-c.ordre))[0];
-  const imgUrl=b.cover_url||(photo&&photo.url);
+  const photos=(b.offre_photos||[]).slice().sort((a,c)=>((c.est_principale?1:0)-(a.est_principale?1:0))||((a.ordre||0)-(c.ordre||0)));
+  const principale=photos.find(p=>p.est_principale);
+  const imgUrl=(principale&&principale.url)||b.cover_url||(photos[0]&&photos[0].url);
   const trans=b.transaction==='vente'?'À vendre':b.transaction==='location'?'À louer':'Vente / Location';
   const it=(k,v)=> v?`<div class="it"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`:'';
   const surf = b.surface_m2 ? b.surface_m2+' m²'+((b.surface_min_m2||b.surface_max_m2)?` (div. ${b.surface_min_m2||'?'}–${b.surface_max_m2||'?'} m²)`:'') : '';
@@ -443,8 +444,9 @@ function prixHtml(b){
 /* Une carte */
 const ETATS = {neuf:'Neuf', etat_neuf:'État neuf', bon:'Bon état', a_renover:'À rénover'};
 function carte(b){
-  const photo = (b.offre_photos||[]).sort((a,c)=>(c.est_principale-a.est_principale)||(a.ordre-c.ordre))[0];
-  const imgUrl = b.cover_url || (photo && photo.url);
+  const photos = (b.offre_photos||[]).slice().sort((a,c)=>((c.est_principale?1:0)-(a.est_principale?1:0))||((a.ordre||0)-(c.ordre||0)));
+  const principale = photos.find(p=>p.est_principale);
+  const imgUrl = (principale && principale.url) || b.cover_url || (photos[0] && photos[0].url);
   const img = imgUrl ? `<img src="${imgUrl}" alt="">` : (ICONS[b.type_bien]||'🏢');
   return `<div class="card">
     <div class="photo">${img}</div>
