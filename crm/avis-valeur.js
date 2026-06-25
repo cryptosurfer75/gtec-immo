@@ -675,6 +675,8 @@
     let st=document.getElementById('av-ed-style');
     if(!st){ st=document.createElement('style'); st.id='av-ed-style'; st.textContent=modalCss(); document.head.appendChild(st); }
     const root=document.createElement('div'); root.innerHTML=html; document.body.appendChild(root.firstElementChild);
+    // Auto-complétion ville → code postal (réutilise le helper global du CRM).
+    try{ if(typeof brancherVilleAuto==='function') brancherVilleAuto(document.getElementById('av-ville'), ()=>document.getElementById('av-cp')); }catch(e){}
     _calc();
   }
 
