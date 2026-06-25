@@ -163,7 +163,7 @@
          <ul><li>Les conditions du marché</li><li>Les éléments techniques et réglementaires</li><li>Les audits et vérifications complémentaires</li></ul>`, true)}
     </div>`;
     return `<section class="pg">
-      <header class="pg-h"><h1>Avertissement</h1>${logoBlock('pg-logo')}</header>
+      <header class="pg-h"><h1>Cadre légal</h1>${logoBlock('pg-logo')}</header>
       <div class="pg-body">${body}</div>
       <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
     </section>`;
@@ -377,8 +377,8 @@
       .pg-h{ flex-shrink:0; display:flex; align-items:center; justify-content:space-between; margin:0 14mm 5mm; padding:14mm 0 4mm; border-bottom:.8mm solid var(--teal); }
       .pg-h h1{ font-size:30pt; font-weight:600; margin:0; color:#222; }
       .pg-logo{ height:22mm; }
-      .logo-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:1.5mm; }
-      .logo-tag{ font-size:8pt; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-weight:600; white-space:nowrap; }
+      .logo-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:.8mm; }
+      .logo-tag{ font-size:9pt; letter-spacing:.30em; text-transform:uppercase; color:var(--teal); font-weight:500; white-space:nowrap; padding-left:.30em; }
       .pg-body{ flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; padding:2mm 14mm; }
       .pg-f{ flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; padding:0 12mm 7mm; }
       .pg-f .nav{ display:flex; gap:6px; flex:1; }
