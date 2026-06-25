@@ -36,7 +36,7 @@
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const nb  = v => (v==null||v==='') ? '' : new Intl.NumberFormat('fr-FR').format(Math.round(Number(v)));
   const eur = v => (v==null||v==='') ? '' : nb(v)+' €';
-  const num = v => { if(v==null||v==='') return null; const n=Number(v); return isNaN(n)?null:n; };
+  const num = v => { if(v==null||v==='') return null; const n=Number(String(v).replace(',','.')); return isNaN(n)?null:n; };
   // Nom affiché en couverture / titre = le PROPRIÉTAIRE (SCI ou société du propriétaire),
   // pas les enseignes locataires (elles vont dans le cadre Occupants). Repli sur l'ancien
   // champ enseigne pour les avis déjà saisis, puis sur le type d'actif.
@@ -234,7 +234,8 @@
     const lots = (Array.isArray(a.lots)?a.lots:[]).filter(l=>l && (l.batiment||l.niveau||l.designation||l.surface!=null));
     const tot = lots.reduce((x,l)=>x+(num(l.surface)||0),0);
     const fonc = num(a.surface_foncier);
-    const proprio = a.copropriete ? 'en copropriété' : 'en pleine propriété';
+    // On n'affirme jamais « en pleine propriété » (risqué). On ne précise « en copropriété » que si la case est cochée.
+    const proprio = a.copropriete ? ' en copropriété' : '';
     const lotsTable = lots.length
       ? `<table class="av-lots">
           <thead><tr><th>Bâtiment</th><th>Niveau</th><th>Désignation</th><th class="r">Surface</th></tr></thead>
@@ -246,7 +247,7 @@
     const fonctable = (a.parcelle_cadastrale || fonc!=null)
       ? `<div class="av-tech-foncier"><table class="av-mini">
           ${a.parcelle_cadastrale?`<tr><th>Parcelle cadastrale</th><td>${esc(a.parcelle_cadastrale)}</td></tr>`:''}
-          ${fonc!=null?`<tr><th>Surface du foncier</th><td>${nb(fonc)} m² environ ${proprio}</td></tr>`:''}
+          ${fonc!=null?`<tr><th>Surface du foncier</th><td>${nb(fonc)} m² environ${proprio}</td></tr>`:''}
         </table></div>` : '';
     const body = `<div class="av-tech">
       <div class="av-tech-titre">${esc(typeActifDe(a))}</div>
@@ -760,8 +761,8 @@
         <div class="rows" id="av-loyer-rows">${loyer.map(loyerRow).join('')}</div>
         <button type="button" class="addbtn" onclick="GTEC_AVIS._addLoyer()">＋ Ajouter une composante (bureaux, stockage, vente…)</button>
         <div class="grid" style="margin-top:12px">
-          ${I('av-taux','Taux de rendement (%)', a.taux_rendement, {type:'number', attr:'oninput="GTEC_AVIS._calc()"'})}
-          ${I('av-frais','Frais de mutation (%)', a.frais_mutation_pct, {type:'number', attr:'oninput="GTEC_AVIS._calc()"'})}
+          ${I('av-taux','Taux de rendement (%) — décimales possibles (ex : 7,2)', a.taux_rendement==null?'':String(a.taux_rendement).replace('.',','), {attr:'inputmode="decimal" oninput="GTEC_AVIS._calc()"'})}
+          ${I('av-frais','Frais de mutation (%)', a.frais_mutation_pct==null?'':String(a.frais_mutation_pct).replace('.',','), {attr:'inputmode="decimal" oninput="GTEC_AVIS._calc()"'})}
           ${I('av-valest','Valeur retenue (€, vide = net vendeur calculé)', a.valeur_estimee, {type:'number', attr:'oninput="GTEC_AVIS._calc()"', full:true})}
         </div>
         <div class="calc" id="av-calc"></div>
@@ -806,7 +807,7 @@
 
   async function save(genApres){
     const g  = id => { const e=document.getElementById(id); return e?(e.value.trim()||null):null; };
-    const gn = id => { const v=g(id); return v==null?null:Number(v); };
+    const gn = id => { const v=g(id); if(v==null) return null; const n=Number(String(v).replace(',','.')); return isNaN(n)?null:n; };
     let cover_url = A.cover_url || null;
     let photo_presentation_url = A.photo_presentation_url || null;
     try{
