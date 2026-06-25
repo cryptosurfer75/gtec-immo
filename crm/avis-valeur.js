@@ -887,7 +887,7 @@
       const c = ((j.features||[])[0]||{}).geometry;
       if(c && Array.isArray(c.coordinates)){
         const [lon,lat] = c.coordinates;
-        url += '?style=ortho#19/'+lat+'/'+lon;
+        url += '?style=ortho#18/'+lat+'/'+lon;
       }
     }catch(e){}
     window.open(url, '_blank', 'noopener');

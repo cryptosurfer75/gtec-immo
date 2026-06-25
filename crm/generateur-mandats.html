@@ -409,7 +409,7 @@ async function chercherAdresses(q, el){
 // Nom de fenêtre fixe « cadastreGTEC » → réutilise le même onglet à chaque nouvelle adresse (pas d'empilement d'onglets).
 let BIEN_GEO = null; // coordonnées du bien (renseignées via la liste d'adresses, sinon géocodées à la volée)
 function ouvrirCadastre(lat,lon){
-  try{ window.open('https://cadastre.data.gouv.fr/map?style=ortho#19/'+lat+'/'+lon, 'cadastreGTEC'); }catch(e){}
+  try{ window.open('https://cadastre.data.gouv.fr/map?style=ortho#18/'+lat+'/'+lon, 'cadastreGTEC'); }catch(e){}
 }
 // Bouton « Cadastre » : fonctionne MÊME quand l'adresse a été pré-remplie depuis le CRM (donc pas choisie dans la liste).
 // On ouvre l'onglet tout de suite (le clic = geste utilisateur → pas bloqué), puis on le recentre une fois l'adresse géocodée.
@@ -424,7 +424,7 @@ async function ouvrirCadastreBouton(){
       if(f&&f.geometry&&f.geometry.coordinates){ const c=f.geometry.coordinates; geo={lat:c[1],lon:c[0]}; BIEN_GEO=geo; }
     }catch(e){}
   }
-  if(geo && w){ w.location.href='https://cadastre.data.gouv.fr/map?style=ortho#19/'+geo.lat+'/'+geo.lon; }
+  if(geo && w){ w.location.href='https://cadastre.data.gouv.fr/map?style=ortho#18/'+geo.lat+'/'+geo.lon; }
   else { if(w) w.close(); alert("Renseigne d'abord l'adresse du bien pour ouvrir le cadastre au bon endroit."); }
 }
 
