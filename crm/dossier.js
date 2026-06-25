@@ -47,11 +47,33 @@
     return (m[t] || (t||'BIEN')).toUpperCase();
   }
 
-  // Met les équipements (objet {catégorie:[items]}) à plat en une liste simple
-  function equipListe(equip){
+  // Libellé + ORDRE d'affichage des catégories d'équipement, cohérent avec la lecture
+  // du bâtiment (du gros œuvre vers les aménagements). Cet ordre fait foi partout
+  // dans le dossier (page Équipements). L'ordre des clés ci-dessous = l'ordre affiché.
+  const EQUIP_LABELS = {
+    structure:'Structure du bâtiment',
+    toiture:'Toiture',
+    isolation:'Isolation',
+    sol:'Sol',
+    electricite:'Électricité',
+    chauffage:'Chauffage',
+    climatisation:'Climatisation',
+    eclairage:'Éclairage',
+    parking:'Parking'
+  };
+  // Regroupe les équipements (objet {catégorie:[items]}) en lignes « Catégorie : valeurs »
+  function equipGroupes(equip){
     if(!equip || typeof equip!=='object') return [];
     const out=[];
-    Object.values(equip).forEach(arr=>{ if(Array.isArray(arr)) arr.forEach(x=>out.push(x)); });
+    const ajout = (k)=>{
+      const arr = equip[k];
+      if(Array.isArray(arr) && arr.length){
+        out.push({ label: EQUIP_LABELS[k] || (k.charAt(0).toUpperCase()+k.slice(1)),
+                   valeurs: arr.join(', ') });
+      }
+    };
+    Object.keys(EQUIP_LABELS).forEach(ajout);                              // ordre du formulaire
+    Object.keys(equip).forEach(k=>{ if(!EQUIP_LABELS[k]) ajout(k); });     // catégories inconnues éventuelles
     return out;
   }
 
@@ -300,12 +322,13 @@
   }
 
   function pageEquipements(o){
-    const liste = equipListe(o.equipements);
+    const grp = equipGroupes(o.equipements);
     let body;
-    if(liste.length){
+    if(grp.length){
+      const cell = g => `<div class="eq-cell"><span class="eq-cat">${esc(g.label)} :</span> <span class="eq-val">${esc(g.valeurs)}</span></div>`;
       const lignes = [];
-      for(let i=0;i<liste.length;i+=2){
-        lignes.push(`<div class="eq-row"><div class="eq-cell">${esc(liste[i])}</div><div class="eq-cell">${liste[i+1]?esc(liste[i+1]):''}</div></div>`);
+      for(let i=0;i<grp.length;i+=2){
+        lignes.push(`<div class="eq-row">${cell(grp[i])}${grp[i+1]?cell(grp[i+1]):'<div class="eq-cell"></div>'}</div>`);
       }
       body = `<div class="eq-title">ÉQUIPEMENTS</div><div class="eq-table">${lignes.join('')}</div>`;
     } else {
@@ -455,7 +478,9 @@
       .eq-title{ text-align:center; font-size:16pt; font-weight:700; letter-spacing:2px; color:#222; margin:8mm 0 4mm; }
       .eq-table{ border-top:2px solid var(--navy); }
       .eq-row{ display:flex; border-bottom:1px solid #d7dadd; }
-      .eq-cell{ flex:1; text-align:center; padding:6mm 4mm; font-size:14pt; color:#222; }
+      .eq-cell{ flex:1; text-align:left; padding:5mm 8mm; color:#222; font-size:13pt; }
+      .eq-cat{ font-weight:700; color:var(--navy); }
+      .eq-val{ color:#222; }
       /* Surfaces & conditions */
       table.surf{ width:100%; border-collapse:collapse; margin-top:8mm; }
       table.surf th{ font-size:13pt; letter-spacing:1px; color:#222; padding:4mm; border-bottom:2px solid var(--navy); text-align:center; }
