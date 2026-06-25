@@ -91,10 +91,23 @@
       return { lat, lon };
     }catch(e){ return null; }
   }
+  // Vue aérienne : image satellite UNIQUE exportée par Esri (pas de tuiles → pas de
+  // quadrillage ni mention d'attribution), strictement identique au générateur de dossier.
+  function esriAerialUrl(geo){
+    if(!geo) return null;
+    const R = 20037508.34;                 // demi-circonférence Web Mercator (m)
+    const x = geo.lon*R/180;
+    const y = Math.log(Math.tan((90+geo.lat)*Math.PI/360))/(Math.PI/180)*R/180;
+    const dx = 350, dy = dx*800/1280;      // ~700 m de large, ratio image 1280×800
+    const bbox = [x-dx, y-dy, x+dx, y+dy].join(',');
+    return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
+      + '?bbox='+bbox+'&bboxSR=3857&imageSR=3857&size=1280,800&format=jpg&f=image';
+  }
   function carteHtml(geo, variant, n, vide){
-    const g = googleStaticUrl(geo, variant);
-    if(g)   return `<div class="av-map"><img src="${esc(g)}" alt=""></div>`;
-    if(geo) return `<div class="av-map"><div id="avmap-${n}" class="av-leaflet" data-lat="${geo.lat}" data-lon="${geo.lon}" data-variant="${esc(variant)}"></div></div>`;
+    // Plan = carte Google (roadmap) ; aérienne = image Esri unique (comme le dossier)
+    const auto = (variant==='aerienne') ? esriAerialUrl(geo) : googleStaticUrl(geo, variant);
+    if(auto) return `<div class="av-map"><img src="${esc(auto)}" alt=""></div>`;
+    if(geo)  return `<div class="av-map"><div id="avmap-${n}" class="av-leaflet" data-lat="${geo.lat}" data-lon="${geo.lon}" data-variant="${esc(variant)}"></div></div>`;
     return `<div class="av-map ph">${esc(vide)}<br><small>(renseignez l’adresse pour la carte automatique)</small></div>`;
   }
 
@@ -134,17 +147,19 @@
   }
 
   function pageAvertissement(){
-    const bloc = (t,c)=>`<div class="av-warn-bloc"><h3>${t}</h3><div>${c}</div></div>`;
+    const bloc = (t,c,full)=>`<div class="av-warn-bloc${full?' full':''}"><h3>${t}</h3><div>${c}</div></div>`;
+    // Rangée du haut : Confidentialité (gauche) + Limitation (droite), alignées à la même hauteur.
+    // Puis « Nature des informations » sur toute la largeur en dessous.
     const body = `<div class="av-warn">
       ${bloc('Confidentialité du document',
         `<p>Cette présentation a été réalisée par GTEC Immobilier dans le cadre d’une étude de valorisation immobilière. Les informations qu’elle contient sont strictement confidentielles et réservées à son destinataire.</p>
          <p>Toute diffusion, reproduction ou transmission à un tiers sans autorisation préalable est interdite.</p>`)}
-      ${bloc('Nature des informations communiquées',
-        `<p>Les données et estimations présentées sont fournies à titre indicatif et ne constituent ni une offre contractuelle, ni une expertise immobilière au sens réglementaire. Les éléments communiqués reposent sur les informations disponibles à la date de réalisation de l’étude et restent susceptibles d’évoluer selon :</p>
-         <ul><li>Les conditions du marché</li><li>Les éléments techniques et réglementaires</li><li>Les audits et vérifications complémentaires</li></ul>`)}
       ${bloc('Limitation de responsabilité',
         `<p>GTEC Immobilier ne pourra être tenu responsable d’une utilisation partielle des informations présentées dans ce document.</p>
          <p>Le propriétaire se réserve la possibilité de modifier, suspendre ou interrompre toute discussion relative à l’actif présenté.</p>`)}
+      ${bloc('Nature des informations communiquées',
+        `<p>Les données et estimations présentées sont fournies à titre indicatif et ne constituent ni une offre contractuelle, ni une expertise immobilière au sens réglementaire. Les éléments communiqués reposent sur les informations disponibles à la date de réalisation de l’étude et restent susceptibles d’évoluer selon :</p>
+         <ul><li>Les conditions du marché</li><li>Les éléments techniques et réglementaires</li><li>Les audits et vérifications complémentaires</li></ul>`, true)}
     </div>`;
     return `<section class="pg">
       <header class="pg-h"><h1>Avertissement</h1>${logoBlock('pg-logo')}</header>
@@ -178,7 +193,7 @@
   function pagePresentation(a){
     const ens = enseigneDe(a);
     const villeCp = [a.ville, a.code_postal?`(${a.code_postal})`:''].filter(Boolean).join(' ');
-    const photo = a.cover_url || '';
+    const photo = a.photo_presentation_url || a.cover_url || '';
     const occ = (Array.isArray(a.occupants)?a.occupants:[]).map(o=>o&&o.nom).filter(Boolean);
     const body = `<div class="av-presit">
       <div class="av-presit-txt">
@@ -372,8 +387,9 @@
       .av-cover-right{ flex:1; background:#eef0f2; }
       .av-cover-right img{ width:100%; height:100%; object-fit:cover; display:block; }
       .av-cover-right .ph{ height:100%; display:flex; align-items:center; justify-content:center; }
-      .av-warn{ columns:2; column-gap:12mm; padding-top:3mm; }
-      .av-warn-bloc{ break-inside:avoid; margin-bottom:7mm; }
+      .av-warn{ display:grid; grid-template-columns:1fr 1fr; column-gap:12mm; row-gap:8mm; align-items:start; padding-top:3mm; }
+      .av-warn-bloc{ break-inside:avoid; }
+      .av-warn-bloc.full{ grid-column:1 / -1; }
       .av-warn-bloc h3{ color:var(--teal-d); font-size:13pt; margin:0 0 2mm; text-transform:uppercase; letter-spacing:.04em; }
       .av-warn-bloc p, .av-warn-bloc li{ font-size:10.5pt; line-height:1.5; color:#333; margin:0 0 2mm; }
       .av-warn-bloc ul{ margin:0; padding-left:6mm; }
@@ -520,7 +536,7 @@
   /* ==========================================================================
      FORMULAIRE — saisie / modification d'un avis de valeur
      ========================================================================== */
-  let A = { id:null, cover_url:null, photoFile:null };
+  let A = { id:null, cover_url:null, photoFile:null, photo_presentation_url:null, presFile:null };
 
   function modalCss(){
     return `#av-ed-bg{position:fixed;inset:0;background:rgba(26,39,56,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;font-family:'Inter','Segoe UI',Arial,sans-serif}
@@ -658,6 +674,13 @@
     r.onload=e=>{ const p=document.getElementById('av-photo-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
     r.readAsDataURL(f);
   }
+  function _presPhoto(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    A.presFile=f;
+    const r=new FileReader();
+    r.onload=e=>{ const p=document.getElementById('av-pres-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(f);
+  }
   function fermer(){ const e=document.getElementById('av-ed-bg'); if(e) e.remove(); }
 
   async function uploadPhoto(file){
@@ -683,7 +706,7 @@
     if(id){ try{ a = await charger(id); }catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; } }
     // Rafraîchit la liste des clients pour alimenter le menu déroulant de rattachement.
     try{ if(typeof chargerClients==='function') await chargerClients(); }catch(e){}
-    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, client_id:a.client_id||null };
+    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, client_id:a.client_id||null };
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
@@ -710,6 +733,9 @@
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
           <div class="photo" id="av-photo-prev">${a.cover_url?`<img src="${esc(a.cover_url)}" alt="">`:''}</div></div>
+        <div class="f full" style="margin-top:12px"><label>Photo de présentation de l’actif <span style="font-weight:400;color:#6b7280">(facultatif — sinon la photo de couverture est reprise)</span></label>
+          <input type="file" accept="image/*" onchange="GTEC_AVIS._presPhoto(this)">
+          <div class="photo" id="av-pres-prev">${a.photo_presentation_url?`<img src="${esc(a.photo_presentation_url)}" alt="">`:''}</div></div>
 
         <div class="sep">Détail des lots & surfaces</div>
         <div class="rowhead row lot"><span>Bâtiment</span><span>Niveau</span><span>Désignation (usage / occupant)</span><span>Surface m²</span><span></span></div>
@@ -782,7 +808,11 @@
     const g  = id => { const e=document.getElementById(id); return e?(e.value.trim()||null):null; };
     const gn = id => { const v=g(id); return v==null?null:Number(v); };
     let cover_url = A.cover_url || null;
-    try{ if(A.photoFile) cover_url = await uploadPhoto(A.photoFile); }
+    let photo_presentation_url = A.photo_presentation_url || null;
+    try{
+      if(A.photoFile) cover_url = await uploadPhoto(A.photoFile);
+      if(A.presFile)  photo_presentation_url = await uploadPhoto(A.presFile);
+    }
     catch(e){ alert('Échec de l’envoi de la photo : '+(e.message||e)); return; }
     const lotsArr = collect('#av-lots-rows');
     const surfaceTot = lotsArr.reduce((x,l)=>x+(Number(l.surface)||0),0) || null;
@@ -790,7 +820,7 @@
       client_id:A.client_id||null,
       agent:g('av-agent'), proprietaire:g('av-proprietaire'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
-      cover_url, annee:gn('av-annee'),
+      cover_url, photo_presentation_url, annee:gn('av-annee'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
       swot:{ forces:g('av-swot-f'), faiblesses:g('av-swot-w'), opportunites:g('av-swot-o'), menaces:g('av-swot-t') },
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'),
@@ -856,5 +886,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
