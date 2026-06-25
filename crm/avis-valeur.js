@@ -28,7 +28,7 @@
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;
-  const SECTIONS = ['Présentation de l’actif','Analyse de localisation','Accessibilité & environnement',
+  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif','Analyse de localisation','Accessibilité & environnement',
                     'Données techniques','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
 
@@ -36,7 +36,8 @@
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const nb  = v => (v==null||v==='') ? '' : new Intl.NumberFormat('fr-FR').format(Math.round(Number(v)));
   const pct = v => (v==null||v==='') ? '' : new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2}).format(Number(v));
-  const eur = v => (v==null||v==='') ? '' : nb(v)+' €';
+  // Montants en euros : séparateur de milliers en point (1.073.800 €). Les surfaces gardent l'espace via nb().
+  const eur = v => (v==null||v==='') ? '' : new Intl.NumberFormat('de-DE').format(Math.round(Number(v)))+' €';
   const num = v => { if(v==null||v==='') return null; const n=Number(String(v).replace(',','.')); return isNaN(n)?null:n; };
   // Nom affiché en couverture / titre = le PROPRIÉTAIRE (SCI ou société du propriétaire),
   // pas les enseignes locataires (elles vont dans le cadre Occupants). Repli sur l'ancien
@@ -162,11 +163,7 @@
         `<p>Les données et estimations présentées sont fournies à titre indicatif et ne constituent ni une offre contractuelle, ni une expertise immobilière au sens réglementaire. Les éléments communiqués reposent sur les informations disponibles à la date de réalisation de l’étude et restent susceptibles d’évoluer selon :</p>
          <ul><li>Les conditions du marché</li><li>Les éléments techniques et réglementaires</li><li>Les audits et vérifications complémentaires</li></ul>`, true)}
     </div>`;
-    return `<section class="pg">
-      <header class="pg-h"><h1>Cadre légal</h1>${logoBlock('pg-logo')}</header>
-      <div class="pg-body">${body}</div>
-      <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
-    </section>`;
+    return page('Cadre légal', body, 'Cadre légal', 2);
   }
 
   function pageGroupe(){
@@ -175,11 +172,7 @@
       <p>Notre équipe met son expertise du marché régional au service des propriétaires, investisseurs et utilisateurs, sur l’ensemble des Hauts-de-France.</p>
       <div class="av-groupe-tags"><span>Transaction</span><span>Vente</span><span>Location</span><span>Conseil & valorisation</span></div>
     </div>`;
-    return `<section class="pg">
-      <header class="pg-h"><h1>Le groupe</h1>${logoBlock('pg-logo')}</header>
-      <div class="pg-body">${body}</div>
-      <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
-    </section>`;
+    return page('Présentation du groupe', body, 'Présentation du groupe', 1);
   }
 
   function pageSommaire(){
@@ -210,7 +203,7 @@
       </div>
       <div class="av-presit-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo</div>'}</div>
     </div>`;
-    return page('Présentation de l’actif', body, 'Présentation de l’actif', 1);
+    return page('Présentation de l’actif', body, 'Présentation de l’actif', 3);
   }
 
   function pageLocalisation(a, geo){
@@ -219,7 +212,7 @@
       ? `<div class="av-cad-wrap"><img src="${esc(a.cadastre_url)}" alt="Extrait cadastral"></div>`
       : carteHtml(geo, 'plan', 1, 'Plan de localisation');
     const body = `<div class="av-loc">${visuel}</div>`;
-    return page('Analyse de localisation', body, 'Analyse de localisation', 2);
+    return page('Analyse de localisation', body, 'Analyse de localisation', 4);
   }
 
   function pageAcces(a){
@@ -232,7 +225,7 @@
       ? `${bloc('Zone de chalandise', zc)}${bloc('Accessibilité & environnement', acc)}`
       : '<p class="ph">Zone de chalandise et accessibilité non renseignées.</p>';
     const body = `<div class="av-acc">${contenu}</div>`;
-    return page('Accessibilité & environnement', body, 'Accessibilité & environnement', 3);
+    return page('Accessibilité & environnement', body, 'Accessibilité & environnement', 5);
   }
 
   function pageTechnique(a){
@@ -259,7 +252,7 @@
       ${lotsTable}
       ${fonctable}
     </div>`;
-    return page('Données techniques', body, 'Données techniques', 4);
+    return page('Données techniques', body, 'Données techniques', 6);
   }
 
   function pageComparatif(a){
@@ -278,7 +271,7 @@
     } else {
       body = '<p class="ph">Aucune transaction comparable renseignée.</p>';
     }
-    return page('Valeur comparative du marché', body, 'Valeur comparative', 5);
+    return page('Valeur comparative du marché', body, 'Valeur comparative', 7);
   }
 
   // Pastilles rondes à icônes par quadrant (interne/externe · atout/vigilance)
@@ -308,7 +301,7 @@
         ${block('swB-t', SWOT_ICON.warn, 'Menaces', s.menaces)}
       </div>
     </div>`;
-    return page('Analyse SWOT', body, 'Analyse SWOT', 6);
+    return page('Analyse SWOT', body, 'Analyse SWOT', 8);
   }
 
   function pageValorisation(a){
@@ -326,13 +319,8 @@
         <tbody>${lignes}</tbody></table>
       <div class="av-val-tot">VALEUR LOCATIVE TOTALE ANNUELLE : <b>${f.vlAnnuelle!=null?eur(f.vlAnnuelle)+' HT / AN HC':'—'}</b></div>
       ${comm?`<div class="av-val-comm"><p>${esc(comm).replace(/\n+/g,'</p><p>')}</p></div>`:''}
-      <div class="av-val-cards">
-        <div class="av-card"><div class="av-card-l">Taux de rendement retenu</div><div class="av-card-v">${f.taux!=null?pct(f.taux)+' %':'—'}</div></div>
-        <div class="av-card teal"><div class="av-card-l">Valeur par capitalisation (net vendeur)</div><div class="av-card-v">${f.netVendeur!=null?eur(f.netVendeur)+' HDHH':'—'}</div></div>
-        <div class="av-card"><div class="av-card-l">Frais de mutation (${f.fraisPct!=null?pct(f.fraisPct)+' %':'—'}) → prix actes en mains</div><div class="av-card-v">${f.actesEnMains!=null?eur(f.actesEnMains):'—'}</div></div>
-      </div>
     </div>`;
-    return page('Valorisation financière', body, 'Valorisation & conclusion', 7);
+    return page('Valorisation financière', body, 'Valorisation & conclusion', 9);
   }
 
   function pageConclusion(a){
@@ -340,7 +328,17 @@
     const note = (a.commentaire_conclusion||'').trim();
     const body = `<div class="av-ccl">
       <p class="av-ccl-intro">Notre analyse permet d’estimer la valeur de cet actif à :</p>
-      <div class="av-ccl-val">${f.valeurRetenue!=null?eur(f.valeurRetenue)+' Hors Droits Hors Honoraires':'—'}</div>
+      <div class="av-ccl-row">
+        <div class="av-ccl-side">
+          <div class="av-ccl-side-l">Taux de rendement retenu</div>
+          <div class="av-ccl-side-v">${f.taux!=null?pct(f.taux)+' %':'—'}</div>
+        </div>
+        <div class="av-ccl-val">${f.valeurRetenue!=null?eur(f.valeurRetenue)+'<span class="av-ccl-hdhh">Hors Droits Hors Honoraires</span>':'—'}</div>
+        <div class="av-ccl-side">
+          <div class="av-ccl-side-l">Prix actes en mains<small>droits d’enregistrement ${f.fraisPct!=null?pct(f.fraisPct)+' %':''} inclus</small></div>
+          <div class="av-ccl-side-v">${f.actesEnMains!=null?eur(f.actesEnMains):'—'}</div>
+        </div>
+      </div>
       ${f.valeurM2!=null?`<div class="av-ccl-m2">soit environ ${eur(f.valeurM2)} / m²</div>`:''}
       <div class="av-ccl-note">
         ${note?`<p>${esc(note).replace(/\n+/g,'</p><p>')}</p>`:''}
@@ -348,7 +346,7 @@
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
       </div>
     </div>`;
-    return page('Conclusion', body, 'Valorisation & conclusion', 8);
+    return page('Conclusion', body, 'Valorisation & conclusion', 10);
   }
 
   function pageContact(a){
@@ -386,7 +384,7 @@
       .navcell span{ font-size:7pt; color:#444; line-height:1.1; margin-bottom:3px; text-align:center; min-height:2.4em; display:flex; align-items:flex-end; justify-content:center; }
       .navcell i{ display:block; height:7px; background:#bdbdbd; border-radius:2px; }
       .navcell i.on{ background:var(--teal); }
-      .pg-num{ font-size:11pt; color:#9aa0a6; padding-left:10px; }
+      .pg-num{ font-size:11pt; font-weight:700; color:#111; padding-left:10px; }
       .av-conf{ font-size:9pt; color:#9aa0a6; }
       .ph{ color:#9aa0a6; font-style:italic; }
       .av-cover{ padding:0; display:block; position:relative; }
@@ -464,12 +462,13 @@
       .av-bar-track{ flex:1; height:9mm; background:#eef0f2; border-radius:4px; overflow:hidden; } .av-bar-fill{ height:100%; border-radius:4px; }
       .av-bar-v{ width:34mm; text-align:right; font-size:11pt; font-weight:600; color:#222; } .av-bar-v small{ color:#888; font-weight:400; }
       table.av-lots{ width:100%; border-collapse:collapse; margin:2mm 0 4mm; }
-      table.av-lots th{ font-size:10.5pt; text-transform:uppercase; letter-spacing:.04em; color:#fff; background:var(--navy); padding:3mm; text-align:left; }
+      table.av-lots th{ font-size:10.5pt; text-transform:uppercase; letter-spacing:.04em; color:#fff; background:var(--navy); padding:2mm 3mm; text-align:left; }
       table.av-lots th.r, table.av-lots td.r{ text-align:right; }
-      table.av-lots td{ font-size:12pt; padding:3mm; border-bottom:1px solid #e1e6e8; color:#222; }
+      table.av-lots td{ font-size:11pt; padding:1.7mm 3mm; border-bottom:1px solid #e1e6e8; color:#222; }
       table.av-lots tbody tr:nth-child(even) td{ background:#f6f9f8; }
-      table.av-lots tfoot td{ font-weight:700; color:var(--navy); border-top:2px solid var(--navy); border-bottom:none; font-size:12.5pt; }
-      .av-tech-foncier{ margin-top:8mm; }
+      table.av-lots tfoot td{ font-weight:700; color:var(--navy); border-top:2px solid var(--navy); border-bottom:none; font-size:12pt; padding:2.5mm 3mm; }
+      .av-tech-foncier{ margin-top:4mm; }
+      .av-tech-foncier table.av-mini th, .av-tech-foncier table.av-mini td{ padding:2.2mm 2mm; font-size:11.5pt; }
       table.av-comp{ width:100%; border-collapse:collapse; margin-top:6mm; }
       table.av-comp th{ background:var(--navy); color:#fff; font-size:10pt; padding:3.5mm 2mm; text-align:left; }
       table.av-comp td{ font-size:10.5pt; padding:3.5mm 2mm; border-bottom:1px solid #d7dadd; color:#333; }
@@ -485,10 +484,15 @@
       .av-card{ flex:1; border:1px solid #d7dadd; border-radius:6px; padding:4mm; }
       .av-card.teal{ background:var(--teal); border-color:var(--teal); color:#fff; }
       .av-card-l{ font-size:9.5pt; opacity:.85; min-height:3em; } .av-card-v{ font-size:15pt; font-weight:700; margin-top:2mm; }
-      .av-ccl{ padding-top:8mm; text-align:center; } .av-ccl-intro{ font-size:15pt; color:#333; }
-      .av-ccl-val{ font-size:30pt; font-weight:700; color:var(--navy); margin:5mm auto; padding:7mm 10mm; border:.8mm solid var(--teal); border-radius:8px; display:inline-block; }
-      .av-ccl-m2{ font-size:16pt; color:var(--teal-d); font-weight:600; }
-      .av-ccl-note{ max-width:200mm; margin:8mm auto 0; text-align:left; font-size:11pt; line-height:1.6; color:#444; } .av-ccl-note p{ margin:0 0 3mm; }
+      .av-ccl{ padding-top:3mm; text-align:center; } .av-ccl-intro{ font-size:15pt; color:#333; margin:2mm 0; }
+      .av-ccl-row{ display:flex; align-items:center; justify-content:center; gap:6mm; margin:4mm 0; }
+      .av-ccl-side{ flex:0 0 60mm; display:flex; flex-direction:column; justify-content:center; min-height:26mm; border:1px solid #d6dcde; border-radius:8px; padding:3mm 5mm; background:#fafbfb; }
+      .av-ccl-side-l{ font-size:11pt; color:#555; line-height:1.3; } .av-ccl-side-l small{ display:block; font-size:8.5pt; color:#9aa0a6; margin-top:.5mm; }
+      .av-ccl-side-v{ font-size:18pt; font-weight:700; color:var(--navy); margin-top:2.5mm; }
+      .av-ccl-val{ font-size:29pt; font-weight:700; color:var(--navy); margin:0; padding:5mm 10mm; border:.8mm solid var(--teal); border-radius:8px; display:inline-block; line-height:1.1; }
+      .av-ccl-hdhh{ display:block; font-size:11pt; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:#8a9199; margin-top:2mm; }
+      .av-ccl-m2{ font-size:15pt; color:var(--teal-d); font-weight:600; }
+      .av-ccl-note{ max-width:200mm; margin:4mm auto 0; text-align:left; font-size:10.5pt; line-height:1.45; color:#444; } .av-ccl-note p{ margin:0 0 2mm; }
       .av-contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; }
       .av-ct-logo{ display:flex; flex-direction:column; align-items:center; margin-top:30mm; } .av-ct-logo img{ height:50mm; }
       .av-ct-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
@@ -539,7 +543,7 @@
     catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; }
     const geo = await geocoder(a);
     const pages = [
-      pageCouverture(a), pageAvertissement(), pageGroupe(), pageSommaire(),
+      pageCouverture(a), pageSommaire(), pageGroupe(), pageAvertissement(),
       pagePresentation(a), pageLocalisation(a, geo), pageAcces(a),
       pageTechnique(a), pageComparatif(a), pageSwot(a), pageValorisation(a), pageConclusion(a),
       pageContact(a)
