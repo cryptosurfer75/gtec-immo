@@ -519,6 +519,10 @@
       #av-ed .row.occ{grid-template-columns:1fr 28px}
       #av-ed .occ-box{border:1px solid #d7dde0;border-radius:10px;padding:11px 13px;background:#fafcfb}
       #av-ed .occ-box>label{margin-bottom:7px}
+      #av-ed .cad-row{display:flex;gap:8px;align-items:stretch}
+      #av-ed .cad-row input{flex:1}
+      #av-ed .cad-btn{white-space:nowrap;border:0;border-radius:8px;background:#eef3f1;color:#2f6359;font-weight:600;font-size:13px;padding:0 12px;cursor:pointer}
+      #av-ed .cad-btn:hover{background:#dfeae6}
       #av-ed .lots-tot{margin-top:10px;text-align:right;font-size:14px;color:#4A5A5E} #av-ed .lots-tot b{font-size:18px;color:#1A2738;margin-left:6px}
       #av-ed .row input{padding:6px 8px;font-size:13px}
       #av-ed .row .del{background:#fbe9e9;border:0;color:#b33;border-radius:6px;cursor:pointer;font-size:15px;height:30px}
@@ -687,7 +691,12 @@
 
         <div class="sep">Foncier & cadastre</div>
         <div class="grid">
-          ${I('av-cadastre','Parcelle cadastrale', a.parcelle_cadastrale)}
+          <div class="f"><label>Parcelle cadastrale</label>
+            <div class="cad-row">
+              <input id="av-cadastre" type="text" value="${a.parcelle_cadastrale==null?'':esc(a.parcelle_cadastrale)}" placeholder="ex : AB-123">
+              <button type="button" class="cad-btn" onclick="GTEC_AVIS._cadastre()" title="Ouvrir le cadastre (Géoportail) sur l'adresse">🗺️ Cadastre</button>
+            </div>
+          </div>
           ${I('av-foncier','Surface du foncier (m²)', a.surface_foncier, {type:'number'})}
           ${CK('av-copro','Foncier en copropriété', a.copropriete)}
         </div>
@@ -773,6 +782,28 @@
 
   function resume(a){ const f = finance(a); return { valeur:f.valeurRetenue, m2:f.valeurM2 }; }
 
+  // Ouvre le Géoportail (photo aérienne + couche cadastre) centré sur l'adresse saisie,
+  // pour repérer la parcelle et recopier sa référence. Gain de temps + vérif visuelle.
+  async function ouvrirCadastre(){
+    const v = id => (document.getElementById(id)||{}).value || '';
+    const q = [v('av-adresse'), v('av-cp'), v('av-ville')].filter(Boolean).join(' ').trim();
+    if(!q){ alert("Renseignez d'abord l'adresse (ou au moins la ville) du bien."); return; }
+    // Service dédié cadastre et pérenne (data.gouv.fr) : vue aérienne + parcelles.
+    // Format du lien : ?style=ortho#<zoom>/<lat>/<lon>. À défaut de coordonnées,
+    // on ouvre la carte avec sa barre « Rechercher une adresse ».
+    let url = 'https://cadastre.data.gouv.fr/map';
+    try{
+      const r = await fetch('https://api-adresse.data.gouv.fr/search/?limit=1&q='+encodeURIComponent(q));
+      const j = await r.json();
+      const c = ((j.features||[])[0]||{}).geometry;
+      if(c && Array.isArray(c.coordinates)){
+        const [lon,lat] = c.coordinates;
+        url += '?style=ortho#19/'+lat+'/'+lon;
+      }
+    }catch(e){}
+    window.open(url, '_blank', 'noopener');
+  }
+
   // Au choix d'un client dans le menu : on retient son id et on pré-remplit le propriétaire.
   function pickClient(){
     const sel = document.getElementById('av-client'); if(!sel) return;
@@ -787,5 +818,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
