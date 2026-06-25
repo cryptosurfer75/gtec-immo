@@ -35,6 +35,7 @@
   // -- Petites aides -----------------------------------------------------------
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const nb  = v => (v==null||v==='') ? '' : new Intl.NumberFormat('fr-FR').format(Math.round(Number(v)));
+  const pct = v => (v==null||v==='') ? '' : new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2}).format(Number(v));
   const eur = v => (v==null||v==='') ? '' : nb(v)+' €';
   const num = v => { if(v==null||v==='') return null; const n=Number(String(v).replace(',','.')); return isNaN(n)?null:n; };
   // Nom affiché en couverture / titre = le PROPRIÉTAIRE (SCI ou société du propriétaire),
@@ -171,7 +172,7 @@
   function pageGroupe(){
     const body = `<div class="av-groupe">
       <p>GTEC Immobilier, spécialiste de l’immobilier d’entreprise et commercial, vous accompagne à chaque étape de vos projets : transaction, vente, location, recherche de locaux et conseil en valorisation.</p>
-      <p>Implantée à Amiens et Beauvais, notre équipe met son expertise du marché régional au service des propriétaires, investisseurs et utilisateurs, sur l’ensemble des Hauts-de-France.</p>
+      <p>Notre équipe met son expertise du marché régional au service des propriétaires, investisseurs et utilisateurs, sur l’ensemble des Hauts-de-France.</p>
       <div class="av-groupe-tags"><span>Transaction</span><span>Vente</span><span>Location</span><span>Conseil & valorisation</span></div>
     </div>`;
     return `<section class="pg">
@@ -213,25 +214,24 @@
   }
 
   function pageLocalisation(a, geo){
-    const note = (a.zone_chalandise||'').trim();
     // Si un extrait cadastral a été importé, il sert de plan de localisation (plus précis que la carte auto).
     const visuel = a.cadastre_url
-      ? `<div class="av-map av-cad"><img src="${esc(a.cadastre_url)}" alt="Extrait cadastral"></div>
-         <div class="av-cad-cap">Extrait cadastral${a.parcelle_cadastrale?' — parcelle '+esc(a.parcelle_cadastrale):''} · © IGN / DINUM (data.gouv.fr)</div>`
+      ? `<div class="av-cad-wrap"><img src="${esc(a.cadastre_url)}" alt="Extrait cadastral"></div>`
       : carteHtml(geo, 'plan', 1, 'Plan de localisation');
-    const body = `<div class="av-loc">
-      ${visuel}
-      ${note?`<div class="av-loc-note"><h4>Zone de chalandise</h4><p>${esc(note).replace(/\n+/g,'</p><p>')}</p></div>`:''}
-    </div>`;
+    const body = `<div class="av-loc">${visuel}</div>`;
     return page('Analyse de localisation', body, 'Analyse de localisation', 2);
   }
 
-  function pageAcces(a, geo){
-    const note = (a.accessibilite||'').trim();
-    const body = `<div class="av-loc">
-      ${carteHtml(geo, 'aerienne', 2, 'Vue aérienne')}
-      ${note?`<div class="av-loc-note"><h4>Accessibilité & environnement</h4><p>${esc(note).replace(/\n+/g,'</p><p>')}</p></div>`:''}
-    </div>`;
+  function pageAcces(a){
+    const zc  = (a.zone_chalandise||'').trim();
+    const acc = (a.accessibilite||'').trim();
+    const bloc = (titre, txt) => txt
+      ? `<div class="av-acc-bloc"><h4>${titre}</h4><p>${esc(txt).replace(/\n+/g,'</p><p>')}</p></div>`
+      : '';
+    const contenu = (zc||acc)
+      ? `${bloc('Zone de chalandise', zc)}${bloc('Accessibilité & environnement', acc)}`
+      : '<p class="ph">Zone de chalandise et accessibilité non renseignées.</p>';
+    const body = `<div class="av-acc">${contenu}</div>`;
     return page('Accessibilité & environnement', body, 'Accessibilité & environnement', 3);
   }
 
@@ -281,18 +281,32 @@
     return page('Valeur comparative du marché', body, 'Valeur comparative', 5);
   }
 
+  // Pastilles rondes à icônes par quadrant (interne/externe · atout/vigilance)
+  const SWOT_ICON = {
+    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    minus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+    up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>',
+    warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 4.3 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"/></svg>'
+  };
+
   function pageSwot(a){
     const s = a.swot || {};
-    const cell = (titre, txt, cls) => {
+    const block = (cls, icon, titre, txt) => {
       const lines = (txt||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
-      const corps = lines.length ? `<ul>${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="ph">Non renseigné</p>';
-      return `<div class="swot-q ${cls}"><div class="swot-h">${esc(titre)}</div><div class="swot-b">${corps}</div></div>`;
+      const corps = lines.length ? `<ul class="swB-ul">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="ph">Non renseigné</p>';
+      return `<div class="swB-block ${cls}"><div class="swB-h"><span class="swB-sign">${icon}</span><b>${esc(titre)}</b></div>${corps}</div>`;
     };
-    const body = `<div class="swot-grid">
-      ${cell('Forces', s.forces, 'sw-f')}
-      ${cell('Faiblesses', s.faiblesses, 'sw-w')}
-      ${cell('Opportunités', s.opportunites, 'sw-o')}
-      ${cell('Menaces', s.menaces, 'sw-t')}
+    const body = `<div class="swB">
+      <div class="swB-col">
+        <div class="swB-coltitle">Analyse interne — le bien</div>
+        ${block('swB-f', SWOT_ICON.plus, 'Forces', s.forces)}
+        ${block('swB-w', SWOT_ICON.minus, 'Faiblesses', s.faiblesses)}
+      </div>
+      <div class="swB-col">
+        <div class="swB-coltitle">Analyse externe — le marché</div>
+        ${block('swB-o', SWOT_ICON.up, 'Opportunités', s.opportunites)}
+        ${block('swB-t', SWOT_ICON.warn, 'Menaces', s.menaces)}
+      </div>
     </div>`;
     return page('Analyse SWOT', body, 'Analyse SWOT', 6);
   }
@@ -313,9 +327,9 @@
       <div class="av-val-tot">VALEUR LOCATIVE TOTALE ANNUELLE : <b>${f.vlAnnuelle!=null?eur(f.vlAnnuelle)+' HT / AN HC':'—'}</b></div>
       ${comm?`<div class="av-val-comm"><p>${esc(comm).replace(/\n+/g,'</p><p>')}</p></div>`:''}
       <div class="av-val-cards">
-        <div class="av-card"><div class="av-card-l">Taux de rendement retenu</div><div class="av-card-v">${f.taux!=null?nb(f.taux)+' %':'—'}</div></div>
+        <div class="av-card"><div class="av-card-l">Taux de rendement retenu</div><div class="av-card-v">${f.taux!=null?pct(f.taux)+' %':'—'}</div></div>
         <div class="av-card teal"><div class="av-card-l">Valeur par capitalisation (net vendeur)</div><div class="av-card-v">${f.netVendeur!=null?eur(f.netVendeur)+' HDHH':'—'}</div></div>
-        <div class="av-card"><div class="av-card-l">Frais de mutation (${f.fraisPct!=null?nb(f.fraisPct)+' %':'—'}) → prix actes en mains</div><div class="av-card-v">${f.actesEnMains!=null?eur(f.actesEnMains):'—'}</div></div>
+        <div class="av-card"><div class="av-card-l">Frais de mutation (${f.fraisPct!=null?pct(f.fraisPct)+' %':'—'}) → prix actes en mains</div><div class="av-card-v">${f.actesEnMains!=null?eur(f.actesEnMains):'—'}</div></div>
       </div>
     </div>`;
     return page('Valorisation financière', body, 'Valorisation & conclusion', 7);
@@ -360,13 +374,13 @@
       .btn-print{ background:var(--teal); color:#fff; } .btn-close{ background:#55606e; color:#fff; }
       .sheet{ padding:24px; display:flex; flex-direction:column; align-items:center; gap:20px; }
       .pg{ width:280mm; height:202mm; background:#fff; position:relative; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,.35); display:flex; flex-direction:column; }
-      .pg-h{ display:flex; align-items:center; justify-content:space-between; margin:0 14mm 5mm; padding:14mm 0 4mm; border-bottom:.8mm solid var(--teal); }
+      .pg-h{ flex-shrink:0; display:flex; align-items:center; justify-content:space-between; margin:0 14mm 5mm; padding:14mm 0 4mm; border-bottom:.8mm solid var(--teal); }
       .pg-h h1{ font-size:30pt; font-weight:600; margin:0; color:#222; }
       .pg-logo{ height:22mm; }
       .logo-wrap{ display:inline-flex; flex-direction:column; align-items:center; gap:1.5mm; }
       .logo-tag{ font-size:8pt; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-weight:600; white-space:nowrap; }
-      .pg-body{ flex:1; padding:2mm 14mm; }
-      .pg-f{ display:flex; align-items:flex-end; justify-content:space-between; padding:0 12mm 7mm; }
+      .pg-body{ flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; padding:2mm 14mm; }
+      .pg-f{ flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; padding:0 12mm 7mm; }
       .pg-f .nav{ display:flex; gap:6px; flex:1; }
       .navcell{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
       .navcell span{ font-size:7pt; color:#444; line-height:1.1; margin-bottom:3px; text-align:center; min-height:2.4em; display:flex; align-items:flex-end; justify-content:center; }
@@ -402,18 +416,25 @@
       .av-groupe{ font-size:14pt; line-height:1.65; color:#222; padding-top:6mm; } .av-groupe p{ margin:0 0 5mm; }
       .av-groupe-tags{ display:flex; flex-wrap:wrap; gap:4mm; margin-top:6mm; }
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
-      .swot-grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:6mm; height:150mm; margin-top:4mm; }
-      .swot-q{ border:1px solid #e1e6e8; border-radius:4px; overflow:hidden; display:flex; flex-direction:column; }
-      .swot-h{ color:#fff; font-size:14pt; font-weight:700; letter-spacing:.04em; padding:3mm 5mm; }
-      .swot-b{ flex:1; padding:4mm 6mm; font-size:11.5pt; color:#222; overflow:hidden; }
-      .swot-b ul{ margin:0; padding-left:5mm; } .swot-b li{ margin:0 0 2mm; }
-      .sw-f{ background:#eef5f3; } .sw-f .swot-h{ background:var(--teal); }
-      .sw-w{ background:#f7efe9; } .sw-w .swot-h{ background:#b5683f; }
-      .sw-o{ background:#eaeef2; } .sw-o .swot-h{ background:var(--navy); }
-      .sw-t{ background:#eef0f2; } .sw-t .swot-h{ background:#6b7480; }
-      .av-sommaire{ list-style:none; margin:6mm 0 0; padding:0 0 0 6mm; }
-      .av-sommaire li{ display:flex; align-items:center; gap:10mm; font-size:19pt; margin:6mm 0; color:#222; }
-      .av-sommaire .num{ width:14mm; height:14mm; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14pt; font-weight:700; }
+      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:4mm; }
+      .swB-col{ display:flex; flex-direction:column; min-height:0; }
+      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:5mm; border-bottom:1px solid #e1e6e8; }
+      .swB-block{ flex:1; display:flex; flex-direction:column; padding-bottom:5mm; }
+      .swB-block + .swB-block{ padding-top:5mm; }
+      .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:3mm; }
+      .swB-sign{ width:9mm; height:9mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
+      .swB-sign svg{ width:5mm; height:5mm; }
+      .swB-h b{ font-size:14pt; letter-spacing:.02em; color:#222; }
+      .swB-ul{ margin:0; padding:0; list-style:none; font-size:11.5pt; color:#2a3340; }
+      .swB-ul li{ position:relative; padding-left:5.5mm; margin:0 0 2.4mm; line-height:1.4; }
+      .swB-ul li::before{ content:''; position:absolute; left:0; top:.45em; width:2mm; height:2mm; border-radius:50%; }
+      .swB-f .swB-sign{ background:var(--teal); } .swB-f li::before{ background:var(--teal); }
+      .swB-w .swB-sign{ background:#b5683f; } .swB-w li::before{ background:#b5683f; }
+      .swB-o .swB-sign{ background:var(--navy); } .swB-o li::before{ background:var(--navy); }
+      .swB-t .swB-sign{ background:#6b7480; } .swB-t li::before{ background:#6b7480; }
+      .av-sommaire{ list-style:none; margin:0; padding:0 0 0 6mm; height:100%; display:flex; flex-direction:column; justify-content:space-evenly; }
+      .av-sommaire li{ display:flex; align-items:center; gap:10mm; font-size:18pt; color:#222; }
+      .av-sommaire .num{ flex-shrink:0; width:13mm; height:13mm; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13pt; font-weight:700; }
       .av-presit{ display:flex; gap:10mm; padding-top:4mm; height:100%; } .av-presit-txt{ flex:1; }
       .av-pres-ens{ font-size:24pt; font-weight:700; color:var(--navy); }
       .av-pres-ville{ font-size:15pt; color:var(--teal-d); font-weight:600; margin-top:1mm; }
@@ -426,11 +447,15 @@
       .av-loc{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; }
       .av-map{ position:relative; width:100%; flex:1; min-height:110mm; background:#e9ecef; border-radius:3px; overflow:hidden; }
       .av-map img{ width:100%; height:100%; object-fit:cover; } .av-leaflet{ width:100%; height:100%; }
-      .av-map.av-cad{ background:#fff; } .av-map.av-cad img{ object-fit:contain; }
-      .av-cad-cap{ font-size:9pt; color:#777; font-style:italic; text-align:center; }
+      .av-cad-wrap{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center; background:#fff; border-radius:3px; overflow:hidden; }
+      .av-cad-wrap img{ width:100%; height:100%; object-fit:contain; display:block; }
+      .av-cad-cap{ flex-shrink:0; font-size:9pt; color:#777; font-style:italic; text-align:center; }
       .av-map.ph{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9aa0a6; font-size:13pt; text-align:center; }
       .av-loc-note h4{ margin:0 0 2mm; color:var(--teal-d); font-size:12pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-loc-note p{ margin:0 0 2mm; font-size:11pt; line-height:1.5; color:#333; }
+      .av-acc{ display:flex; flex-direction:column; gap:9mm; padding-top:4mm; }
+      .av-acc-bloc h4{ margin:0 0 3mm; color:var(--teal-d); font-size:14pt; text-transform:uppercase; letter-spacing:.04em; }
+      .av-acc-bloc p{ margin:0 0 3mm; font-size:13pt; line-height:1.6; color:#222; }
       .av-tech-titre{ font-size:17pt; font-weight:700; color:var(--navy); margin:2mm 0 5mm; }
       .av-tech-grid{ display:flex; gap:10mm; } .av-tech-col{ flex:1; }
       .av-tech-sub{ font-size:13pt; font-weight:700; color:var(--teal-d); margin-bottom:4mm; }
@@ -515,7 +540,7 @@
     const geo = await geocoder(a);
     const pages = [
       pageCouverture(a), pageAvertissement(), pageGroupe(), pageSommaire(),
-      pagePresentation(a), pageLocalisation(a, geo), pageAcces(a, geo),
+      pagePresentation(a), pageLocalisation(a, geo), pageAcces(a),
       pageTechnique(a), pageComparatif(a), pageSwot(a), pageValorisation(a), pageConclusion(a),
       pageContact(a)
     ].join('');
@@ -801,8 +826,8 @@
         </div>
 
         <div class="sep">Textes des pages</div>
-        ${TA('av-chalandise','Analyse de localisation / zone de chalandise', a.zone_chalandise)}
-        ${TA('av-acces','Accessibilité & environnement', a.accessibilite)}
+        ${TA('av-chalandise','Zone de chalandise (page Accessibilité)', a.zone_chalandise)}
+        ${TA('av-acces','Accessibilité & environnement (page Accessibilité)', a.accessibilite)}
         ${TA('av-ccl','Commentaire de conclusion', a.commentaire_conclusion)}
       </div>
       <div class="foot">
