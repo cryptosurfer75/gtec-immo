@@ -1710,7 +1710,13 @@ function formOffre(rec){
       client_id:val('o-client'), publie:(val('o-pub')?true:null), equipements:EQUIP_SEL, cover_url });
     vueOffres();
   }, rec.id ? async()=>{ if(rec.cover_url) await supprimerCoverStorage(rec.cover_url); await sb.from('offre_photos').delete().eq('offre_id', rec.id); await sb.from('actions').delete().eq('cible_type','offre').eq('cible_id',rec.id); await del('offres', rec.id); vueOffres(); } : null, 'offre:'+(rec.id||'new'),
-    rec.id ? {archived:!!rec.archive, toggle:async()=>{ await save('offres', rec.id, {archive:!rec.archive}); vueOffres(); }} : null);
+    rec.id ? {archived:!!rec.archive, toggle:async()=>{
+      const enArchivage = !rec.archive;                       // true => on passe le bien en archivé
+      await save('offres', rec.id, {archive:!rec.archive});
+      // En archivant, on révoque automatiquement le lien public du dossier (évite de l'oublier).
+      if(enArchivage){ try{ await sb.storage.from('offres').remove(['dossier-public/'+rec.id+'.html']); }catch(e){} }
+      vueOffres();
+    }} : null);
   brancherVilleAuto(document.getElementById('o-ville'), ()=>document.getElementById('o-cp'));
   brancherAdresseAuto(document.getElementById('o-adresse'));
   majEquipSummary();
