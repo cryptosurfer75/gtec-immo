@@ -29,7 +29,7 @@
   };
   const CONTACT_DEFAUT = AGENTS.FB;
   const SECTIONS = ['Présentation de l’actif','Analyse de localisation','Accessibilité & environnement',
-                    'Données techniques','Valeur comparative','Valorisation & conclusion'];
+                    'Données techniques','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
 
   // -- Petites aides -----------------------------------------------------------
@@ -260,6 +260,22 @@
     return page('Valeur comparative du marché', body, 'Valeur comparative', 5);
   }
 
+  function pageSwot(a){
+    const s = a.swot || {};
+    const cell = (titre, txt, cls) => {
+      const lines = (txt||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+      const corps = lines.length ? `<ul>${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="ph">Non renseigné</p>';
+      return `<div class="swot-q ${cls}"><div class="swot-h">${esc(titre)}</div><div class="swot-b">${corps}</div></div>`;
+    };
+    const body = `<div class="swot-grid">
+      ${cell('Forces', s.forces, 'sw-f')}
+      ${cell('Faiblesses', s.faiblesses, 'sw-w')}
+      ${cell('Opportunités', s.opportunites, 'sw-o')}
+      ${cell('Menaces', s.menaces, 'sw-t')}
+    </div>`;
+    return page('Analyse SWOT', body, 'Analyse SWOT', 6);
+  }
+
   function pageValorisation(a){
     const f = finance(a);
     const lignes = f.detail.length ? f.detail.map(d=>`<tr>
@@ -281,7 +297,7 @@
         <div class="av-card"><div class="av-card-l">Frais de mutation (${f.fraisPct!=null?nb(f.fraisPct)+' %':'—'}) → prix actes en mains</div><div class="av-card-v">${f.actesEnMains!=null?eur(f.actesEnMains):'—'}</div></div>
       </div>
     </div>`;
-    return page('Valorisation financière', body, 'Valorisation & conclusion', 6);
+    return page('Valorisation financière', body, 'Valorisation & conclusion', 7);
   }
 
   function pageConclusion(a){
@@ -297,7 +313,7 @@
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
       </div>
     </div>`;
-    return page('Conclusion', body, 'Valorisation & conclusion', 7);
+    return page('Conclusion', body, 'Valorisation & conclusion', 8);
   }
 
   function pageContact(a){
@@ -364,6 +380,15 @@
       .av-groupe{ font-size:14pt; line-height:1.65; color:#222; padding-top:6mm; } .av-groupe p{ margin:0 0 5mm; }
       .av-groupe-tags{ display:flex; flex-wrap:wrap; gap:4mm; margin-top:6mm; }
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
+      .swot-grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:6mm; height:150mm; margin-top:4mm; }
+      .swot-q{ border:1px solid #e1e6e8; border-radius:4px; overflow:hidden; display:flex; flex-direction:column; }
+      .swot-h{ color:#fff; font-size:14pt; font-weight:700; letter-spacing:.04em; padding:3mm 5mm; }
+      .swot-b{ flex:1; padding:4mm 6mm; font-size:11.5pt; color:#222; overflow:hidden; }
+      .swot-b ul{ margin:0; padding-left:5mm; } .swot-b li{ margin:0 0 2mm; }
+      .sw-f{ background:#eef5f3; } .sw-f .swot-h{ background:var(--teal); }
+      .sw-w{ background:#f7efe9; } .sw-w .swot-h{ background:#b5683f; }
+      .sw-o{ background:#eaeef2; } .sw-o .swot-h{ background:var(--navy); }
+      .sw-t{ background:#eef0f2; } .sw-t .swot-h{ background:#6b7480; }
       .av-sommaire{ list-style:none; margin:6mm 0 0; padding:0 0 0 6mm; }
       .av-sommaire li{ display:flex; align-items:center; gap:10mm; font-size:19pt; margin:6mm 0; color:#222; }
       .av-sommaire .num{ width:14mm; height:14mm; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14pt; font-weight:700; }
@@ -467,7 +492,7 @@
     const pages = [
       pageCouverture(a), pageAvertissement(), pageGroupe(), pageSommaire(),
       pagePresentation(a), pageLocalisation(a, geo), pageAcces(a, geo),
-      pageTechnique(a), pageComparatif(a), pageValorisation(a), pageConclusion(a),
+      pageTechnique(a), pageComparatif(a), pageSwot(a), pageValorisation(a), pageConclusion(a),
       pageContact(a)
     ].join('');
     const titre = `Avis de valeur — ${enseigneDe(a) || typeActifDe(a)} ${a.ville||''}`.trim();
@@ -523,6 +548,8 @@
       #av-ed .cad-row input{flex:1}
       #av-ed .cad-btn{white-space:nowrap;border:0;border-radius:8px;background:#eef3f1;color:#2f6359;font-weight:600;font-size:13px;padding:0 12px;cursor:pointer}
       #av-ed .cad-btn:hover{background:#dfeae6}
+      #av-ed .swot-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+      #av-ed .swot-form textarea{min-height:70px}
       #av-ed .lots-tot{margin-top:10px;text-align:right;font-size:14px;color:#4A5A5E} #av-ed .lots-tot b{font-size:18px;color:#1A2738;margin-left:6px}
       #av-ed .row input{padding:6px 8px;font-size:13px}
       #av-ed .row .del{background:#fbe9e9;border:0;color:#b33;border-radius:6px;cursor:pointer;font-size:15px;height:30px}
@@ -661,6 +688,7 @@
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
     const occ   = Array.isArray(a.occupants) && a.occupants.length ? a.occupants : [{}];
+    const sw    = a.swot || {};
     const defAgent = (id ? a.agent : (window.ME_AGENT||'FB')) || 'FB';
     const titreModal = id ? `Avis de valeur ${a.reference?'— '+esc(a.reference):''}` : 'Nouvel avis de valeur';
 
@@ -694,7 +722,7 @@
           <div class="f"><label>Parcelle cadastrale</label>
             <div class="cad-row">
               <input id="av-cadastre" type="text" value="${a.parcelle_cadastrale==null?'':esc(a.parcelle_cadastrale)}" placeholder="ex : AB-123">
-              <button type="button" class="cad-btn" onclick="GTEC_AVIS._cadastre()" title="Ouvrir le cadastre (Géoportail) sur l'adresse">🗺️ Cadastre</button>
+              <button type="button" class="cad-btn" onclick="GTEC_AVIS._cadastre()" title="Ouvrir le cadastre (vue aérienne) sur l'adresse du bien">🗺️ Cadastre</button>
             </div>
           </div>
           ${I('av-foncier','Surface du foncier (m²)', a.surface_foncier, {type:'number'})}
@@ -717,6 +745,15 @@
         <div class="rowhead row comp"><span>Date</span><span>Typologie</span><span>Adresse</span><span>Terrain m²</span><span>Bâti m²</span><span>Valeur vénale €</span><span></span></div>
         <div class="rows" id="av-comp-rows">${comp.map(compRow).join('')}</div>
         <button type="button" class="addbtn" onclick="GTEC_AVIS._addComp()">＋ Ajouter une transaction comparable</button>
+
+        <div class="sep">Analyse SWOT</div>
+        <p class="hint" style="margin:-4px 0 8px">Une ligne = un point (chaque ligne devient une puce dans le document).</p>
+        <div class="swot-form">
+          <div class="f"><label>Forces</label><textarea id="av-swot-f">${sw.forces==null?'':esc(sw.forces)}</textarea></div>
+          <div class="f"><label>Faiblesses</label><textarea id="av-swot-w">${sw.faiblesses==null?'':esc(sw.faiblesses)}</textarea></div>
+          <div class="f"><label>Opportunités</label><textarea id="av-swot-o">${sw.opportunites==null?'':esc(sw.opportunites)}</textarea></div>
+          <div class="f"><label>Menaces</label><textarea id="av-swot-t">${sw.menaces==null?'':esc(sw.menaces)}</textarea></div>
+        </div>
 
         <div class="sep">Textes des pages</div>
         ${TA('av-chalandise','Analyse de localisation / zone de chalandise', a.zone_chalandise)}
@@ -755,6 +792,7 @@
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
       cover_url, annee:gn('av-annee'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
+      swot:{ forces:g('av-swot-f'), faiblesses:g('av-swot-w'), opportunites:g('av-swot-o'), menaces:g('av-swot-t') },
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'),
       copropriete:document.getElementById('av-copro').checked,
       loyer_lignes:collect('#av-loyer-rows'),
