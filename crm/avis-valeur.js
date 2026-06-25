@@ -517,6 +517,12 @@
   const CK = (id,label,v) => `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}" style="font-weight:500">${esc(label)}</label></div>`;
   const SELA = (v) => `<div class="f"><label>Négociateur GTEC</label><select id="av-agent">`+
     [['FB','Florent BOURDIEC'],['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'FB')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
+  // Menu déroulant des clients existants : rattache un client à l'avis et pré-remplit le propriétaire.
+  // Réutilise les helpers globaux du CRM (chargerClients/optClients/nomClient).
+  const SELC = (v) => `<div class="f full"><label>Client rattaché (remplit le propriétaire automatiquement)</label>`+
+    `<select id="av-client" onchange="GTEC_AVIS._pickClient()">`+
+    ((typeof optClients==='function') ? optClients(v) : `<option value="">— Aucun client —</option>`)+
+    `</select></div>`;
 
   function loyerRow(l){ l=l||{};
     return `<div class="row loyer">
@@ -598,7 +604,9 @@
   async function editer(id){
     let a={};
     if(id){ try{ a = await charger(id); }catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; } }
-    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null };
+    // Rafraîchit la liste des clients pour alimenter le menu déroulant de rattachement.
+    try{ if(typeof chargerClients==='function') await chargerClients(); }catch(e){}
+    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, client_id:a.client_id||null };
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const defAgent = (id ? a.agent : (window.ME_AGENT||'FB')) || 'FB';
@@ -609,6 +617,7 @@
       <div class="b">
         <div class="sep">Identité du bâtiment</div>
         <div class="grid">
+          ${SELC(a.client_id)}
           ${SELA(defAgent)}
           ${I('av-proprietaire','Propriétaire / prospect', a.proprietaire)}
           ${I('av-enseigne','Enseigne / occupant', a.enseigne)}
@@ -676,6 +685,7 @@
     try{ if(A.photoFile) cover_url = await uploadPhoto(A.photoFile); }
     catch(e){ alert('Échec de l’envoi de la photo : '+(e.message||e)); return; }
     const payload = {
+      client_id:A.client_id||null,
       agent:g('av-agent'), proprietaire:g('av-proprietaire'), enseigne:g('av-enseigne'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
       cover_url, surface_totale:gn('av-surftot'), etage:g('av-etage'), annee:gn('av-annee'),
@@ -707,6 +717,19 @@
 
   function resume(a){ const f = finance(a); return { valeur:f.valeurRetenue, m2:f.valeurM2 }; }
 
+  // Au choix d'un client dans le menu : on retient son id et on pré-remplit le propriétaire.
+  function pickClient(){
+    const sel = document.getElementById('av-client'); if(!sel) return;
+    const cid = sel.value || null;
+    A.client_id = cid;
+    if(!cid) return;
+    const liste = (typeof CLIENTS!=='undefined' && Array.isArray(CLIENTS)) ? CLIENTS : [];
+    const c = liste.find(x=>String(x.id)===String(cid));
+    if(!c) return;
+    const prop = document.getElementById('av-proprietaire');
+    if(prop && typeof nomClient==='function') prop.value = nomClient(c);
+  }
+
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save };
+    _calc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient };
 })();
