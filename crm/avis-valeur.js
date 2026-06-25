@@ -214,8 +214,13 @@
 
   function pageLocalisation(a, geo){
     const note = (a.zone_chalandise||'').trim();
+    // Si un extrait cadastral a été importé, il sert de plan de localisation (plus précis que la carte auto).
+    const visuel = a.cadastre_url
+      ? `<div class="av-map av-cad"><img src="${esc(a.cadastre_url)}" alt="Extrait cadastral"></div>
+         <div class="av-cad-cap">Extrait cadastral${a.parcelle_cadastrale?' — parcelle '+esc(a.parcelle_cadastrale):''} · © IGN / DINUM (data.gouv.fr)</div>`
+      : carteHtml(geo, 'plan', 1, 'Plan de localisation');
     const body = `<div class="av-loc">
-      ${carteHtml(geo, 'plan', 1, 'Plan de localisation')}
+      ${visuel}
       ${note?`<div class="av-loc-note"><h4>Zone de chalandise</h4><p>${esc(note).replace(/\n+/g,'</p><p>')}</p></div>`:''}
     </div>`;
     return page('Analyse de localisation', body, 'Analyse de localisation', 2);
@@ -421,6 +426,8 @@
       .av-loc{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; }
       .av-map{ position:relative; width:100%; flex:1; min-height:110mm; background:#e9ecef; border-radius:3px; overflow:hidden; }
       .av-map img{ width:100%; height:100%; object-fit:cover; } .av-leaflet{ width:100%; height:100%; }
+      .av-map.av-cad{ background:#fff; } .av-map.av-cad img{ object-fit:contain; }
+      .av-cad-cap{ font-size:9pt; color:#777; font-style:italic; text-align:center; }
       .av-map.ph{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9aa0a6; font-size:13pt; text-align:center; }
       .av-loc-note h4{ margin:0 0 2mm; color:var(--teal-d); font-size:12pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-loc-note p{ margin:0 0 2mm; font-size:11pt; line-height:1.5; color:#333; }
@@ -682,6 +689,13 @@
     r.onload=e=>{ const p=document.getElementById('av-pres-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
     r.readAsDataURL(f);
   }
+  function _cadPhoto(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    A.cadFile=f;
+    const r=new FileReader();
+    r.onload=e=>{ const p=document.getElementById('av-cad-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(f);
+  }
   function fermer(){ const e=document.getElementById('av-ed-bg'); if(e) e.remove(); }
 
   async function uploadPhoto(file){
@@ -707,7 +721,7 @@
     if(id){ try{ a = await charger(id); }catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; } }
     // Rafraîchit la liste des clients pour alimenter le menu déroulant de rattachement.
     try{ if(typeof chargerClients==='function') await chargerClients(); }catch(e){}
-    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, client_id:a.client_id||null };
+    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, cadastre_url:a.cadastre_url||null, cadFile:null, client_id:a.client_id||null };
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
@@ -755,6 +769,10 @@
           ${I('av-foncier','Surface du foncier (m²)', a.surface_foncier, {type:'number'})}
           ${CK('av-copro','Foncier en copropriété', a.copropriete)}
         </div>
+        <div class="f full" style="margin-top:10px"><label>Extrait cadastral (capture du plan, parcelle surlignée)</label>
+          <input type="file" accept="image/*" onchange="GTEC_AVIS._cadPhoto(this)">
+          <div class="photo" id="av-cad-prev">${a.cadastre_url?`<img src="${esc(a.cadastre_url)}" alt="">`:''}</div>
+          <p class="hint">Clique « 🗺️ Cadastre » ci-dessus, fais une capture de la parcelle, puis importe-la ici. Elle apparaîtra sur la page « Analyse de localisation » du document.</p></div>
 
         <div class="sep">Valeur locative de marché</div>
         <div class="rowhead row loyer"><span>Composante</span><span>Surface m²</span><span>Loyer €/m²/an</span><span>Marché min</span><span>Marché max</span><span></span></div>
@@ -810,9 +828,11 @@
     const gn = id => { const v=g(id); if(v==null) return null; const n=Number(String(v).replace(',','.')); return isNaN(n)?null:n; };
     let cover_url = A.cover_url || null;
     let photo_presentation_url = A.photo_presentation_url || null;
+    let cadastre_url = A.cadastre_url || null;
     try{
       if(A.photoFile) cover_url = await uploadPhoto(A.photoFile);
       if(A.presFile)  photo_presentation_url = await uploadPhoto(A.presFile);
+      if(A.cadFile)   cadastre_url = await uploadPhoto(A.cadFile);
     }
     catch(e){ alert('Échec de l’envoi de la photo : '+(e.message||e)); return; }
     const lotsArr = collect('#av-lots-rows');
@@ -824,7 +844,7 @@
       cover_url, photo_presentation_url, annee:gn('av-annee'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
       swot:{ forces:g('av-swot-f'), faiblesses:g('av-swot-w'), opportunites:g('av-swot-o'), menaces:g('av-swot-t') },
-      parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'),
+      parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'), cadastre_url,
       copropriete:document.getElementById('av-copro').checked,
       loyer_lignes:collect('#av-loyer-rows'),
       taux_rendement:gn('av-taux'), frais_mutation_pct:gn('av-frais'), valeur_estimee:gn('av-valest'),
@@ -887,5 +907,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
