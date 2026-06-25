@@ -991,14 +991,14 @@ async function chercherCommunes(q, villeEl, getCpEl, multi){
 }
 
 /* Recherche d'adresse (Base Adresse Nationale) → remplit adresse + ville + code postal */
-function brancherAdresseAuto(el){
+function brancherAdresseAuto(el, opts){
   if(!el) return;
   el.setAttribute('autocomplete','off');
   el.addEventListener('input', ()=>{ const q=el.value.trim(); clearTimeout(acTimer); fermerAuto();
-    if(q.length<3) return; acTimer=setTimeout(()=>chercherAdresses(q, el), 280); });
+    if(q.length<3) return; acTimer=setTimeout(()=>chercherAdresses(q, el, opts), 280); });
   el.addEventListener('blur', ()=>setTimeout(fermerAuto, 180));
 }
-async function chercherAdresses(q, el){
+async function chercherAdresses(q, el, opts){
   let feats=[];
   try{ const r=await fetch('https://api-adresse.data.gouv.fr/search/?limit=6&q='+encodeURIComponent(q)); const j=await r.json(); feats=j.features||[]; }
   catch(e){ return; }
@@ -1011,11 +1011,16 @@ async function chercherAdresses(q, el){
   acBox.style.top=(el.offsetTop+el.offsetHeight+2)+'px'; acBox.style.left=el.offsetLeft+'px';
   acBox.style.width=Math.max(el.offsetWidth,280)+'px';
   cont.appendChild(acBox);
+  // Champs cibles paramétrables (par défaut : la fiche d'un bien). Permet de réutiliser
+  // l'auto-complétion ailleurs (ex. avis de valeur) en visant d'autres champs ville/CP.
+  opts = opts || {};
+  const getVille = opts.getVille || (()=>document.getElementById('o-ville'));
+  const getCp    = opts.getCp    || (()=>document.getElementById('o-cp'));
   acBox.querySelectorAll('div').forEach(d=>d.addEventListener('mousedown', e=>{
     e.preventDefault();
     el.value=d.dataset.nom||'';
-    const v=document.getElementById('o-ville'); if(v && d.dataset.ville) v.value=d.dataset.ville;
-    const cp=document.getElementById('o-cp'); if(cp && d.dataset.cp) cp.value=d.dataset.cp;
+    const v=getVille(); if(v && d.dataset.ville) v.value=d.dataset.ville;
+    const cp=getCp(); if(cp && d.dataset.cp) cp.value=d.dataset.cp;
     fermerAuto();
   }));
 }
@@ -1883,7 +1888,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 init();
 </script>
 <script src="dossier.js?v=6"></script>
-<script src="avis-valeur.js?v=5"></script>
+<script src="avis-valeur.js?v=6"></script>
 <script src="teams.js?v=2"></script>
 </body>
 </html>
