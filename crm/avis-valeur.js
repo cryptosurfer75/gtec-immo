@@ -111,6 +111,8 @@
     const villeCp = [a.ville, a.code_postal?`(${a.code_postal})`:''].filter(Boolean).join(' ');
     const photo = a.cover_url || '';
     return `<section class="pg av-cover">
+      ${photo?`<img class="av-cv-bg" src="${esc(photo)}" alt="">`:'<div class="av-cv-bg av-cv-ph">Photo du bien à ajouter</div>'}
+      <div class="av-cv-veil"></div>
       <div class="av-cover-left">
         ${logoBlock('av-cv-logo')}
         <div class="av-cv-titre">AVIS DE<br><span>VALEUR</span></div>
@@ -125,7 +127,6 @@
           <div class="t3">BUREAUX <i>|</i> ACTIVITÉS <i>|</i> COMMERCE</div>
         </div>
       </div>
-      <div class="av-cover-right">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo du bien à ajouter</div>'}</div>
     </section>`;
   }
 
@@ -333,8 +334,11 @@
       .pg-num{ font-size:11pt; color:#9aa0a6; padding-left:10px; }
       .av-conf{ font-size:9pt; color:#9aa0a6; }
       .ph{ color:#9aa0a6; font-style:italic; }
-      .av-cover{ padding:0; flex-direction:row; }
-      .av-cover-left{ width:40%; background:var(--navy); color:#fff; padding:14mm 12mm; display:flex; flex-direction:column; }
+      .av-cover{ padding:0; display:block; position:relative; }
+      .av-cv-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+      .av-cv-ph{ display:flex; align-items:center; justify-content:center; background:#eef0f2; color:#9aa0a6; font-size:13pt; }
+      .av-cv-veil{ position:absolute; inset:0; z-index:1; background:linear-gradient(90deg, rgba(26,39,56,.95) 0%, rgba(26,39,56,.88) 33%, rgba(26,39,56,.34) 60%, rgba(26,39,56,0) 100%); }
+      .av-cover-left{ position:relative; z-index:2; width:64%; height:100%; color:#fff; padding:14mm 12mm; display:flex; flex-direction:column; }
       .av-cv-logo{ height:24mm; } .av-cv-logo-wrap{ align-items:flex-start; } .av-cv-logo-wrap .logo-tag{ color:var(--teal-l); }
       .av-cv-titre{ font-size:38pt; font-weight:700; line-height:1.04; margin-top:16mm; letter-spacing:.02em; }
       .av-cv-titre span{ color:var(--teal-l); }

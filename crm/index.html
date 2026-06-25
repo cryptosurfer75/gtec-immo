@@ -1438,7 +1438,7 @@ function initMediaDossier(offreId, plansUrls){
   DOSSIER_PHOTOS = [];
   renderMediaDossier();
   if(MEDIA_OFFRE_ID){
-    sb.from('offre_photos').select('id,url,ordre').eq('offre_id',MEDIA_OFFRE_ID)
+    sb.from('offre_photos').select('id,url,ordre,est_principale').eq('offre_id',MEDIA_OFFRE_ID)
       .order('ordre',{ascending:true,nullsFirst:false}).then(({data})=>{
         DOSSIER_PHOTOS = data||[]; renderMediaDossier();
       });
@@ -1447,17 +1447,35 @@ function initMediaDossier(offreId, plansUrls){
 /* Vignette numérotée + flèches de réordonnancement pour les photos du dossier */
 function thumbPhoto(p,i){
   const n=DOSSIER_PHOTOS.length;
+  const annonce=!!p.est_principale;
+  const bord=annonce?'#caa24a':'var(--teal)';
   return `<div style="position:relative;display:inline-block;margin:4px">
-    <img src="${esc(p.url)}" style="height:80px;width:108px;object-fit:cover;border-radius:6px;display:block;border:2px solid var(--teal)">
+    <img src="${esc(p.url)}" style="height:80px;width:108px;object-fit:cover;border-radius:6px;display:block;border:2px solid ${bord}">
     <span style="position:absolute;top:-8px;left:-8px;min-width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px">${i+1}</span>
+    ${annonce?`<span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#caa24a;color:#1A2738;font-size:10px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3)">★ ANNONCE</span>`:''}
     <button type="button" onclick="supprimerPhotoDossier('${p.id}')" title="Supprimer"
       style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border:none;border-radius:50%;background:#b3261e;color:#fff;cursor:pointer;font-size:14px;line-height:22px">×</button>
     <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:rgba(26,39,56,.6);border-radius:0 0 4px 4px">
       <button type="button" title="Reculer (numéro plus petit)" ${i===0?'disabled':''} onclick="deplacerPhotoDossier('${p.id}',-1)"
         style="flex:1;border:0;background:none;color:#fff;font-size:13px;cursor:pointer;${i===0?'opacity:.3;cursor:default':''}">◀</button>
+      <button type="button" title="${annonce?'Photo de l’annonce (cliquer pour la retirer)':'Choisir comme photo de l’annonce (vitrine + portails)'}" onclick="definirPhotoAnnonce('${p.id}')"
+        style="flex:1;border:0;background:none;color:${annonce?'#caa24a':'#fff'};font-size:14px;cursor:pointer">${annonce?'★':'☆'}</button>
       <button type="button" title="Avancer (numéro plus grand)" ${i===n-1?'disabled':''} onclick="deplacerPhotoDossier('${p.id}',1)"
         style="flex:1;border:0;background:none;color:#fff;font-size:13px;cursor:pointer;${i===n-1?'opacity:.3;cursor:default':''}">▶</button>
     </div></div>`;
+}
+/* Désigne UNE photo de la galerie comme photo de l'annonce (vitrine + portails type Leboncoin).
+   Indépendant de la photo de couverture du dossier. Re-cliquer la retire (retour à la couverture). */
+async function definirPhotoAnnonce(id){
+  if(!MEDIA_OFFRE_ID) return;
+  const cur=DOSSIER_PHOTOS.find(x=>String(x.id)===String(id)); if(!cur) return;
+  const activer=!cur.est_principale;   // bascule
+  DOSSIER_PHOTOS.forEach(p=>{ p.est_principale = activer && String(p.id)===String(id); });
+  renderMediaDossier();
+  try{
+    await sb.from('offre_photos').update({est_principale:false}).eq('offre_id',MEDIA_OFFRE_ID);
+    if(activer) await sb.from('offre_photos').update({est_principale:true}).eq('id',id);
+  }catch(e){ alert('Impossible d’enregistrer la photo de l’annonce : '+(e.message||e)); }
 }
 /* Renumérote les rangs (0,1,2,…) selon l'ordre affiché et persiste ceux qui ont changé */
 async function persistOrdrePhotos(){
@@ -1482,7 +1500,8 @@ function renderMediaDossier(){
   }
   const galP = DOSSIER_PHOTOS.length
     ? `<div style="display:flex;flex-wrap:wrap">${DOSSIER_PHOTOS.map((p,i)=>thumbPhoto(p,i)).join('')}</div>
-       <p style="font-size:.8rem;color:var(--gris-fonce);margin:6px 0 0">Le numéro détermine la place dans le dossier : <b>1</b> en haut à gauche, <b>2</b> en haut à droite, <b>3</b> en bas à gauche, <b>4</b> en bas à droite. Utilisez ◀ ▶ pour réordonner.</p>`
+       <p style="font-size:.8rem;color:var(--gris-fonce);margin:6px 0 0">Le numéro détermine la place dans le dossier : <b>1</b> en haut à gauche, <b>2</b> en haut à droite, <b>3</b> en bas à gauche, <b>4</b> en bas à droite. Utilisez ◀ ▶ pour réordonner.</p>
+       <p style="font-size:.8rem;color:var(--gris-fonce);margin:4px 0 0"><b style="color:#caa24a">★</b> = photo affichée comme <b>annonce</b> sur la vitrine et les portails (Leboncoin…). Sans étoile, c'est la photo de couverture qui est utilisée, à défaut la n°1.</p>`
     : '<span style="color:#888;font-style:italic">aucune photo</span>';
   const galPl = DOSSIER_PLANS.map((u,i)=>thumbPlan(u,`supprimerPlanDossier(${i})`)).join('') || '<span style="color:#888;font-style:italic">aucun plan</span>';
   const nbHeic = DOSSIER_PHOTOS.filter(p=>/\.(heic|heif)$/i.test(p.url||'')).length;
@@ -1651,10 +1670,11 @@ function formOffre(rec){
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
     <div class="f full"><label>Client propriétaire</label><select id="o-client">${optClients(rec.client_id)}</select></div>
     ${fCheck('o-pub','Publier sur la vitrine',rec.publie)}
-    ${fSep('Photo de couverture')}
+    ${fSep('Photo de couverture (dossier PDF)')}
     <div class="full">
       <input id="o-cover-file" type="file" accept="image/*" onchange="apercuCover()">
       <div id="o-cover-preview" style="margin-top:10px"></div>
+      <p style="font-size:.8rem;color:var(--gris-fonce);margin:6px 0 0">Photo de garde du dossier. La photo de l'<b>annonce</b> (vitrine + portails) se choisit séparément avec l'étoile <b style="color:#caa24a">★</b> dans « Dossier — Photos &amp; plans » ci-dessous.</p>
     </div>
     ${fSep('Dossier — Localisation (cartes Google Maps)')}
     <div class="f"><label>Carte — plan de localisation</label>
@@ -1888,7 +1908,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 init();
 </script>
 <script src="dossier.js?v=6"></script>
-<script src="avis-valeur.js?v=7"></script>
+<script src="avis-valeur.js?v=8"></script>
 <script src="teams.js?v=2"></script>
 </body>
 </html>
