@@ -176,6 +176,7 @@
     const ens = enseigneDe(a);
     const villeCp = [a.ville, a.code_postal?`(${a.code_postal})`:''].filter(Boolean).join(' ');
     const photo = a.cover_url || '';
+    const occ = (Array.isArray(a.occupants)?a.occupants:[]).map(o=>o&&o.nom).filter(Boolean);
     const body = `<div class="av-presit">
       <div class="av-presit-txt">
         <div class="av-pres-ens">${esc(ens||'—')}</div>
@@ -183,6 +184,7 @@
         <div class="av-pres-adr">${esc(a.adresse||'')}</div>
         <table class="av-mini">
           <tr><th>Type d’actif</th><td>${esc(typeActifDe(a))}</td></tr>
+          ${occ.length?`<tr><th>Occupant${occ.length>1?'s':''}</th><td>${esc(occ.join(', '))}</td></tr>`:''}
           ${a.surface_totale?`<tr><th>Surface totale</th><td>${nb(a.surface_totale)} m²</td></tr>`:''}
           ${a.annee?`<tr><th>Année</th><td>${esc(a.annee)}</td></tr>`:''}
           ${a.proprietaire?`<tr><th>Propriétaire</th><td>${esc(a.proprietaire)}</td></tr>`:''}
@@ -512,6 +514,9 @@
       #av-ed .row.loyer{grid-template-columns:1.4fr .8fr .8fr .8fr .8fr 28px}
       #av-ed .row.comp{grid-template-columns:.8fr 1fr 1.3fr .8fr .8fr 1fr 28px}
       #av-ed .row.lot{grid-template-columns:1fr 1fr 1.6fr .9fr 28px}
+      #av-ed .row.occ{grid-template-columns:1fr 28px}
+      #av-ed .occ-box{border:1px solid #d7dde0;border-radius:10px;padding:11px 13px;background:#fafcfb}
+      #av-ed .occ-box>label{margin-bottom:7px}
       #av-ed .lots-tot{margin-top:10px;text-align:right;font-size:14px;color:#4A5A5E} #av-ed .lots-tot b{font-size:18px;color:#1A2738;margin-left:6px}
       #av-ed .row input{padding:6px 8px;font-size:13px}
       #av-ed .row .del{background:#fbe9e9;border:0;color:#b33;border-radius:6px;cursor:pointer;font-size:15px;height:30px}
@@ -528,8 +533,19 @@
   const I  = (id,label,v,o={}) => `<div class="f ${o.full?'full':''}"><label>${esc(label)}</label><input id="${id}" type="${o.type||'text'}" value="${v==null?'':esc(v)}" ${o.attr||''}></div>`;
   const TA = (id,label,v) => `<div class="f full"><label>${esc(label)}</label><textarea id="${id}">${v==null?'':esc(v)}</textarea></div>`;
   const CK = (id,label,v) => `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}" style="font-weight:500">${esc(label)}</label></div>`;
-  const SELA = (v) => `<div class="f"><label>Négociateur GTEC</label><select id="av-agent">`+
+  const SELA = (v) => `<div class="f full"><label>Négociateur GTEC</label><select id="av-agent">`+
     [['FB','Florent BOURDIEC'],['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'FB')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
+  // Cadre « Occupant(s) » : 1 à 3 enseignes / sociétés occupant le bien, juste sous le consultant.
+  function occRow(o){ o=o||{};
+    return `<div class="row occ">
+      <input data-k="nom" value="${esc(o.nom||'')}" placeholder="Enseigne ou société de l'occupant">
+      <button type="button" class="del" onclick="GTEC_AVIS._delOcc(this)">×</button></div>`;
+  }
+  const occBox = (list) => `<div class="f full occ-box">
+      <label>Occupant(s) — enseigne / société</label>
+      <div class="rows" id="av-occ-rows">${list.map(occRow).join('')}</div>
+      <button type="button" class="addbtn" id="av-occ-add" onclick="GTEC_AVIS._addOcc()">＋ Ajouter un occupant</button>
+    </div>`;
   // Menu déroulant des clients existants : rattache un client à l'avis et pré-remplit le propriétaire.
   // Réutilise les helpers globaux du CRM (chargerClients/optClients/nomClient).
   const SELC = (v) => `<div class="f full"><label>Client rattaché (remplit le propriétaire automatiquement)</label>`+
@@ -595,6 +611,9 @@
   }
   function _addLot(){ document.getElementById('av-lots-rows').insertAdjacentHTML('beforeend', lotRow()); }
   function _delLot(b){ b.closest('.row').remove(); _calc(); }
+  function _occCap(){ const add=document.getElementById('av-occ-add'); if(!add) return; const n=document.querySelectorAll('#av-occ-rows .row').length; add.style.display = n>=3 ? 'none' : ''; }
+  function _addOcc(){ const rows=document.getElementById('av-occ-rows'); if(!rows || rows.querySelectorAll('.row').length>=3) return; rows.insertAdjacentHTML('beforeend', occRow()); _occCap(); }
+  function _delOcc(b){ b.closest('.row').remove(); _occCap(); }
   function _addLoyer(){ document.getElementById('av-loyer-rows').insertAdjacentHTML('beforeend', loyerRow()); }
   function _addComp(){ document.getElementById('av-comp-rows').insertAdjacentHTML('beforeend', compRow()); }
   function _delLoyer(b){ b.closest('.row').remove(); _calc(); }
@@ -635,6 +654,7 @@
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
+    const occ   = Array.isArray(a.occupants) && a.occupants.length ? a.occupants : [{}];
     const defAgent = (id ? a.agent : (window.ME_AGENT||'FB')) || 'FB';
     const titreModal = id ? `Avis de valeur ${a.reference?'— '+esc(a.reference):''}` : 'Nouvel avis de valeur';
 
@@ -645,6 +665,7 @@
         <div class="grid">
           ${SELC(a.client_id)}
           ${SELA(defAgent)}
+          ${occBox(occ)}
           ${I('av-proprietaire','Propriétaire / prospect', a.proprietaire)}
           ${I('av-enseigne','Enseigne / occupant', a.enseigne)}
           ${I('av-typeactif','Type d’actif (ex : Cellule commerciale en copropriété)', a.type_actif)}
@@ -707,7 +728,7 @@
         { getVille:()=>document.getElementById('av-ville'), getCp:()=>document.getElementById('av-cp') }); }catch(e){}
     // Auto-complétion ville → code postal (utile quand on ne saisit que la ville).
     try{ if(typeof brancherVilleAuto==='function') brancherVilleAuto(document.getElementById('av-ville'), ()=>document.getElementById('av-cp')); }catch(e){}
-    _calc();
+    _calc(); _occCap();
   }
 
   async function save(genApres){
@@ -723,7 +744,7 @@
       agent:g('av-agent'), proprietaire:g('av-proprietaire'), enseigne:g('av-enseigne'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
       cover_url, annee:gn('av-annee'),
-      lots:lotsArr, surface_totale:surfaceTot,
+      lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'),
       copropriete:document.getElementById('av-copro').checked,
       loyer_lignes:collect('#av-loyer-rows'),
@@ -765,5 +786,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient };
 })();
