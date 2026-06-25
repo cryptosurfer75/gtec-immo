@@ -37,7 +37,10 @@
   const nb  = v => (v==null||v==='') ? '' : new Intl.NumberFormat('fr-FR').format(Math.round(Number(v)));
   const eur = v => (v==null||v==='') ? '' : nb(v)+' €';
   const num = v => { if(v==null||v==='') return null; const n=Number(v); return isNaN(n)?null:n; };
-  const enseigneDe = a => a.enseigne || a.proprietaire || '';
+  // Nom affiché en couverture / titre = le PROPRIÉTAIRE (SCI ou société du propriétaire),
+  // pas les enseignes locataires (elles vont dans le cadre Occupants). Repli sur l'ancien
+  // champ enseigne pour les avis déjà saisis, puis sur le type d'actif.
+  const enseigneDe = a => a.proprietaire || a.enseigne || '';
   const typeActifDe = a => a.type_actif || 'Actif immobilier';
 
   // -- Calcul financier --------------------------------------------------------
@@ -187,7 +190,6 @@
           ${occ.length?`<tr><th>Occupant${occ.length>1?'s':''}</th><td>${esc(occ.join(', '))}</td></tr>`:''}
           ${a.surface_totale?`<tr><th>Surface totale</th><td>${nb(a.surface_totale)} m²</td></tr>`:''}
           ${a.annee?`<tr><th>Année</th><td>${esc(a.annee)}</td></tr>`:''}
-          ${a.proprietaire?`<tr><th>Propriétaire</th><td>${esc(a.proprietaire)}</td></tr>`:''}
         </table>
       </div>
       <div class="av-presit-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo</div>'}</div>
@@ -666,8 +668,7 @@
           ${SELC(a.client_id)}
           ${SELA(defAgent)}
           ${occBox(occ)}
-          ${I('av-proprietaire','Propriétaire / prospect', a.proprietaire)}
-          ${I('av-enseigne','Enseigne / occupant', a.enseigne)}
+          ${I('av-proprietaire','Propriétaire — SCI / société (nom de la couverture)', a.proprietaire, {full:true})}
           ${I('av-typeactif','Type d’actif (ex : Cellule commerciale en copropriété)', a.type_actif)}
           ${I('av-adresse','Adresse', a.adresse, {full:true})}
           ${I('av-ville','Ville', a.ville)}
@@ -741,7 +742,7 @@
     const surfaceTot = lotsArr.reduce((x,l)=>x+(Number(l.surface)||0),0) || null;
     const payload = {
       client_id:A.client_id||null,
-      agent:g('av-agent'), proprietaire:g('av-proprietaire'), enseigne:g('av-enseigne'),
+      agent:g('av-agent'), proprietaire:g('av-proprietaire'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
       cover_url, annee:gn('av-annee'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
