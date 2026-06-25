@@ -41,6 +41,12 @@
   const typeActifDe = a => a.type_actif || 'Actif immobilier';
 
   // -- Calcul financier --------------------------------------------------------
+  // Somme des surfaces des lots (null si aucun lot chiffré) — sert de surface totale.
+  function lotsSum(a){
+    const ls = Array.isArray(a && a.lots) ? a.lots : [];
+    const t = ls.reduce((x,l)=>x+(num(l && l.surface)||0),0);
+    return t || null;
+  }
   function finance(a){
     const lignes = Array.isArray(a.loyer_lignes) ? a.loyer_lignes : [];
     const detail = lignes.map(l=>{
@@ -54,7 +60,7 @@
     const fraisPct = num(a.frais_mutation_pct);
     const actesEnMains = (netVendeur!=null && fraisPct!=null) ? netVendeur*(1+fraisPct/100) : null;
     const valeurRetenue = num(a.valeur_estimee)!=null ? num(a.valeur_estimee) : netVendeur;
-    const surfTot = num(a.surface_totale);
+    const surfTot = lotsSum(a) || num(a.surface_totale);
     const valeurM2 = (valeurRetenue!=null && surfTot) ? valeurRetenue/surfTot : null;
     return { detail, vlAnnuelle, taux, netVendeur, fraisPct, actesEnMains, valeurRetenue, valeurM2, surfTot };
   }
@@ -177,7 +183,6 @@
         <table class="av-mini">
           <tr><th>Type d’actif</th><td>${esc(typeActifDe(a))}</td></tr>
           ${a.surface_totale?`<tr><th>Surface totale</th><td>${nb(a.surface_totale)} m²</td></tr>`:''}
-          ${a.etage?`<tr><th>Niveau</th><td>${esc(a.etage)}</td></tr>`:''}
           ${a.annee?`<tr><th>Année</th><td>${esc(a.annee)}</td></tr>`:''}
           ${a.proprietaire?`<tr><th>Propriétaire</th><td>${esc(a.proprietaire)}</td></tr>`:''}
         </table>
@@ -206,32 +211,27 @@
   }
 
   function pageTechnique(a){
-    const sv=num(a.surface_vente), sr=num(a.surface_reserve), ss=num(a.surface_sociaux);
-    const detail=[['Surface de vente',sv,'#3D8074'],['Réserve',sr,'#2f6359'],['Locaux sociaux',ss,'#5FA08F']].filter(d=>d[1]!=null);
-    const tot = detail.reduce((x,d)=>x+(d[1]||0),0);
-    const barres = detail.length ? `<div class="av-bars">${detail.map(d=>{
-        const pct = tot? Math.round(d[1]/tot*100):0;
-        return `<div class="av-bar"><div class="av-bar-l">${esc(d[0])}</div><div class="av-bar-track"><div class="av-bar-fill" style="width:${pct}%;background:${d[2]}"></div></div><div class="av-bar-v">${nb(d[1])} m² <small>(${pct}%)</small></div></div>`;
-      }).join('')}</div>` : '';
+    const lots = (Array.isArray(a.lots)?a.lots:[]).filter(l=>l && (l.batiment||l.niveau||l.designation||l.surface!=null));
+    const tot = lots.reduce((x,l)=>x+(num(l.surface)||0),0);
     const fonc = num(a.surface_foncier);
     const proprio = a.copropriete ? 'en copropriété' : 'en pleine propriété';
+    const lotsTable = lots.length
+      ? `<table class="av-lots">
+          <thead><tr><th>Bâtiment</th><th>Niveau</th><th>Désignation</th><th class="r">Surface</th></tr></thead>
+          <tbody>${lots.map(l=>`<tr><td>${esc(l.batiment||'—')}</td><td>${esc(l.niveau||'—')}</td><td>${esc(l.designation||'—')}</td><td class="r">${l.surface!=null?nb(l.surface)+' m²':'—'}</td></tr>`).join('')}</tbody>
+          <tfoot><tr><td colspan="3">Surface totale</td><td class="r">${nb(tot)} m²</td></tr></tfoot>
+        </table>`
+      : (a.surface_totale ? `<table class="av-mini"><tr><th>Surface totale</th><td><b>${nb(a.surface_totale)} m²</b></td></tr></table>`
+                          : '<p class="ph">Détail des lots non renseigné.</p>');
+    const fonctable = (a.parcelle_cadastrale || fonc!=null)
+      ? `<div class="av-tech-foncier"><table class="av-mini">
+          ${a.parcelle_cadastrale?`<tr><th>Parcelle cadastrale</th><td>${esc(a.parcelle_cadastrale)}</td></tr>`:''}
+          ${fonc!=null?`<tr><th>Surface du foncier</th><td>${nb(fonc)} m² environ ${proprio}</td></tr>`:''}
+        </table></div>` : '';
     const body = `<div class="av-tech">
       <div class="av-tech-titre">${esc(typeActifDe(a))}</div>
-      <div class="av-tech-grid">
-        <div class="av-tech-col">
-          <table class="av-mini">
-            ${a.surface_totale?`<tr><th>Surface totale</th><td><b>${nb(a.surface_totale)} m²</b>${a.etage?' — '+esc(a.etage):''}</td></tr>`:''}
-            ${sv!=null?`<tr><th>Surface de vente</th><td>${nb(sv)} m²</td></tr>`:''}
-            ${sr!=null?`<tr><th>Réserve</th><td>${nb(sr)} m²</td></tr>`:''}
-            ${ss!=null?`<tr><th>Locaux sociaux</th><td>${nb(ss)} m²</td></tr>`:''}
-            ${a.parcelle_cadastrale?`<tr><th>Parcelle cadastrale</th><td>${esc(a.parcelle_cadastrale)}</td></tr>`:''}
-            ${fonc!=null?`<tr><th>Surface du foncier</th><td>${nb(fonc)} m² environ ${proprio}</td></tr>`:''}
-          </table>
-        </div>
-        <div class="av-tech-col">
-          ${detail.length?`<div class="av-tech-sub">Répartition des surfaces</div>${barres}`:'<p class="ph">Détail des surfaces non renseigné.</p>'}
-        </div>
-      </div>
+      ${lotsTable}
+      ${fonctable}
     </div>`;
     return page('Données techniques', body, 'Données techniques', 4);
   }
@@ -381,6 +381,13 @@
       .av-bar{ display:flex; align-items:center; gap:4mm; } .av-bar-l{ width:38mm; font-size:11pt; color:#333; }
       .av-bar-track{ flex:1; height:9mm; background:#eef0f2; border-radius:4px; overflow:hidden; } .av-bar-fill{ height:100%; border-radius:4px; }
       .av-bar-v{ width:34mm; text-align:right; font-size:11pt; font-weight:600; color:#222; } .av-bar-v small{ color:#888; font-weight:400; }
+      table.av-lots{ width:100%; border-collapse:collapse; margin:2mm 0 4mm; }
+      table.av-lots th{ font-size:10.5pt; text-transform:uppercase; letter-spacing:.04em; color:#fff; background:var(--navy); padding:3mm; text-align:left; }
+      table.av-lots th.r, table.av-lots td.r{ text-align:right; }
+      table.av-lots td{ font-size:12pt; padding:3mm; border-bottom:1px solid #e1e6e8; color:#222; }
+      table.av-lots tbody tr:nth-child(even) td{ background:#f6f9f8; }
+      table.av-lots tfoot td{ font-weight:700; color:var(--navy); border-top:2px solid var(--navy); border-bottom:none; font-size:12.5pt; }
+      .av-tech-foncier{ margin-top:8mm; }
       table.av-comp{ width:100%; border-collapse:collapse; margin-top:6mm; }
       table.av-comp th{ background:var(--navy); color:#fff; font-size:10pt; padding:3.5mm 2mm; text-align:left; }
       table.av-comp td{ font-size:10.5pt; padding:3.5mm 2mm; border-bottom:1px solid #d7dadd; color:#333; }
@@ -500,6 +507,8 @@
       #av-ed .row{display:grid;gap:8px;align-items:center}
       #av-ed .row.loyer{grid-template-columns:1.4fr .8fr .8fr .8fr .8fr 28px}
       #av-ed .row.comp{grid-template-columns:.8fr 1fr 1.3fr .8fr .8fr 1fr 28px}
+      #av-ed .row.lot{grid-template-columns:1fr 1fr 1.6fr .9fr 28px}
+      #av-ed .lots-tot{margin-top:10px;text-align:right;font-size:14px;color:#4A5A5E} #av-ed .lots-tot b{font-size:18px;color:#1A2738;margin-left:6px}
       #av-ed .row input{padding:6px 8px;font-size:13px}
       #av-ed .row .del{background:#fbe9e9;border:0;color:#b33;border-radius:6px;cursor:pointer;font-size:15px;height:30px}
       #av-ed .rowhead{font-size:11px;color:#8a9498;font-weight:600}
@@ -524,6 +533,14 @@
     ((typeof optClients==='function') ? optClients(v) : `<option value="">— Aucun client —</option>`)+
     `</select></div>`;
 
+  function lotRow(l){ l=l||{};
+    return `<div class="row lot">
+      <input data-k="batiment" value="${esc(l.batiment||'')}" placeholder="ex : Bât 1">
+      <input data-k="niveau" value="${esc(l.niveau||'')}" placeholder="ex : Rdc, R+1">
+      <input data-k="designation" value="${esc(l.designation||'')}" placeholder="ex : Commerce, Bureaux…">
+      <input data-k="surface" type="number" value="${l.surface==null?'':esc(l.surface)}" placeholder="m²" oninput="GTEC_AVIS._calc()">
+      <button type="button" class="del" onclick="GTEC_AVIS._delLot(this)">×</button></div>`;
+  }
   function loyerRow(l){ l=l||{};
     return `<div class="row loyer">
       <input data-k="designation" value="${esc(l.designation||'')}" placeholder="ex : Bureaux">
@@ -557,7 +574,9 @@
     const vl=lignes.reduce((x,l)=>x+((l.surface!=null&&l.loyer_m2!=null)?l.surface*l.loyer_m2:0),0)||null;
     const taux=num((document.getElementById('av-taux')||{}).value);
     const frais=num((document.getElementById('av-frais')||{}).value);
-    const surf=num((document.getElementById('av-surftot')||{}).value);
+    const lots=collect('#av-lots-rows');
+    const surf=lots.reduce((x,l)=>x+(num(l.surface)||0),0)||null;
+    const tEl=document.getElementById('av-lots-tot'); if(tEl) tEl.textContent = surf!=null ? nb(surf)+' m²' : '—';
     const net=(vl!=null&&taux)?vl/(taux/100):null;
     const aem=(net!=null&&frais!=null)?net*(1+frais/100):null;
     const over=num((document.getElementById('av-valest')||{}).value);
@@ -570,6 +589,8 @@
       `Prix actes en mains : <b>${aem!=null?eur(aem):'—'}</b><br>`+
       `<span class="big">Valeur retenue : ${ret!=null?eur(ret)+' HDHH':'—'}${m2!=null?' &nbsp;(soit '+eur(m2)+'/m²)':''}</span>`;
   }
+  function _addLot(){ document.getElementById('av-lots-rows').insertAdjacentHTML('beforeend', lotRow()); }
+  function _delLot(b){ b.closest('.row').remove(); _calc(); }
   function _addLoyer(){ document.getElementById('av-loyer-rows').insertAdjacentHTML('beforeend', loyerRow()); }
   function _addComp(){ document.getElementById('av-comp-rows').insertAdjacentHTML('beforeend', compRow()); }
   function _delLoyer(b){ b.closest('.row').remove(); _calc(); }
@@ -609,6 +630,7 @@
     A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, client_id:a.client_id||null };
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
+    const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
     const defAgent = (id ? a.agent : (window.ME_AGENT||'FB')) || 'FB';
     const titreModal = id ? `Avis de valeur ${a.reference?'— '+esc(a.reference):''}` : 'Nouvel avis de valeur';
 
@@ -625,19 +647,20 @@
           ${I('av-adresse','Adresse', a.adresse, {full:true})}
           ${I('av-ville','Ville', a.ville)}
           ${I('av-cp','Code postal', a.code_postal)}
-          ${I('av-surftot','Surface totale (m²)', a.surface_totale, {type:'number', attr:'oninput="GTEC_AVIS._calc()"'})}
-          ${I('av-etage','Niveau (ex : Rez-de-chaussée, R+1)', a.etage)}
           ${I('av-annee','Année de construction', a.annee, {type:'number'})}
         </div>
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
           <div class="photo" id="av-photo-prev">${a.cover_url?`<img src="${esc(a.cover_url)}" alt="">`:''}</div></div>
 
-        <div class="sep">Détail des surfaces</div>
+        <div class="sep">Détail des lots & surfaces</div>
+        <div class="rowhead row lot"><span>Bâtiment</span><span>Niveau</span><span>Désignation (usage / occupant)</span><span>Surface m²</span><span></span></div>
+        <div class="rows" id="av-lots-rows">${lots.map(lotRow).join('')}</div>
+        <button type="button" class="addbtn" onclick="GTEC_AVIS._addLot()">＋ Ajouter un lot</button>
+        <div class="lots-tot">Surface totale (somme automatique) :<b id="av-lots-tot">—</b></div>
+
+        <div class="sep">Foncier & cadastre</div>
         <div class="grid">
-          ${I('av-svente','Surface de vente (m²)', a.surface_vente, {type:'number'})}
-          ${I('av-sreserve','Réserve (m²)', a.surface_reserve, {type:'number'})}
-          ${I('av-ssociaux','Locaux sociaux (m²)', a.surface_sociaux, {type:'number'})}
           ${I('av-cadastre','Parcelle cadastrale', a.parcelle_cadastrale)}
           ${I('av-foncier','Surface du foncier (m²)', a.surface_foncier, {type:'number'})}
           ${CK('av-copro','Foncier en copropriété', a.copropriete)}
@@ -689,12 +712,14 @@
     let cover_url = A.cover_url || null;
     try{ if(A.photoFile) cover_url = await uploadPhoto(A.photoFile); }
     catch(e){ alert('Échec de l’envoi de la photo : '+(e.message||e)); return; }
+    const lotsArr = collect('#av-lots-rows');
+    const surfaceTot = lotsArr.reduce((x,l)=>x+(Number(l.surface)||0),0) || null;
     const payload = {
       client_id:A.client_id||null,
       agent:g('av-agent'), proprietaire:g('av-proprietaire'), enseigne:g('av-enseigne'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
-      cover_url, surface_totale:gn('av-surftot'), etage:g('av-etage'), annee:gn('av-annee'),
-      surface_vente:gn('av-svente'), surface_reserve:gn('av-sreserve'), surface_sociaux:gn('av-ssociaux'),
+      cover_url, annee:gn('av-annee'),
+      lots:lotsArr, surface_totale:surfaceTot,
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'),
       copropriete:document.getElementById('av-copro').checked,
       loyer_lignes:collect('#av-loyer-rows'),
@@ -736,5 +761,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient };
+    _calc, _addLot, _delLot, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _fermer:fermer, _save:save, _pickClient:pickClient };
 })();
