@@ -484,7 +484,7 @@
       .av-ccl-side{ flex:0 0 60mm; display:flex; flex-direction:column; justify-content:center; min-height:26mm; border:1px solid #d6dcde; border-radius:8px; padding:3mm 5mm; background:#fafbfb; }
       .av-ccl-side-l{ font-size:11pt; color:#555; line-height:1.3; } .av-ccl-side-l small{ display:block; font-size:8.5pt; color:#9aa0a6; margin-top:.5mm; }
       .av-ccl-side-v{ font-size:18pt; font-weight:700; color:var(--navy); margin-top:2.5mm; }
-      .av-ccl-val{ font-size:29pt; font-weight:700; color:var(--navy); margin:0; padding:5mm 10mm; border:.8mm solid var(--teal); border-radius:8px; display:inline-block; line-height:1.1; }
+      .av-ccl-val{ font-size:29pt; font-weight:700; color:var(--navy); margin:0; padding:5mm 10mm; border:.8mm solid var(--teal); border-radius:8px; display:inline-block; line-height:1.1; background:linear-gradient(135deg,#f3f9f7 0%,#d9ede7 55%,#cbe6dd 100%); }
       .av-ccl-hdhh{ display:block; font-size:11pt; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:#8a9199; margin-top:2mm; }
       .av-ccl-m2{ font-size:15pt; color:var(--teal-d); font-weight:600; }
       .av-ccl-note{ max-width:200mm; margin:4mm auto 0; text-align:left; font-size:10.5pt; line-height:1.45; color:#444; } .av-ccl-note p{ margin:0 0 2mm; }
