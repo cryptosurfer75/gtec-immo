@@ -538,7 +538,8 @@ function renderOffres(){
 }
 
 /* ===== AVIS DE VALEUR (documents autonomes — table avis_valeur) ===== */
-let AVIS_LISTE = [];
+let AVIS_LISTE = [], AVIS_ARCH = false;
+function avisBase(){ return AVIS_LISTE.filter(a=> AVIS_ARCH ? a.archive : !a.archive); }
 function avisLigne(a){
   const r = window.GTEC_AVIS ? GTEC_AVIS.resume(a) : {valeur:null,m2:null};
   const d = (a.updated_at||a.created_at) ? new Date(a.updated_at||a.created_at).toLocaleDateString('fr-FR') : '—';
@@ -551,22 +552,40 @@ function avisLigne(a){
       <td>${a.surface_totale?esc(a.surface_totale)+' m²':'—'}</td>
       <td>${r.valeur!=null?euro(r.valeur)+' HDHH':'—'}</td>
       <td onclick="event.stopPropagation()">
-        <button class="btn btn-ghost btn-sm" title="Modifier l'avis" onclick="GTEC_AVIS.editer('${a.id}')">✏️</button>
-        <button class="btn btn-ghost btn-sm" title="Aperçu (à enregistrer en PDF)" onclick="GTEC_AVIS.generer('${a.id}')">📄</button>
-        <button class="btn btn-ghost btn-sm" title="Supprimer" onclick="supprimerAvis('${a.id}')">🗑️</button>
+        ${AVIS_ARCH
+          ? `<button class="btn btn-ghost btn-sm" title="Restaurer (désarchiver)" onclick="restaurerAvis('${a.id}')">↩️</button>
+             <button class="btn btn-ghost btn-sm" title="Supprimer définitivement" onclick="supprimerAvisDefinitif('${a.id}')">🗑️</button>`
+          : `<button class="btn btn-ghost btn-sm" title="Modifier l'avis" onclick="GTEC_AVIS.editer('${a.id}')">✏️</button>
+             <button class="btn btn-ghost btn-sm" title="Aperçu (à enregistrer en PDF)" onclick="GTEC_AVIS.generer('${a.id}')">📄</button>
+             <button class="btn btn-ghost btn-sm" title="Archiver (récupérable)" onclick="archiverAvis('${a.id}')">🗄️</button>`}
       </td></tr>`;
 }
 function filtrerAvis(q){
   const t = normTxt(q).trim();
-  const liste = t ? AVIS_LISTE.filter(a=>normTxt([a.reference,a.enseigne,a.proprietaire,a.ville,a.adresse,a.type_actif].filter(Boolean).join(' ')).includes(t)) : AVIS_LISTE;
+  const base = avisBase();
+  const liste = t ? base.filter(a=>normTxt([a.reference,a.enseigne,a.proprietaire,a.ville,a.adresse,a.type_actif].filter(Boolean).join(' ')).includes(t)) : base;
   const tb = document.getElementById('avis-tbody');
   if(tb) tb.innerHTML = liste.length ? liste.map(avisLigne).join('')
     : `<tr><td colspan="7" style="text-align:center;color:var(--gris-fonce);padding:20px">Aucun avis ne correspond à « ${esc(q)} ».</td></tr>`;
   const c = document.getElementById('avis-count'); if(c) c.textContent = `${liste.length} avis`;
 }
-async function supprimerAvis(id){
+// Le 🗑️ archive (suppression douce, récupérable) au lieu de supprimer définitivement.
+async function archiverAvis(id){
   const a = AVIS_LISTE.find(x=>String(x.id)===String(id));
-  if(!confirm('Supprimer définitivement cet avis de valeur'+(a&&a.reference?' ('+a.reference+')':'')+' ?')) return;
+  if(!confirm('Archiver cet avis de valeur'+(a&&a.reference?' ('+a.reference+')':'')+' ?\n\nIl sera retiré de la liste mais reste récupérable dans « Archivés ».')) return;
+  const { error } = await sb.from('avis_valeur').update({archive:true}).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  vueAvis();
+}
+async function restaurerAvis(id){
+  const { error } = await sb.from('avis_valeur').update({archive:false}).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  vueAvis();
+}
+// Suppression DÉFINITIVE — disponible uniquement depuis la vue « Archivés ».
+async function supprimerAvisDefinitif(id){
+  const a = AVIS_LISTE.find(x=>String(x.id)===String(id));
+  if(!confirm('Supprimer DÉFINITIVEMENT cet avis de valeur'+(a&&a.reference?' ('+a.reference+')':'')+' ?\n\nCette action est irréversible.')) return;
   const { error } = await sb.from('avis_valeur').delete().eq('id', id);
   if(error){ alert('Erreur : '+error.message); return; }
   vueAvis();
@@ -576,18 +595,21 @@ async function vueAvis(){
   const { data, error } = await sb.from('avis_valeur').select('*').order('created_at',{ascending:false});
   if(error) return erreur(error);
   AVIS_LISTE = data||[];
-  const corps = AVIS_LISTE.length
+  const base = avisBase();
+  const archivees = AVIS_LISTE.filter(a=>a.archive);
+  const corps = base.length
     ? `<div style="padding:14px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
          <input id="avis-search" type="search" autocomplete="off" placeholder="🔎 Rechercher un avis (réf., enseigne, propriétaire, ville…)"
            oninput="filtrerAvis(this.value)"
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
-         <span id="avis-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${AVIS_LISTE.length} avis</span>
+         <span id="avis-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${base.length} avis</span>
        </div>
        <div class="tscroll"><table><thead><tr><th>Date</th><th>Réf.</th><th>Bien / propriétaire</th><th>Ville</th><th>Surface</th><th>Valeur retenue</th><th>Actions</th></tr></thead>
-       <tbody id="avis-tbody">${AVIS_LISTE.map(avisLigne).join('')}</tbody></table></div>`
-    : vide('Aucun avis de valeur pour le moment. Cliquez sur « + Nouvel avis de valeur » pour en créer un.');
-  C().innerHTML = panel('Avis de valeur', `${AVIS_LISTE.length} document(s)`, corps,
-    `<button class="btn btn-sm" onclick="GTEC_AVIS.nouveau()">+ Nouvel avis de valeur</button>`);
+       <tbody id="avis-tbody">${base.map(avisLigne).join('')}</tbody></table></div>`
+    : vide(AVIS_ARCH ? 'Aucun avis archivé.' : 'Aucun avis de valeur pour le moment. Cliquez sur « + Nouvel avis de valeur » pour en créer un.');
+  C().innerHTML = panel(AVIS_ARCH?'Avis archivés':'Avis de valeur', `${base.length} document(s)`, corps,
+    `<button class="btn btn-sm" onclick="GTEC_AVIS.nouveau()">+ Nouvel avis de valeur</button>
+     <button class="btn btn-ghost btn-sm" onclick="AVIS_ARCH=!AVIS_ARCH;vueAvis()">${AVIS_ARCH?'← Avis actifs':'Archivés ('+archivees.length+')'}</button>`);
 }
 
 /* ===== DEMANDES (+ matching) ===== */
