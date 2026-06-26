@@ -155,14 +155,15 @@
       const p = picProj(geo.lon, geo.lat);
       if(p[0]>=-20 && p[0]<=PIC_MAP.W+20 && p[1]>=-20 && p[1]<=PIC_MAP.H+20){
         bx=p[0]; by=p[1];
-        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="40" fill="#5FA08F" opacity=".24"/>'
-            + '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="20" fill="#5FA08F" stroke="#fff" stroke-width="7"/>'
+        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="22" fill="#FFD12E" stroke="#1A2738" stroke-width="4"/>'
             + (ville?'<text x="'+bx.toFixed(0)+'" y="'+(by+80).toFixed(0)+'" text-anchor="middle" style="'+PIC_BLD_STYLE+'">'+esc(ville)+'</text>':'');
       }
     }
     const refs = PIC_CITIES.map(c=>{
       const [cx,cy] = picProj(c.lon, c.lat);
-      if(bx!=null && Math.hypot(cx-bx, cy-by) < 60) return ''; // confondue avec la ville du bien
+      if(ville && c.n.toLowerCase()===String(ville).toLowerCase()) return ''; // même ville que le bien : pas de doublon
+      if(bx!=null && Math.hypot(cx-bx,cy-by) < 75) // repère collé au point du bien : nom au-dessus, sans pastille
+        return '<text x="'+cx.toFixed(0)+'" y="'+(cy-22).toFixed(0)+'" text-anchor="middle" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
       const tx = c.side==='L' ? cx-17 : cx+17;
       const anchor = c.side==='L' ? 'end' : 'start';
       return '<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>'
@@ -455,7 +456,7 @@
       .av-cv-titre span{ color:var(--teal-l); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
-      .av-cv-map{ width:70mm; margin:0 0 6mm; }
+      .av-cv-map{ width:70mm; margin:0 0 3mm; }
       .av-cv-map svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.4)); }
       .av-cv-tag{ border-top:.5mm solid rgba(255,255,255,.25); padding-top:6mm; }
       .av-cv-tag .t1{ font-size:13pt; font-weight:700; letter-spacing:.04em; }
@@ -474,15 +475,16 @@
       .av-groupe{ font-size:14pt; line-height:1.65; color:#222; padding-top:6mm; } .av-groupe p{ margin:0 0 5mm; }
       .av-groupe-tags{ display:flex; flex-wrap:wrap; gap:4mm; margin-top:6mm; }
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
-      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; align-content:start; column-gap:0; row-gap:0; margin-top:4mm; }
+      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; align-content:start; column-gap:10mm; row-gap:9mm; margin-top:4mm; }
       .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:-4mm; border-bottom:1px solid #e1e6e8; }
-      /* Liseré de démarcation entre les 4 quadrants (croix fine et subtile) */
-      .swB-coltitle:nth-child(1){ padding-right:6mm; } .swB-coltitle:nth-child(2){ padding-left:6mm; }
-      .swB-f, .swB-w{ border-right:1px solid #e1e6e8; padding-right:6mm; }
-      .swB-o, .swB-t{ padding-left:6mm; }
-      .swB-f, .swB-o{ border-bottom:1px solid #e1e6e8; padding-bottom:6mm; }
-      .swB-w, .swB-t{ padding-top:6mm; }
-      .swB-block{ display:flex; flex-direction:column; }
+      .swB-block{ display:flex; flex-direction:column; position:relative; }
+      /* Croix de séparation fine et subtile, centrée entre les 4 cases (n'atteint pas les bords) */
+      .swB-f::after, .swB-w::after{ content:''; position:absolute; right:-5mm; width:1px; background:#e1e6e8; }
+      .swB-f::after{ top:10mm; bottom:-4.5mm; }
+      .swB-w::after{ top:-4.5mm; bottom:10mm; }
+      .swB-f::before, .swB-o::before{ content:''; position:absolute; bottom:-4.5mm; height:1px; background:#e1e6e8; }
+      .swB-f::before{ left:10mm; right:-5mm; }
+      .swB-o::before{ left:-5mm; right:10mm; }
       .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:2.5mm; }
       .swB-sign{ width:9mm; height:9mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
       .swB-sign svg{ width:5mm; height:5mm; }
