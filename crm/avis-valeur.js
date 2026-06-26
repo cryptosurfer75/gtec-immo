@@ -146,7 +146,7 @@
     return [ ((lon-PIC_MAP.lonMin)*PIC_MAP.cosMid)*PIC_MAP.S + PIC_MAP.PAD,
              ((PIC_MAP.latMax-lat))*PIC_MAP.S + PIC_MAP.PAD ];
   }
-  const PIC_REF_STYLE = 'font-family:Inter,Arial,sans-serif;font-size:33px;font-weight:600;fill:#eef5f2;paint-order:stroke;stroke:rgba(26,39,56,.78);stroke-width:7;stroke-linejoin:round';
+  const PIC_REF_STYLE = 'font-family:Inter,Arial,sans-serif;font-size:43px;font-weight:600;fill:#eef5f2;paint-order:stroke;stroke:rgba(26,39,56,.8);stroke-width:8;stroke-linejoin:round';
   const PIC_BLD_STYLE = 'font-family:Inter,Arial,sans-serif;font-size:43px;font-weight:700;fill:#ffffff;paint-order:stroke;stroke:rgba(26,39,56,.82);stroke-width:8;stroke-linejoin:round';
   function picardieMap(geo, ville){
     const dPaths = PIC_MAP.paths.map(d=>'<path d="'+d+'" fill="rgba(255,255,255,.16)" stroke="#8fc0b4" stroke-width="5" stroke-linejoin="round"/>').join('');
@@ -155,21 +155,19 @@
       const p = picProj(geo.lon, geo.lat);
       if(p[0]>=-20 && p[0]<=PIC_MAP.W+20 && p[1]>=-20 && p[1]<=PIC_MAP.H+20){
         bx=p[0]; by=p[1];
-        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="22" fill="#FFD12E" stroke="#1A2738" stroke-width="4"/>'
-            + (ville?'<text x="'+bx.toFixed(0)+'" y="'+(by+80).toFixed(0)+'" text-anchor="middle" style="'+PIC_BLD_STYLE+'">'+esc(ville)+'</text>':'');
+        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="22" fill="#FFD12E" stroke="#1A2738" stroke-width="4"/>';
       }
     }
+    const dot = (cx,cy)=>'<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>';
     const refs = PIC_CITIES.map(c=>{
       const [cx,cy] = picProj(c.lon, c.lat);
-      if(ville && c.n.toLowerCase()===String(ville).toLowerCase()) return ''; // même ville que le bien : pas de doublon
-      if(bx!=null && Math.hypot(cx-bx,cy-by) < 75) // repère collé au point du bien : nom au-dessus, sans pastille
-        return '<text x="'+cx.toFixed(0)+'" y="'+(cy-22).toFixed(0)+'" text-anchor="middle" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
+      if(bx!=null && Math.hypot(cx-bx,cy-by) < 75) // repère collé au point jaune : on garde le point blanc, nom au-dessus
+        return dot(cx,cy) + '<text x="'+cx.toFixed(0)+'" y="'+(cy-24).toFixed(0)+'" text-anchor="middle" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
       const tx = c.side==='L' ? cx-17 : cx+17;
       const anchor = c.side==='L' ? 'end' : 'start';
-      return '<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>'
-           + '<text x="'+tx.toFixed(0)+'" y="'+(cy+11).toFixed(0)+'" text-anchor="'+anchor+'" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
+      return dot(cx,cy) + '<text x="'+tx.toFixed(0)+'" y="'+(cy+13).toFixed(0)+'" text-anchor="'+anchor+'" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
     }).join('');
-    return '<div class="av-cv-map"><svg viewBox="0 -24 1048 968" preserveAspectRatio="xMidYMid meet">'+dPaths+refs+bld+'</svg></div>';
+    return '<div class="av-cv-map"><svg viewBox="0 -24 1048 968" preserveAspectRatio="xMidYMid meet">'+dPaths+bld+refs+'</svg></div>';
   }
 
   function pageCouverture(a, geo){
@@ -385,6 +383,7 @@
   function pageConclusion(a){
     const f = finance(a);
     const note = (a.commentaire_conclusion||'').trim();
+    const resp = (a.commentaire_responsabilite||'').trim();
     const body = `<div class="av-ccl">
       <p class="av-ccl-intro">Notre analyse permet d’estimer la valeur de cet actif à :</p>
       <div class="av-ccl-row">
@@ -401,7 +400,7 @@
       ${f.valeurM2!=null?`<div class="av-ccl-m2">soit environ ${eur(f.valeurM2)} / m²</div>`:''}
       <div class="av-ccl-note">
         ${note?`<p>${esc(note).replace(/\n+/g,'</p><p>')}</p>`:''}
-        <p>Cette estimation est communiquée à titre indicatif et ne constitue pas une expertise immobilière. La valorisation retenue tient compte des caractéristiques de l’actif et des conditions de marché à la date de l’étude.</p>
+        ${resp?`<p>${esc(resp).replace(/\n+/g,'</p><p>')}</p>`:''}
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
       </div>
     </div>`;
@@ -456,7 +455,7 @@
       .av-cv-titre span{ color:var(--teal-l); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
-      .av-cv-map{ width:70mm; margin:0 0 3mm; }
+      .av-cv-map{ width:70mm; margin:0 0 1mm; }
       .av-cv-map svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.4)); }
       .av-cv-tag{ border-top:.5mm solid rgba(255,255,255,.25); padding-top:6mm; }
       .av-cv-tag .t1{ font-size:13pt; font-weight:700; letter-spacing:.04em; }
@@ -952,6 +951,7 @@
         ${TA('av-chalandise','Zone de chalandise (page Accessibilité)', a.zone_chalandise)}
         ${TA('av-acces','Analyse de l’emplacement (page Accessibilité)', a.accessibilite)}
         ${TA('av-ccl','Commentaire de conclusion', a.commentaire_conclusion)}
+        ${TA('av-resp','Mention de responsabilité (phrase type — page Conclusion)', a.commentaire_responsabilite)}
       </div>
       <div class="foot">
         <button type="button" class="cancel" onclick="GTEC_AVIS._fermer()">Fermer</button>
@@ -1007,6 +1007,7 @@
       comparables:collect('#av-comp-rows'),
       zone_chalandise:g('av-chalandise'), accessibilite:g('av-acces'),
       commentaire_marche:g('av-commarche'), commentaire_conclusion:g('av-ccl'),
+      commentaire_responsabilite:g('av-resp'),
       updated_at:new Date().toISOString()
     };
     let id = A.id;
