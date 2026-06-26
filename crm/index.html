@@ -1248,15 +1248,17 @@ function formClient(rec, liens){
 }
 
 /* ----- ÉQUIPEMENTS (sélecteur 2 volets) ----- */
+/* Ordre des catégories = ordre d'affichage dans le dossier (EQUIP_LABELS de dossier.js) :
+   structure → toiture → isolation → sol → électricité → chauffage → climatisation → éclairage → parking */
 const EQUIP_CAT = {
-  climatisation:{ label:'Climatisation', options:['Réversible','Centralisée'] },
-  chauffage:{ label:'Chauffage', options:['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes'] },
-  eclairage:{ label:'Éclairage', options:['Led','Néon','Lumière naturelle','Faux plafond'] },
-  isolation:{ label:'Isolation', options:['Simple peau','Double peau','RT 2012','RT 2005','RE2020'] },
-  toiture:{ label:'Toiture', options:['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'] },
   structure:{ label:'Structure du bâtiment', options:['Métallique','Béton','Brique'] },
+  toiture:{ label:'Toiture', options:['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'] },
+  isolation:{ label:'Isolation', options:['Simple peau','Double peau','RT 2012','RT 2005','RE2020'] },
   sol:{ label:'Sol', options:['Dalle béton','Lino','Parquet','Carrelage','500 kg/m²','1 T/m²','1,5 T/m²','5 T/m²'] },
   electricite:{ label:'Électricité', options:['RJ45','Vertical','Périphérique','Courant fort','Courant faible','Tarif bleu','Tarif jaune','Tarif vert'] },
+  chauffage:{ label:'Chauffage', options:['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes'] },
+  climatisation:{ label:'Climatisation', options:['Réversible','Centralisée'] },
+  eclairage:{ label:'Éclairage', options:['Led','Néon','Lumière naturelle','Faux plafond'] },
   parking:{ label:'Parking', options:['Privatif','Couvert','Extérieur','Borne de recharge','Accès poids lourds'] },
 };
 let EQUIP_SEL = {}, EQUIP_OPEN = null;
