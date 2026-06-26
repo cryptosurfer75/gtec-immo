@@ -168,7 +168,7 @@
       return '<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>'
            + '<text x="'+tx.toFixed(0)+'" y="'+(cy+11).toFixed(0)+'" text-anchor="'+anchor+'" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
     }).join('');
-    return '<div class="av-cv-map"><svg viewBox="-40 -24 1128 968" preserveAspectRatio="xMidYMid meet">'+dPaths+refs+bld+'</svg></div>';
+    return '<div class="av-cv-map"><svg viewBox="0 -24 1048 968" preserveAspectRatio="xMidYMid meet">'+dPaths+refs+bld+'</svg></div>';
   }
 
   function pageCouverture(a, geo){
@@ -261,7 +261,7 @@
     if(!ph.length) return '';
     const imgs = ph.map(u=>`<div class="av-vues-ph"><img src="${esc(u)}" alt="Vue de l’actif"></div>`).join('');
     return `<section class="pg">
-      <header class="pg-h"><h1>Vues de l’actif</h1>${logoBlock('pg-logo')}</header>
+      <header class="pg-h"><h1>Photo de l’actif</h1>${logoBlock('pg-logo')}</header>
       <div class="pg-body"><div class="av-vues av-vues-${ph.length}">${imgs}</div></div>
       <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
     </section>`;
@@ -455,7 +455,7 @@
       .av-cv-titre span{ color:var(--teal-l); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
-      .av-cv-map{ width:62mm; margin:0 auto 6mm; }
+      .av-cv-map{ width:70mm; margin:0 0 6mm; }
       .av-cv-map svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.4)); }
       .av-cv-tag{ border-top:.5mm solid rgba(255,255,255,.25); padding-top:6mm; }
       .av-cv-tag .t1{ font-size:13pt; font-weight:700; letter-spacing:.04em; }
@@ -474,8 +474,14 @@
       .av-groupe{ font-size:14pt; line-height:1.65; color:#222; padding-top:6mm; } .av-groupe p{ margin:0 0 5mm; }
       .av-groupe-tags{ display:flex; flex-wrap:wrap; gap:4mm; margin-top:6mm; }
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
-      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; align-content:start; column-gap:10mm; row-gap:9mm; margin-top:4mm; }
+      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; align-content:start; column-gap:0; row-gap:0; margin-top:4mm; }
       .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:-4mm; border-bottom:1px solid #e1e6e8; }
+      /* Liseré de démarcation entre les 4 quadrants (croix fine et subtile) */
+      .swB-coltitle:nth-child(1){ padding-right:6mm; } .swB-coltitle:nth-child(2){ padding-left:6mm; }
+      .swB-f, .swB-w{ border-right:1px solid #e1e6e8; padding-right:6mm; }
+      .swB-o, .swB-t{ padding-left:6mm; }
+      .swB-f, .swB-o{ border-bottom:1px solid #e1e6e8; padding-bottom:6mm; }
+      .swB-w, .swB-t{ padding-top:6mm; }
       .swB-block{ display:flex; flex-direction:column; }
       .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:2.5mm; }
       .swB-sign{ width:9mm; height:9mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
