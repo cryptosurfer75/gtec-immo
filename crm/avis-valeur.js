@@ -147,27 +147,28 @@
              ((PIC_MAP.latMax-lat))*PIC_MAP.S + PIC_MAP.PAD ];
   }
   const PIC_REF_STYLE = 'font-family:Inter,Arial,sans-serif;font-size:43px;font-weight:600;fill:#eef5f2;paint-order:stroke;stroke:rgba(26,39,56,.8);stroke-width:8;stroke-linejoin:round';
-  const PIC_BLD_STYLE = 'font-family:Inter,Arial,sans-serif;font-size:43px;font-weight:700;fill:#ffffff;paint-order:stroke;stroke:rgba(26,39,56,.82);stroke-width:8;stroke-linejoin:round';
-  function picardieMap(geo, ville){
+  const PIC_NEAR_STYLE = 'font-family:Inter,Arial,sans-serif;font-size:43px;font-weight:700;fill:#5FC9A4;paint-order:stroke;stroke:rgba(26,39,56,.82);stroke-width:8;stroke-linejoin:round';
+  function picardieMap(geo){
     const dPaths = PIC_MAP.paths.map(d=>'<path d="'+d+'" fill="rgba(255,255,255,.16)" stroke="#8fc0b4" stroke-width="5" stroke-linejoin="round"/>').join('');
-    let bld = '', bx=null, by=null;
+    // Position de l'actif (géocodée) → uniquement pour repérer la ville la plus proche (nom en vert).
+    let bx=null, by=null, nearIdx=-1;
     if(geo){
       const p = picProj(geo.lon, geo.lat);
-      if(p[0]>=-20 && p[0]<=PIC_MAP.W+20 && p[1]>=-20 && p[1]<=PIC_MAP.H+20){
-        bx=p[0]; by=p[1];
-        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="36" fill="rgba(95,160,143,.18)" stroke="#5FA08F" stroke-width="6"/>';
-      }
+      if(p[0]>=-20 && p[0]<=PIC_MAP.W+20 && p[1]>=-20 && p[1]<=PIC_MAP.H+20){ bx=p[0]; by=p[1]; }
+    }
+    if(bx!=null){
+      let best=Infinity;
+      PIC_CITIES.forEach((c,i)=>{ const [cx,cy]=picProj(c.lon,c.lat); const d=Math.hypot(cx-bx,cy-by); if(d<best){best=d;nearIdx=i;} });
     }
     const dot = (cx,cy)=>'<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>';
-    const refs = PIC_CITIES.map(c=>{
+    const refs = PIC_CITIES.map((c,i)=>{
       const [cx,cy] = picProj(c.lon, c.lat);
-      if(bx!=null && Math.hypot(cx-bx,cy-by) < 75) // repère collé au point jaune : on garde le point blanc, nom au-dessus
-        return dot(cx,cy) + '<text x="'+cx.toFixed(0)+'" y="'+(cy-24).toFixed(0)+'" text-anchor="middle" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
       const tx = c.side==='L' ? cx-17 : cx+17;
       const anchor = c.side==='L' ? 'end' : 'start';
-      return dot(cx,cy) + '<text x="'+tx.toFixed(0)+'" y="'+(cy+13).toFixed(0)+'" text-anchor="'+anchor+'" style="'+PIC_REF_STYLE+'">'+c.n+'</text>';
+      const style = (i===nearIdx) ? PIC_NEAR_STYLE : PIC_REF_STYLE; // ville la plus proche de l'actif = en vert
+      return dot(cx,cy) + '<text x="'+tx.toFixed(0)+'" y="'+(cy+13).toFixed(0)+'" text-anchor="'+anchor+'" style="'+style+'">'+c.n+'</text>';
     }).join('');
-    return '<div class="av-cv-map"><svg viewBox="0 -24 1048 968" preserveAspectRatio="xMidYMid meet">'+dPaths+bld+refs+'</svg></div>';
+    return '<div class="av-cv-map"><svg viewBox="0 -24 1048 968" preserveAspectRatio="xMidYMid meet">'+dPaths+refs+'</svg></div>';
   }
 
   function pageCouverture(a, geo){
@@ -459,7 +460,7 @@
       .av-cv-titre span{ color:var(--teal-l); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
-      .av-cv-map{ width:64mm; margin:0 0 1mm; }
+      .av-cv-map{ width:59mm; margin:0 0 1mm; }
       .av-cv-map svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.4)); }
       .av-cv-tag{ border-top:.5mm solid rgba(255,255,255,.25); padding-top:6mm; }
       .av-cv-tag .t1{ font-size:13pt; font-weight:700; letter-spacing:.04em; }
@@ -696,6 +697,9 @@
   }
   const I  = (id,label,v,o={}) => `<div class="f ${o.full?'full':''}"><label>${esc(label)}</label><input id="${id}" type="${o.type||'text'}" value="${v==null?'':esc(v)}" ${o.attr||''}></div>`;
   const TA = (id,label,v) => `<div class="f full"><label>${esc(label)}</label><textarea id="${id}">${v==null?'':esc(v)}</textarea></div>`;
+  // Menu déroulant simple — listes d'options alignées sur le CRM des offres (EQUIP_CAT).
+  const SEL = (id,label,v,opts) => `<div class="f"><label>${esc(label)}</label><select id="${id}"><option value="">—</option>`+
+    opts.map(o=>`<option value="${esc(o)}" ${(v||'')===o?'selected':''}>${esc(o)}</option>`).join('')+`</select></div>`;
   const CK = (id,label,v) => `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}" style="font-weight:500">${esc(label)}</label></div>`;
   const SELA = (v) => `<div class="f full"><label>Négociateur GTEC</label><select id="av-agent">`+
     [['FB','Florent BOURDIEC'],['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'FB')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
