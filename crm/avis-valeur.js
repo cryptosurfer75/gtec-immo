@@ -171,6 +171,9 @@
     return '<div class="av-cv-map"><svg viewBox="0 -24 1048 968" preserveAspectRatio="xMidYMid meet">'+dPaths+refs+'</svg></div>';
   }
 
+  const _MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const moisAnnee = d => { const x = d ? new Date(d) : new Date(); const m = _MOIS_FR[x.getMonth()]; return m.charAt(0).toUpperCase()+m.slice(1)+' '+x.getFullYear(); };
+
   function pageCouverture(a, geo){
     const ens = enseigneDe(a);
     const villeCp = [a.ville, a.code_postal?`(${a.code_postal})`:''].filter(Boolean).join(' ');
@@ -193,6 +196,7 @@
           <div class="t3">BUREAUX <i>|</i> ACTIVITÉS <i>|</i> COMMERCE</div>
         </div>
       </div>
+      <div class="av-cv-date">${moisAnnee(a.created_at)}</div>
     </section>`;
   }
 
@@ -459,6 +463,7 @@
       .av-cv-logo{ height:24mm; } .av-cv-logo-wrap{ align-items:flex-start; } .av-cv-logo-wrap .logo-tag{ color:var(--teal-l); }
       .av-cv-titre{ font-size:38pt; font-weight:700; line-height:1.04; margin-top:16mm; letter-spacing:.02em; }
       .av-cv-titre span{ color:var(--teal-l); }
+      .av-cv-date{ position:absolute; right:14mm; bottom:12mm; z-index:3; font-size:13pt; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#fff; text-shadow:0 1mm 3mm rgba(0,0,0,.55); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
       .av-cv-map{ width:48mm; margin:0 0 1mm; }
