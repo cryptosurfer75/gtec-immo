@@ -196,7 +196,9 @@
     </section>`;
   }
 
-  function pageAvertissement(){
+  function pageAvertissement(a){
+    a = a || {};
+    const resp = (a.commentaire_responsabilite||'').trim();
     const bloc = (t,c,full)=>`<div class="av-warn-bloc${full?' full':''}"><h3>${t}</h3><div>${c}</div></div>`;
     // Rangée du haut : Confidentialité (gauche) + Limitation (droite), alignées à la même hauteur.
     // Puis « Nature des informations » sur toute la largeur en dessous.
@@ -210,7 +212,8 @@
       ${bloc('Nature des informations communiquées',
         `<p>Les données et estimations présentées sont fournies à titre indicatif et ne constituent ni une offre contractuelle, ni une expertise immobilière au sens réglementaire. Les éléments communiqués reposent sur les informations disponibles à la date de réalisation de l’étude et restent susceptibles d’évoluer selon :</p>
          <ul><li>Les conditions du marché</li><li>Les éléments techniques et réglementaires</li><li>Les audits et vérifications complémentaires</li></ul>`, true)}
-    </div>`;
+    </div>
+    ${resp?`<div class="av-ccl-legal"><div class="av-ccl-legal-h">Mention légale</div><p>${esc(resp).replace(/\n+/g,'</p><p>')}</p></div>`:''}`;
     return page('Cadre légal', body, 'Cadre légal', 2);
   }
 
@@ -387,7 +390,6 @@
   function pageConclusion(a){
     const f = finance(a);
     const note = (a.commentaire_conclusion||'').trim();
-    const resp = (a.commentaire_responsabilite||'').trim();
     const body = `<div class="av-ccl">
       <p class="av-ccl-intro">Notre analyse permet d’estimer la valeur de cet actif à :</p>
       <div class="av-ccl-row">
@@ -407,7 +409,6 @@
         ${note?`<p>${esc(note).replace(/\n+/g,'</p><p>')}</p>`:''}
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
       </div>
-      ${resp?`<div class="av-ccl-legal"><div class="av-ccl-legal-h">Mention légale</div><p>${esc(resp).replace(/\n+/g,'</p><p>')}</p></div>`:''}
     </div>`;
     return page('Conclusion', body, 'Valorisation & conclusion', 9);
   }
@@ -633,7 +634,7 @@
   // Construit le document HTML complet. shared=true → version « client » (barre simplifiée, pas de Fermer).
   function construireDocAvis(a, geo, shared){
     const pages = [
-      pageCouverture(a, geo), pageSommaire(), pageGroupe(), pageAvertissement(),
+      pageCouverture(a, geo), pageSommaire(), pageGroupe(), pageAvertissement(a),
       pagePresentation(a), pageVuesActif(a), pageLocalisation(a, geo),
       pageTechnique(a), pageComparatif(a), pageSwot(a), pageValorisation(a), pageConclusion(a),
       pageContact(a)
