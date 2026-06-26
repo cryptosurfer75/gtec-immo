@@ -218,7 +218,7 @@
     const body = `<div class="av-groupe">
       <p>GTEC Immobilier est un acteur spécialisé en immobilier d’entreprise et commercial, dédié à l’accompagnement des entreprises, investisseurs et propriétaires dans leurs projets de transaction, vente et location.</p>
       <p>La société s’appuie sur une équipe forte de plus de 10 ans d’expérience sur le marché des Hauts-de-France. Cette expertise permet d’offrir une parfaite connaissance des secteurs, des valeurs de marché et des opportunités locales afin de proposer un accompagnement sur mesure à chaque étape de votre projet.</p>
-      <p>Notre ambition est simple : mettre notre savoir-faire, notre proximité et notre réactivité au service de vos décisions immobilières.</p>
+      <p>Notre ambition est simple : mettre notre savoir faire, notre proximité et notre réactivité au service de vos décisions immobilières.</p>
       <div class="av-groupe-tags"><span>Transaction</span><span>Vente</span><span>Location</span><span>Conseil & valorisation</span></div>
     </div>`;
     return page('Présentation du groupe', body, 'Présentation du groupe', 1);
