@@ -216,8 +216,9 @@
 
   function pageGroupe(){
     const body = `<div class="av-groupe">
-      <p>GTEC Immobilier, spécialiste de l’immobilier d’entreprise et commercial, vous accompagne à chaque étape de vos projets : transaction, vente, location, recherche de locaux et conseil en valorisation.</p>
-      <p>Notre équipe met son expertise du marché régional au service des propriétaires, investisseurs et utilisateurs, sur l’ensemble des Hauts-de-France.</p>
+      <p>GTEC Immobilier est un acteur spécialisé en immobilier d’entreprise et commercial, dédié à l’accompagnement des entreprises, investisseurs et propriétaires dans leurs projets de transaction, vente et location.</p>
+      <p>La société s’appuie sur une équipe forte de plus de 10 ans d’expérience sur le marché des Hauts-de-France. Cette expertise permet d’offrir une parfaite connaissance des secteurs, des valeurs de marché et des opportunités locales afin de proposer un accompagnement sur mesure à chaque étape de votre projet.</p>
+      <p>Notre ambition est simple : mettre notre savoir-faire, notre proximité et notre réactivité au service de vos décisions immobilières.</p>
       <div class="av-groupe-tags"><span>Transaction</span><span>Vente</span><span>Location</span><span>Conseil & valorisation</span></div>
     </div>`;
     return page('Présentation du groupe', body, 'Présentation du groupe', 1);
@@ -328,6 +329,8 @@
     } else {
       body = '<p class="ph">Aucune transaction comparable renseignée.</p>';
     }
+    const note = (a.analyse_comparative||'').trim();
+    if(note) body += `<div class="av-comp-note"><h4>Analyse comparative</h4><p>${esc(note).replace(/\n+/g,'</p><p>')}</p></div>`;
     return page('Valeur comparative du marché', body, 'Valeur comparative', 6);
   }
 
@@ -554,6 +557,9 @@
       table.av-comp th{ background:var(--navy); color:#fff; font-size:10pt; padding:3.5mm 2mm; text-align:left; }
       table.av-comp td{ font-size:10.5pt; padding:3.5mm 2mm; border-bottom:1px solid #d7dadd; color:#333; }
       table.av-comp tbody tr:nth-child(even){ background:#f4f6f7; }
+      .av-comp-note{ margin-top:7mm; }
+      .av-comp-note h4{ margin:0 0 2.5mm; color:var(--teal-d); font-size:12pt; text-transform:uppercase; letter-spacing:.04em; }
+      .av-comp-note p{ font-size:10.5pt; line-height:1.55; color:#444; margin:0 0 2.5mm; }
       .av-val-sub{ font-size:14pt; font-weight:700; color:var(--teal-d); margin:2mm 0 3mm; }
       table.av-loyer{ width:100%; border-collapse:collapse; }
       table.av-loyer th{ border-bottom:2px solid var(--navy); font-size:11pt; text-align:left; padding:3mm 2mm; color:#222; }
@@ -788,6 +794,116 @@
   function _addComp(){ document.getElementById('av-comp-rows').insertAdjacentHTML('beforeend', compRow()); }
   function _delLoyer(b){ b.closest('.row').remove(); _calc(); }
   function _delComp(b){ b.closest('.row').remove(); }
+
+  // ---- Import de ventes comparables (DVF) -----------------------------------
+  let DVF_LAST = [];
+  const gv = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
+  const _frDate = iso => (iso&&iso.includes('-')) ? iso.slice(0,10).split('-').reverse().join('/') : (iso||'');
+
+  async function _geocode(){
+    const q=[gv('av-adresse'), gv('av-cp'), gv('av-ville')].filter(Boolean).join(' ');
+    if(!q){ alert('Renseigne d’abord l’adresse et la ville du bien.'); return null; }
+    try{
+      const r=await fetch('https://api-adresse.data.gouv.fr/search/?limit=1&q='+encodeURIComponent(q));
+      const j=await r.json(); const f=j.features&&j.features[0];
+      if(!f){ alert('Adresse introuvable pour le géocodage.'); return null; }
+      return { lon:f.geometry.coordinates[0], lat:f.geometry.coordinates[1], insee:f.properties.citycode, label:f.properties.label };
+    }catch(e){ alert('Échec du géocodage : '+(e.message||e)); return null; }
+  }
+
+  async function _dvfPick(){
+    const geo=await _geocode(); if(!geo) return;
+    _dvfOverlay('<div class="dvf-h"><b>Ventes comparables — DVF</b><button type="button" onclick="GTEC_AVIS._dvfClose()">×</button></div><div style="padding:34px;text-align:center;color:#555">Recherche des ventes autour de<br><b>'+esc(geo.label)+'</b>…</div>');
+    try{
+      const { data, error } = await sb.functions.invoke('dvf-comparables', { body:{ insee:geo.insee, lat:geo.lat, lon:geo.lon, dist:2000, years:5 } });
+      if(error) throw error;
+      if(data && data.error) throw new Error(data.error);
+      DVF_LAST = (data&&data.items)||[];
+      _dvfRender(data||{items:[]}, geo);
+    }catch(e){ _dvfClose(); alert('Échec de la recherche DVF : '+(e.message||e)); }
+  }
+
+  function _dvfRender(data, geo){
+    const items=data.items||[];
+    const rows=items.map((c,i)=>`<label class="dvf-row">
+      <input type="checkbox" data-i="${i}" ${i<5?'checked':''}>
+      <span class="d">${_frDate(c.date)}</span>
+      <span class="a">${esc(c.adresse||'')}${c.commune?(', '+esc(c.commune)):''}</span>
+      <span class="b">${c.bati?nb(c.bati)+' m²':''}</span>
+      <span class="p">${c.vv?eur(c.vv):''}</span>
+      <span class="m">${c.prix_m2?nb(c.prix_m2)+' €/m²':''}</span>
+      <span class="x">${c.dist!=null?c.dist+' m':''}</span></label>`).join('');
+    const head=`<div class="dvf-h"><b>Ventes comparables — DVF</b><button type="button" onclick="GTEC_AVIS._dvfClose()">×</button></div>
+      <div class="dvf-sub">${items.length} vente(s) trouvée(s) autour de ${esc(geo.label)} — rayon 2 km, années ${(data.annees||[]).join(', ')||'—'}. Les 5 plus proches sont pré-cochées.</div>`;
+    const list = rows ? `<div class="dvf-list">${rows}</div>` : '<p style="padding:24px;text-align:center;color:#777">Aucune vente commerciale/industrielle trouvée à proximité.</p>';
+    const foot=`<div class="dvf-f"><button type="button" class="cancel" onclick="GTEC_AVIS._dvfClose()">Annuler</button>
+      <button type="button" class="ok" onclick="GTEC_AVIS._dvfInsert()">Insérer la sélection</button></div>`;
+    _dvfSet(head+list+foot);
+  }
+
+  function _dvfInsert(){
+    const checked=[...document.querySelectorAll('#dvf-ov .dvf-list input:checked')].map(i=>DVF_LAST[+i.dataset.i]).filter(Boolean);
+    if(!checked.length){ alert('Coche au moins une vente à insérer.'); return; }
+    const rowsEl=document.getElementById('av-comp-rows');
+    checked.forEach(c=> rowsEl.insertAdjacentHTML('beforeend', compRow({
+      date:_frDate(c.date), typologie:'Local commercial / activité',
+      adresse:(c.adresse||'')+(c.commune?(', '+c.commune):''),
+      terrain:c.terrain||'', bati:c.bati||'', vv:c.vv||''
+    })));
+    _dvfGenAnalyse(checked);
+    _dvfClose();
+  }
+
+  // Génère l'analyse à partir des ventes fournies (insertion) ou du tableau (bouton Régénérer).
+  function _dvfGenAnalyse(list){
+    const fromList = Array.isArray(list);
+    let comps = fromList
+      ? list.map(c=>({prix_m2:c.prix_m2, bati:c.bati}))
+      : collect('#av-comp-rows').map(c=>({prix_m2:(c.vv&&c.bati)?Math.round(c.vv/c.bati):null, bati:c.bati}));
+    comps = comps.filter(c=>c.prix_m2>0);
+    if(!comps.length){ alert('Aucune transaction exploitable pour générer l’analyse.'); return; }
+    const ta=document.getElementById('av-analyse-comp'); if(!ta) return;
+    if(!fromList && ta.value.trim() && !confirm('Remplacer l’analyse actuelle ?')) return;
+    const r50=n=>Math.round(n/50)*50;
+    const pm=comps.map(c=>c.prix_m2).sort((a,b)=>a-b);
+    const med=pm[Math.floor(pm.length/2)];
+    const surf=comps.map(c=>c.bati).filter(Boolean);
+    const ville=gv('av-ville')||'la commune';
+    const adr=gv('av-adresse');
+    const sPart = surf.length ? `, portant sur des locaux de ${nb(Math.min(...surf))} à ${nb(Math.max(...surf))} m²,` : '';
+    const t1=`Le bien${adr?(' situé '+adr):''} se trouve dans un secteur actif de l’immobilier d’entreprise de ${ville}. Les ${comps.length} ventes retenues à proximité immédiate${sPart} font ressortir une fourchette de valeur de l’ordre de ${nb(r50(pm[0]))} à ${nb(r50(pm[pm.length-1]))} €/m², avec une médiane proche de ${nb(r50(med))} €/m².`;
+    const t2=`Au regard de ces références de voisinage direct, la valeur vénale du bien peut être appréciée sur une base d’environ ${nb(r50(med))} €/m² de surface utile, à ajuster selon l’état, la divisibilité et la qualité d’emplacement au sein de la zone.`;
+    ta.value = t1+'\n\n'+t2;
+  }
+
+  function _dvfOverlay(inner){
+    _dvfClose();
+    if(!document.getElementById('dvf-ov-style')){
+      const st=document.createElement('style'); st.id='dvf-ov-style'; st.textContent=`
+        #dvf-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center}
+        #dvf-ov .box{background:#fff;border-radius:12px;width:min(900px,95vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;font-family:inherit}
+        #dvf-ov .dvf-h{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#1A2738;color:#fff;font-size:16px}
+        #dvf-ov .dvf-h button{background:none;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+        #dvf-ov .dvf-sub{padding:10px 18px;font-size:13px;color:#555;background:#f4f6f7;border-bottom:1px solid #e3e8ea}
+        #dvf-ov .dvf-list{overflow:auto;padding:4px 10px}
+        #dvf-ov .dvf-row{display:grid;grid-template-columns:24px 76px 1fr 78px 104px 92px 56px;align-items:center;gap:8px;padding:7px 8px;border-bottom:1px solid #eef0f2;font-size:13px;cursor:pointer}
+        #dvf-ov .dvf-row:hover{background:#f7faf9}
+        #dvf-ov .dvf-row .a{font-weight:600;color:#1A2738}
+        #dvf-ov .dvf-row .m{font-weight:700;color:#2f6359;text-align:right}
+        #dvf-ov .dvf-row .p,#dvf-ov .dvf-row .b{text-align:right;color:#444}
+        #dvf-ov .dvf-row .x{text-align:right;color:#9aa0a6}
+        #dvf-ov .dvf-f{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid #e3e8ea}
+        #dvf-ov .dvf-f button{border:0;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer}
+        #dvf-ov .dvf-f .ok{background:#3D8074;color:#fff} #dvf-ov .dvf-f .cancel{background:#e3e8ea;color:#333}`;
+      document.head.appendChild(st);
+    }
+    const ov=document.createElement('div'); ov.id='dvf-ov';
+    ov.innerHTML=`<div class="box">${inner}</div>`;
+    ov.addEventListener('click',e=>{ if(e.target===ov) _dvfClose(); });
+    document.body.appendChild(ov); return ov;
+  }
+  function _dvfSet(inner){ const b=document.querySelector('#dvf-ov .box'); if(b) b.innerHTML=inner; }
+  function _dvfClose(){ const e=document.getElementById('dvf-ov'); if(e) e.remove(); }
   function _photo(input){
     const f=input.files&&input.files[0]; if(!f) return;
     A.photoFile=f;
@@ -948,9 +1064,13 @@
         ${TA('av-commarche','Commentaire sur la valorisation (apparaît sous le tableau)', a.commentaire_marche)}
 
         <div class="sep">Transactions comparables</div>
+        <p class="hint" style="margin:-4px 0 8px">Recherche automatique des ventes DVF des 5 dernières années autour de l’adresse du bien, puis sélection à cocher.</p>
+        <button type="button" class="addbtn" style="background:#1A2738;color:#fff;border-color:#1A2738" onclick="GTEC_AVIS._dvfPick()">🔍 Importer des ventes comparables (DVF)</button>
         <div class="rowhead row comp"><span>Date</span><span>Typologie</span><span>Adresse</span><span>Terrain m²</span><span>Bâti m²</span><span>Valeur vénale €</span><span></span></div>
         <div class="rows" id="av-comp-rows">${comp.map(compRow).join('')}</div>
         <button type="button" class="addbtn" onclick="GTEC_AVIS._addComp()">＋ Ajouter une transaction comparable</button>
+        <div class="f full" style="margin-top:12px"><label>Analyse comparative <span style="font-weight:400;color:#6b7280">(générée automatiquement, librement modifiable — apparaît sous le tableau)</span> <button type="button" class="addbtn" style="display:inline-block;width:auto;padding:2px 10px;font-size:12px;margin-left:6px" onclick="GTEC_AVIS._dvfGenAnalyse()">↻ Régénérer</button></label>
+          <textarea id="av-analyse-comp" style="min-height:120px">${a.analyse_comparative==null?'':esc(a.analyse_comparative)}</textarea></div>
 
         <div class="sep">Analyse SWOT</div>
         <p class="hint" style="margin:-4px 0 8px">Une ligne = un point (chaque ligne devient une puce dans le document).</p>
@@ -1019,6 +1139,7 @@
       loyer_lignes:collect('#av-loyer-rows'),
       taux_rendement:gn('av-taux'), frais_mutation_pct:gn('av-frais'), valeur_estimee:gn('av-valest'),
       comparables:collect('#av-comp-rows'),
+      analyse_comparative:g('av-analyse-comp'),
       accessibilite:g('av-acces'),
       commentaire_marche:g('av-commarche'), commentaire_conclusion:g('av-ccl'),
       commentaire_responsabilite:g('av-resp'),
@@ -1078,5 +1199,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _dvfPick, _dvfInsert, _dvfGenAnalyse, _dvfClose, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
