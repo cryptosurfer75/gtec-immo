@@ -402,6 +402,7 @@
         </div>
       </div>
       ${f.valeurM2!=null?`<div class="av-ccl-m2">soit environ ${eur(f.valeurM2)} / m²</div>`:''}
+      <div class="av-ccl-synth"><span>Synthèse</span></div>
       <div class="av-ccl-note">
         ${note?`<p>${esc(note).replace(/\n+/g,'</p><p>')}</p>`:''}
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
@@ -579,10 +580,13 @@
       .av-ccl-val{ font-size:29pt; font-weight:700; color:var(--navy); margin:0; padding:5mm 10mm; border:.8mm solid var(--teal); border-radius:8px; display:inline-block; line-height:1.1; background:linear-gradient(135deg,#f3f9f7 0%,#d9ede7 55%,#cbe6dd 100%); }
       .av-ccl-hdhh{ display:block; font-size:11pt; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:#8a9199; margin-top:2mm; }
       .av-ccl-m2{ font-size:15pt; color:var(--teal-d); font-weight:600; }
-      .av-ccl-note{ max-width:200mm; margin:4mm auto 0; padding:0 6mm; text-align:left; font-size:10.5pt; line-height:1.45; color:#444; } .av-ccl-note p{ margin:0 0 2mm; }
-      .av-ccl-legal{ max-width:200mm; margin:auto auto 0; border:1px solid #dce2e1; border-radius:4px; background:#fafbfb; padding:1.6mm 4mm; }
-      .av-ccl-legal-h{ font-size:6pt; text-transform:uppercase; letter-spacing:.12em; color:#a6acb2; font-weight:700; margin-bottom:.5mm; }
-      .av-ccl-legal p{ font-size:6.8pt; line-height:1.28; color:#9099a0; font-style:italic; margin:0; }
+      .av-ccl-synth{ display:flex; align-items:center; gap:5mm; margin:8mm 0 3mm; }
+      .av-ccl-synth::before, .av-ccl-synth::after{ content:''; flex:1; height:1px; background:#d6dcde; }
+      .av-ccl-synth span{ font-size:12pt; text-transform:uppercase; letter-spacing:.14em; color:var(--teal-d); font-weight:700; }
+      .av-ccl-note{ margin:0; text-align:left; font-size:11pt; line-height:1.55; color:#3f3f3f; } .av-ccl-note p{ margin:0 0 2.5mm; }
+      .av-ccl-legal{ margin:auto 0 0; border:1px solid #dce2e1; border-radius:4px; background:#fafbfb; padding:2.4mm 5mm; }
+      .av-ccl-legal-h{ font-size:7pt; text-transform:uppercase; letter-spacing:.12em; color:#9aa0a6; font-weight:700; margin-bottom:.8mm; }
+      .av-ccl-legal p{ font-size:8pt; line-height:1.4; color:#7c848b; font-style:italic; margin:0; }
       .av-contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; }
       .av-ct-logo{ display:flex; flex-direction:column; align-items:center; margin-top:30mm; } .av-ct-logo img{ height:50mm; }
       .av-ct-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
