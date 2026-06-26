@@ -598,9 +598,15 @@
       .av-ct-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
       .av-ct-sep{ width:55mm; height:.8mm; background:var(--teal); border-radius:2px; margin:20mm 0 14mm; }
       .av-ct-nom{ font-size:24pt; } .av-ct-tel,.av-ct-mail{ font-size:18pt; color:#7fc8bb; margin-top:2mm; }
+      /* Lecture sur téléphone : on met chaque page (format fixe paysage) à l'échelle
+         de la largeur de l'écran. La mise en page imprimée n'est pas touchée. */
+      @media screen and (max-width:1100px){
+        html,body{ overflow-x:hidden; }
+        .sheet{ align-items:flex-start; padding:10px 0; gap:14px; }
+      }
       @media print{
         html,body{ background:#fff; } .toolbar{ display:none; } .sheet{ padding:0; gap:0; }
-        .pg{ box-shadow:none; width:100%; height:100vh; page-break-after:always; break-after:page; }
+        .pg{ box-shadow:none; width:100%; height:100vh; page-break-after:always; break-after:page; transform:none!important; margin:0!important; }
         @page{ size:A4 landscape; margin:0; }
       }`;
   }
@@ -661,6 +667,7 @@
         ${toolbar}
         <div class="sheet">${pages}</div>
         <script>${initCartesScript()}<\/script>
+        <script>(function(){function fit(){var avail=document.documentElement.clientWidth||window.innerWidth;var pad=12,pages=document.querySelectorAll('.pg');for(var i=0;i<pages.length;i++){var pg=pages[i];pg.style.transform='none';pg.style.marginBottom='';pg.style.marginLeft='';var w=pg.offsetWidth,h=pg.offsetHeight;if(avail<w+pad){var s=(avail-pad)/w;pg.style.transformOrigin='top left';pg.style.transform='scale('+s+')';pg.style.marginBottom=(-(h*(1-s))+14)+'px';pg.style.marginLeft=Math.max(0,(avail-w*s)/2)+'px';}}}window.addEventListener('load',fit);window.addEventListener('resize',fit);fit();setTimeout(fit,300);})();<\/script>
       </body></html>`;
     return { html, titre };
   }

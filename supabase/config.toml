@@ -3,3 +3,7 @@ project_id = "rqeyadmapekiwzyjtyhv"
 # Relais public (données DVF ouvertes) : pas de jeton requis pour l'appel depuis le CRM.
 [functions.dvf-comparables]
 verify_jwt = false
+
+# Relances d'impayés : appelée par le cron (service role) et par le CRM (session).
+[functions.relance-impayes]
+verify_jwt = true
