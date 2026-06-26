@@ -14,12 +14,12 @@
   // Clé Google Maps (Static Maps). Vide = on retombe sur les cartes libres.
   // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-entreprise.png?v=1';
+  const LOGO = 'https://gtec-immobilier.fr/logo-gtec.png?v=3';
   // Marque « bâtiment + GTEC » fond transparent (sans wordmark) — dernière page ;
   // le sous-titre « IMMOBILIER D'ENTREPRISE » est rendu en texte juste en dessous.
   const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=1';
   // Bloc logo + signature « Immobilier d'entreprise » (taille homogène partout)
-  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC Immobilier d’entreprise"></span>`;
+  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
   // Signatures par agent (le bien porte une initiale FB / VDM)
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
