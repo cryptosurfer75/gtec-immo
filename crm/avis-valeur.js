@@ -212,8 +212,8 @@
       ${bloc('Nature des informations communiquées',
         `<p>Les données et estimations présentées sont fournies à titre indicatif et ne constituent ni une offre contractuelle, ni une expertise immobilière au sens réglementaire. Les éléments communiqués reposent sur les informations disponibles à la date de réalisation de l’étude et restent susceptibles d’évoluer selon :</p>
          <ul><li>Les conditions du marché</li><li>Les éléments techniques et réglementaires</li><li>Les audits et vérifications complémentaires</li></ul>`, true)}
-    </div>
-    ${resp?`<div class="av-ccl-legal"><div class="av-ccl-legal-h">Mention légale</div><p>${esc(resp).replace(/\n+/g,'</p><p>')}</p></div>`:''}`;
+      ${resp?bloc('Mention légale', `<p>${esc(resp).replace(/\n+/g,'</p><p>')}</p>`, true):''}
+    </div>`;
     return page('Cadre légal', body, 'Cadre légal', 2);
   }
 
