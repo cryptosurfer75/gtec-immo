@@ -582,11 +582,11 @@
       .av-ccl-m2{ font-size:15pt; color:var(--teal-d); font-weight:600; }
       .av-ccl-synth{ display:flex; align-items:center; gap:5mm; margin:8mm 0 3mm; }
       .av-ccl-synth::before, .av-ccl-synth::after{ content:''; flex:1; height:1px; background:#d6dcde; }
-      .av-ccl-synth span{ font-size:12pt; text-transform:uppercase; letter-spacing:.14em; color:var(--teal-d); font-weight:700; }
+      .av-ccl-synth span{ font-size:12pt; text-transform:uppercase; letter-spacing:.14em; color:#1a1a1a; font-weight:700; }
       .av-ccl-note{ margin:0; text-align:left; font-size:11pt; line-height:1.55; color:#3f3f3f; } .av-ccl-note p{ margin:0 0 2.5mm; }
-      .av-ccl-legal{ margin:auto 0 0; border:1px solid #dce2e1; border-radius:4px; background:#fafbfb; padding:2.4mm 5mm; }
-      .av-ccl-legal-h{ font-size:7pt; text-transform:uppercase; letter-spacing:.12em; color:#9aa0a6; font-weight:700; margin-bottom:.8mm; }
-      .av-ccl-legal p{ font-size:8pt; line-height:1.4; color:#7c848b; font-style:italic; margin:0; }
+      .av-ccl-legal{ margin:auto 0 0; border:1px solid #dce2e1; border-radius:4px; background:#fafbfb; padding:2.7mm 5mm; }
+      .av-ccl-legal-h{ font-size:7.5pt; text-transform:uppercase; letter-spacing:.12em; color:#9aa0a6; font-weight:700; margin-bottom:1mm; }
+      .av-ccl-legal p{ font-size:9pt; line-height:1.42; color:#7c848b; font-style:italic; margin:0; }
       .av-contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; }
       .av-ct-logo{ display:flex; flex-direction:column; align-items:center; margin-top:30mm; } .av-ct-logo img{ height:50mm; }
       .av-ct-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
