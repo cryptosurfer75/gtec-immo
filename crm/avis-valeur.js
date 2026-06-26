@@ -28,7 +28,7 @@
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;
-  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif','Localisation',
+  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif / photos','Localisation',
                     'Détail des surfaces','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
 
@@ -256,7 +256,7 @@
       </div>
       <div class="av-presit-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo</div>'}</div>
     </div>`;
-    return page('Présentation de l’actif', body, 'Présentation de l’actif', 3);
+    return page('Présentation de l’actif', body, 'Présentation de l’actif / photos', 3);
   }
 
   // Page « Vues de l'actif » : photos intérieures supplémentaires. N'apparaît que si au moins
@@ -623,12 +623,8 @@
     return data;
   }
 
-  async function generer(id){
-    if(!id){ alert('Aucun avis sélectionné.'); return; }
-    let a;
-    try{ a = await charger(id); }
-    catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; }
-    const geo = await geocoder(a);
+  // Construit le document HTML complet. shared=true → version « client » (barre simplifiée, pas de Fermer).
+  function construireDocAvis(a, geo, shared){
     const pages = [
       pageCouverture(a, geo), pageSommaire(), pageGroupe(), pageAvertissement(),
       pagePresentation(a), pageVuesActif(a), pageLocalisation(a, geo),
@@ -636,25 +632,88 @@
       pageContact(a)
     ].join('');
     const titre = `Avis de valeur — ${enseigneDe(a) || typeActifDe(a)} ${a.ville||''}`.trim();
+    const toolbar = shared
+      ? `<div class="toolbar"><b>${esc(titre)}</b><div class="acts"><button class="btn-print" onclick="window.print()">⬇ Télécharger en PDF</button></div></div>`
+      : `<div class="toolbar"><b>${esc(titre)}</b><div class="acts"><button class="btn-print" onclick="window.print()">📄 Enregistrer en PDF / Imprimer</button><button class="btn-close" onclick="window.close()">Fermer</button></div></div>`;
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${esc(titre)}</title>
+      <link rel="icon" href="https://gtec-immobilier.fr/favicon.png">
       <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
       <style>${styles()}</style></head>
       <body>
-        <div class="toolbar"><b>${esc(titre)}</b>
-          <div class="acts">
-            <button class="btn-print" onclick="window.print()">📄 Enregistrer en PDF / Imprimer</button>
-            <button class="btn-close" onclick="window.close()">Fermer</button>
-          </div></div>
+        ${toolbar}
         <div class="sheet">${pages}</div>
         <script>${initCartesScript()}<\/script>
       </body></html>`;
+    return { html, titre };
+  }
+
+  // Aperçu local (nouvelle fenêtre, avec Fermer).
+  async function generer(id){
+    if(!id){ alert('Aucun avis sélectionné.'); return; }
+    let a;
+    try{ a = await charger(id); }
+    catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; }
+    const geo = await geocoder(a);
+    const { html } = construireDocAvis(a, geo, false);
     const w = window.open('', '_blank');
     if(!w){ alert('La fenêtre a été bloquée. Autorisez les pop-ups pour ce site.'); return; }
     w.document.open(); w.document.write(html); w.document.close();
+  }
+
+  // Publie l'avis en ligne (version client, pleine qualité) et copie le lien. Lien stable par avis.
+  async function publierLien(id){
+    if(!id){ alert('Aucun avis sélectionné.'); return; }
+    let a;
+    try{ a = await charger(id); }
+    catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; }
+    const geo = await geocoder(a);
+    const { html } = construireDocAvis(a, geo, true);
+    try{
+      const blob = new Blob([html], { type:'text/html; charset=utf-8' });
+      const up = await sb.storage.from('offres').upload('avis-public/'+id+'.html', blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
+      if(up.error) throw up.error;
+    }catch(e){ alert('Impossible de publier l’avis : '+(e.message||e)); return; }
+    afficherLien('https://gtec-immobilier.fr/a/?id=' + encodeURIComponent(id), id);
+  }
+
+  // Révoque le lien : supprime l'avis publié → le lien ne mène plus à rien.
+  async function revoquerLien(id){
+    if(!id) return;
+    if(!confirm('Révoquer le lien de cet avis ? Le client qui l’ouvrira ne verra plus rien. (Vous pourrez toujours en regénérer un nouveau.)')) return;
+    try{
+      const { error } = await sb.storage.from('offres').remove(['avis-public/'+id+'.html']);
+      if(error) throw error;
+      const bg=document.getElementById('av-lien-bg'); if(bg) bg.remove();
+      alert('Lien révoqué : l’avis en ligne a été supprimé.');
+    }catch(e){ alert('Impossible de révoquer : '+(e.message||e)); }
+  }
+
+  // Petite fenêtre : lien copié, copier / ouvrir / révoquer.
+  function afficherLien(url, id){
+    try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(e){}
+    const old = document.getElementById('av-lien-bg'); if(old) old.remove();
+    const bg = document.createElement('div'); bg.id='av-lien-bg';
+    bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
+    bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
+      <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien de l’avis à envoyer au client</div>
+      <div style="padding:18px 20px">
+        <p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Le lien a été copié. Collez-le dans votre e-mail : le client verra l’avis en pleine qualité, sans téléchargement lourd (et pourra l’enregistrer en PDF s'il le souhaite).</p>
+        <input id="av-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
+        <button onclick="GTEC_AVIS.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
+        <span style="flex:1"></span>
+        <button onclick="var i=document.getElementById('av-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#3D8074;color:#fff">📋 Copier</button>
+        <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
+        <button onclick="document.getElementById('av-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
+      </div></div>`;
+    bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+    document.body.appendChild(bg);
   }
 
   /* ==========================================================================
@@ -1218,6 +1277,6 @@
     if(prop && typeof nomClient==='function') prop.value = nomClient(c);
   }
 
-  window.GTEC_AVIS = { nouveau, editer, generer, resume,
+  window.GTEC_AVIS = { nouveau, editer, generer, resume, publierLien, revoquerLien,
     _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _dvfPick, _dvfInsert, _dvfGenAnalyse, _dvfClose, _mselToggle, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
