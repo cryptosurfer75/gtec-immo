@@ -21,7 +21,7 @@
 
   // -- Identité GTEC -----------------------------------------------------------
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec.png?v=2';
+  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-entreprise.png?v=1';
   const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=1';
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
@@ -30,7 +30,7 @@
   const CONTACT_DEFAUT = AGENTS.FB;
   const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif / photos','Localisation',
                     'Détail des surfaces','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
-  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
+  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC Immobilier d’entreprise"></span>`;
 
   // -- Petites aides -----------------------------------------------------------
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
