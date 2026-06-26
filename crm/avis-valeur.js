@@ -416,10 +416,10 @@
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
       .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:4mm; }
       .swB-col{ display:flex; flex-direction:column; min-height:0; }
-      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:5mm; border-bottom:1px solid #e1e6e8; }
-      .swB-block{ flex:1; display:flex; flex-direction:column; padding-bottom:5mm; }
-      .swB-block + .swB-block{ padding-top:5mm; }
-      .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:3mm; }
+      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:4mm; border-bottom:1px solid #e1e6e8; }
+      .swB-block{ display:flex; flex-direction:column; }
+      .swB-block + .swB-block{ margin-top:9mm; }
+      .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:2.5mm; }
       .swB-sign{ width:9mm; height:9mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
       .swB-sign svg{ width:5mm; height:5mm; }
       .swB-h b{ font-size:14pt; letter-spacing:.02em; color:#222; }
