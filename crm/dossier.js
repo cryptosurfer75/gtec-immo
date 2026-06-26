@@ -14,7 +14,7 @@
   // Clé Google Maps (Static Maps). Vide = on retombe sur les cartes libres.
   // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec.png?v=3';
+  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=1';
   // Marque « bâtiment + GTEC » fond transparent (sans wordmark) — dernière page ;
   // le sous-titre « IMMOBILIER D'ENTREPRISE » est rendu en texte juste en dessous.
   const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=1';
