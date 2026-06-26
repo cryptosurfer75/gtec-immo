@@ -557,6 +557,7 @@ function avisLigne(a){
              <button class="btn btn-ghost btn-sm" title="Supprimer définitivement" onclick="supprimerAvisDefinitif('${a.id}')">🗑️</button>`
           : `<button class="btn btn-ghost btn-sm" title="Modifier l'avis" onclick="GTEC_AVIS.editer('${a.id}')">✏️</button>
              <button class="btn btn-ghost btn-sm" title="Aperçu (à enregistrer en PDF)" onclick="GTEC_AVIS.generer('${a.id}')">📄</button>
+             <button class="btn btn-ghost btn-sm" title="Lien client (à envoyer par e-mail)" onclick="GTEC_AVIS.publierLien('${a.id}')">🔗</button>
              <button class="btn btn-ghost btn-sm" title="Archiver (récupérable)" onclick="archiverAvis('${a.id}')">🗄️</button>`}
       </td></tr>`;
 }
@@ -575,6 +576,7 @@ async function archiverAvis(id){
   if(!confirm('Archiver cet avis de valeur'+(a&&a.reference?' ('+a.reference+')':'')+' ?\n\nIl sera retiré de la liste mais reste récupérable dans « Archivés ».')) return;
   const { error } = await sb.from('avis_valeur').update({archive:true}).eq('id', id);
   if(error){ alert('Erreur : '+error.message); return; }
+  try{ await sb.storage.from('offres').remove(['avis-public/'+id+'.html']); }catch(e){}  // révoque le lien client éventuel
   vueAvis();
 }
 async function restaurerAvis(id){
@@ -588,6 +590,7 @@ async function supprimerAvisDefinitif(id){
   if(!confirm('Supprimer DÉFINITIVEMENT cet avis de valeur'+(a&&a.reference?' ('+a.reference+')':'')+' ?\n\nCette action est irréversible.')) return;
   const { error } = await sb.from('avis_valeur').delete().eq('id', id);
   if(error){ alert('Erreur : '+error.message); return; }
+  try{ await sb.storage.from('offres').remove(['avis-public/'+id+'.html']); }catch(e){}  // supprime aussi le lien client éventuel
   vueAvis();
 }
 async function vueAvis(){
@@ -1932,7 +1935,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 init();
 </script>
 <script src="dossier.js?v=6"></script>
-<script src="avis-valeur.js?v=45"></script>
+<script src="avis-valeur.js?v=46"></script>
 <script src="teams.js?v=2"></script>
 </body>
 </html>
