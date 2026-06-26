@@ -28,7 +28,7 @@
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;
-  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif','Analyse de localisation','Accessibilité & environnement',
+  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif','Localisation','Accessibilité & environnement',
                     'Données techniques','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
 
@@ -212,7 +212,7 @@
       ? `<div class="av-cad-wrap"><img src="${esc(a.cadastre_url)}" alt="Extrait cadastral"></div>`
       : carteHtml(geo, 'plan', 1, 'Plan de localisation');
     const body = `<div class="av-loc">${visuel}</div>`;
-    return page('Analyse de localisation', body, 'Analyse de localisation', 4);
+    return page('Localisation', body, 'Localisation', 4);
   }
 
   function pageAcces(a){
@@ -222,7 +222,7 @@
       ? `<div class="av-acc-bloc"><h4>${titre}</h4><p>${esc(txt).replace(/\n+/g,'</p><p>')}</p></div>`
       : '';
     const contenu = (zc||acc)
-      ? `${bloc('Zone de chalandise', zc)}${bloc('Accessibilité & environnement', acc)}`
+      ? `${bloc('Zone de chalandise', zc)}${bloc('Analyse de l’emplacement', acc)}`
       : '<p class="ph">Zone de chalandise et accessibilité non renseignées.</p>';
     const body = `<div class="av-acc">${contenu}</div>`;
     return page('Accessibilité & environnement', body, 'Accessibilité & environnement', 5);
@@ -801,7 +801,7 @@
         <div class="f full" style="margin-top:10px"><label>Extrait cadastral (capture du plan, parcelle surlignée)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._cadPhoto(this)">
           <div class="photo" id="av-cad-prev">${a.cadastre_url?`<img src="${esc(a.cadastre_url)}" alt="">`:''}</div>
-          <p class="hint">Clique « 🗺️ Cadastre » ci-dessus, fais une capture de la parcelle, puis importe-la ici. Elle apparaîtra sur la page « Analyse de localisation » du document.</p></div>
+          <p class="hint">Clique « 🗺️ Cadastre » ci-dessus, fais une capture de la parcelle, puis importe-la ici. Elle apparaîtra sur la page « Localisation » du document.</p></div>
 
         <div class="sep">Valeur locative de marché</div>
         <div class="rowhead row loyer"><span>Composante</span><span>Surface m²</span><span>Loyer €/m²/an</span><span>Marché min</span><span>Marché max</span><span></span></div>
@@ -831,7 +831,7 @@
 
         <div class="sep">Textes des pages</div>
         ${TA('av-chalandise','Zone de chalandise (page Accessibilité)', a.zone_chalandise)}
-        ${TA('av-acces','Accessibilité & environnement (page Accessibilité)', a.accessibilite)}
+        ${TA('av-acces','Analyse de l’emplacement (page Accessibilité)', a.accessibilite)}
         ${TA('av-ccl','Commentaire de conclusion', a.commentaire_conclusion)}
       </div>
       <div class="foot">
