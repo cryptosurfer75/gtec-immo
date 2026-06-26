@@ -672,6 +672,10 @@
       #av-ed .sep:first-child{margin-top:0}
       #av-ed .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
       #av-ed .f{display:flex;flex-direction:column;gap:4px} #av-ed .f.full{grid-column:1/-1}
+      #av-ed .msel{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+      #av-ed .msel-chip{border:1px solid #c7d0d3;border-radius:16px;padding:4px 11px;font-size:12.5px;cursor:pointer;background:#fff;color:#333;user-select:none}
+      #av-ed .msel-chip:hover{border-color:#3D8074}
+      #av-ed .msel-chip.on{background:#3D8074;color:#fff;border-color:#3D8074}
       #av-ed label{font-size:12.5px;color:#4A5A5E;font-weight:600}
       #av-ed input,#av-ed textarea,#av-ed select{border:1px solid #c9d0d3;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;width:100%}
       #av-ed textarea{min-height:60px;resize:vertical}
@@ -708,6 +712,14 @@
   // Menu déroulant simple — listes d'options alignées sur le CRM des offres (EQUIP_CAT).
   const SEL = (id,label,v,opts) => `<div class="f"><label>${esc(label)}</label><select id="${id}"><option value="">—</option>`+
     opts.map(o=>`<option value="${esc(o)}" ${(v||'')===o?'selected':''}>${esc(o)}</option>`).join('')+`</select></div>`;
+  // Multi-sélection par étiquettes (plusieurs valeurs possibles, stockées séparées par des virgules).
+  const MSEL = (id,label,v,opts) => {
+    const sel = String(v||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const chips = opts.map(o=>`<span class="msel-chip${sel.includes(o)?' on':''}" data-v="${esc(o)}" onclick="GTEC_AVIS._mselToggle(this,'${id}')">${esc(o)}</span>`).join('');
+    return `<div class="f full"><label>${esc(label)}</label>
+      <input type="hidden" id="${id}" value="${esc(sel.join(', '))}">
+      <div class="msel">${chips}</div></div>`;
+  };
   const CK = (id,label,v) => `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}" style="font-weight:500">${esc(label)}</label></div>`;
   const SELA = (v) => `<div class="f full"><label>Négociateur GTEC</label><select id="av-agent">`+
     [['FB','Florent BOURDIEC'],['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'FB')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
@@ -904,6 +916,14 @@
   }
   function _dvfSet(inner){ const b=document.querySelector('#dvf-ov .box'); if(b) b.innerHTML=inner; }
   function _dvfClose(){ const e=document.getElementById('dvf-ov'); if(e) e.remove(); }
+
+  // Bascule une étiquette de multi-sélection et met à jour la valeur (champ caché).
+  function _mselToggle(chip, id){
+    chip.classList.toggle('on');
+    const cont=chip.parentElement;
+    const vals=[...cont.querySelectorAll('.msel-chip.on')].map(c=>c.dataset.v);
+    const inp=document.getElementById(id); if(inp) inp.value=vals.join(', ');
+  }
   function _photo(input){
     const f=input.files&&input.files[0]; if(!f) return;
     A.photoFile=f;
@@ -1001,10 +1021,10 @@
           ${I('av-ville','Ville', a.ville)}
           ${I('av-cp','Code postal', a.code_postal)}
           ${I('av-annee','Année de construction', a.annee, {type:'number'})}
-          ${SEL('av-structure','Structure du bâtiment', a.structure_batiment, ['Métallique','Béton','Brique'])}
-          ${SEL('av-toiture','Toiture', a.toiture, ['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'])}
-          ${SEL('av-isolation','Isolation', a.isolation, ['Simple peau','Double peau','RT 2012','RT 2005','RE2020'])}
-          ${SEL('av-chauffage','Chauffage', a.chauffage, ['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes','Climatisation réversible','Climatisation centralisée'])}
+          ${MSEL('av-structure','Structure du bâtiment', a.structure_batiment, ['Métallique','Béton','Brique'])}
+          ${MSEL('av-toiture','Toiture', a.toiture, ['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'])}
+          ${MSEL('av-isolation','Isolation', a.isolation, ['Simple peau','Double peau','RT 2012','RT 2005','RE2020'])}
+          ${MSEL('av-chauffage','Chauffage', a.chauffage, ['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes','Climatisation réversible','Climatisation centralisée'])}
         </div>
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
@@ -1199,5 +1219,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _dvfPick, _dvfInsert, _dvfGenAnalyse, _dvfClose, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _dvfPick, _dvfInsert, _dvfGenAnalyse, _dvfClose, _mselToggle, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
