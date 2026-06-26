@@ -28,7 +28,7 @@
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;
-  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif','Localisation','Accessibilité & environnement',
+  const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif','Localisation',
                     'Détail des surfaces','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
 
@@ -250,7 +250,7 @@
           ${a.structure_batiment?`<tr><th>Structure du bâtiment</th><td>${esc(a.structure_batiment)}</td></tr>`:''}
           ${a.toiture?`<tr><th>Toiture</th><td>${esc(a.toiture)}</td></tr>`:''}
           ${a.isolation?`<tr><th>Isolation</th><td>${esc(a.isolation)}</td></tr>`:''}
-          ${a.chauffage?`<tr><th>Chauffage / Climatisation</th><td>${esc(a.chauffage)}</td></tr>`:''}
+          ${a.chauffage?`<tr><th>Chauffage</th><td>${esc(a.chauffage)}</td></tr>`:''}
         </table>
       </div>
       <div class="av-presit-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo</div>'}</div>
@@ -271,26 +271,18 @@
     </section>`;
   }
 
+  // Page « Localisation » fusionnée : à gauche l'analyse de l'emplacement, à droite l'extrait
+  // cadastral (ou la carte auto si aucun cadastre importé).
   function pageLocalisation(a, geo){
-    // Si un extrait cadastral a été importé, il sert de plan de localisation (plus précis que la carte auto).
+    const acc = (a.accessibilite||'').trim();
+    const texte = acc
+      ? `<div class="av-acc-bloc"><h4>Analyse de l’emplacement</h4><p>${esc(acc).replace(/\n+/g,'</p><p>')}</p></div>`
+      : '<p class="ph">Analyse de l’emplacement non renseignée.</p>';
     const visuel = a.cadastre_url
       ? `<div class="av-cad-wrap"><img src="${esc(a.cadastre_url)}" alt="Extrait cadastral"></div>`
       : carteHtml(geo, 'plan', 1, 'Plan de localisation');
-    const body = `<div class="av-loc">${visuel}</div>`;
+    const body = `<div class="av-locm"><div class="av-locm-txt">${texte}</div><div class="av-locm-img">${visuel}</div></div>`;
     return page('Localisation', body, 'Localisation', 4);
-  }
-
-  function pageAcces(a){
-    const zc  = (a.zone_chalandise||'').trim();
-    const acc = (a.accessibilite||'').trim();
-    const bloc = (titre, txt) => txt
-      ? `<div class="av-acc-bloc"><h4>${titre}</h4><p>${esc(txt).replace(/\n+/g,'</p><p>')}</p></div>`
-      : '';
-    const contenu = (zc||acc)
-      ? `${bloc('Zone de chalandise', zc)}${bloc('Analyse de l’emplacement', acc)}`
-      : '<p class="ph">Zone de chalandise et accessibilité non renseignées.</p>';
-    const body = `<div class="av-acc">${contenu}</div>`;
-    return page('Accessibilité & environnement', body, 'Accessibilité & environnement', 5);
   }
 
   function pageTechnique(a){
@@ -317,7 +309,7 @@
       ${lotsTable}
       ${fonctable}
     </div>`;
-    return page('Détail des surfaces', body, 'Détail des surfaces', 6);
+    return page('Détail des surfaces', body, 'Détail des surfaces', 5);
   }
 
   function pageComparatif(a){
@@ -336,7 +328,7 @@
     } else {
       body = '<p class="ph">Aucune transaction comparable renseignée.</p>';
     }
-    return page('Valeur comparative du marché', body, 'Valeur comparative', 7);
+    return page('Valeur comparative du marché', body, 'Valeur comparative', 6);
   }
 
   // Pastilles rondes à icônes par quadrant (interne/externe · atout/vigilance)
@@ -354,16 +346,20 @@
       const corps = lines.length ? `<ul class="swB-ul">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="ph">Non renseigné</p>';
       return `<div class="swB-block ${cls}"><div class="swB-h"><span class="swB-sign">${icon}</span><b>${esc(titre)}</b></div>${corps}</div>`;
     };
-    // Grille à lignes partagées : titres gauche/droite toujours alignés (ligne 2 = max des deux blocs du haut).
+    // Quadrillage 2×2 à quadrants égaux + croix centrée (indépendant du nb de lignes par quadrant).
     const body = `<div class="swB">
-      <div class="swB-coltitle">Analyse interne — le bien</div>
-      <div class="swB-coltitle">Analyse externe — le marché</div>
-      ${block('swB-f', SWOT_ICON.plus, 'Forces', s.forces)}
-      ${block('swB-o', SWOT_ICON.up, 'Opportunités', s.opportunites)}
-      ${block('swB-w', SWOT_ICON.minus, 'Faiblesses', s.faiblesses)}
-      ${block('swB-t', SWOT_ICON.warn, 'Menaces', s.menaces)}
+      <div class="swB-titles">
+        <div class="swB-coltitle">Analyse interne — le bien</div>
+        <div class="swB-coltitle">Analyse externe — le marché</div>
+      </div>
+      <div class="swB-grid">
+        ${block('swB-f', SWOT_ICON.plus, 'Forces', s.forces)}
+        ${block('swB-o', SWOT_ICON.up, 'Opportunités', s.opportunites)}
+        ${block('swB-w', SWOT_ICON.minus, 'Faiblesses', s.faiblesses)}
+        ${block('swB-t', SWOT_ICON.warn, 'Menaces', s.menaces)}
+      </div>
     </div>`;
-    return page('Analyse SWOT', body, 'Analyse SWOT', 8);
+    return page('Analyse SWOT', body, 'Analyse SWOT', 7);
   }
 
   function pageValorisation(a){
@@ -382,7 +378,7 @@
       <div class="av-val-tot">VALEUR LOCATIVE TOTALE ANNUELLE : <b>${f.vlAnnuelle!=null?eur(f.vlAnnuelle)+' HT / AN HC':'—'}</b></div>
       ${comm?`<div class="av-val-comm"><p>${esc(comm).replace(/\n+/g,'</p><p>')}</p></div>`:''}
     </div>`;
-    return page('Valorisation financière', body, 'Valorisation & conclusion', 9);
+    return page('Valorisation financière', body, 'Valorisation & conclusion', 8);
   }
 
   function pageConclusion(a){
@@ -409,7 +405,7 @@
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
       </div>
     </div>`;
-    return page('Conclusion', body, 'Valorisation & conclusion', 10);
+    return page('Conclusion', body, 'Valorisation & conclusion', 9);
   }
 
   function pageContact(a){
@@ -479,22 +475,20 @@
       .av-groupe{ font-size:14pt; line-height:1.65; color:#222; padding-top:6mm; } .av-groupe p{ margin:0 0 5mm; }
       .av-groupe-tags{ display:flex; flex-wrap:wrap; gap:4mm; margin-top:6mm; }
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
-      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; align-content:start; column-gap:10mm; row-gap:9mm; margin-top:4mm; }
-      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:-4mm; border-bottom:1px solid #e1e6e8; }
-      .swB-block{ display:flex; flex-direction:column; position:relative; }
-      /* Croix de séparation fine et subtile, centrée entre les 4 cases (n'atteint pas les bords) */
-      .swB-f::after, .swB-w::after{ content:''; position:absolute; right:-5mm; width:1px; background:#e1e6e8; }
-      .swB-f::after{ top:10mm; bottom:-4.5mm; }
-      .swB-w::after{ top:-4.5mm; bottom:10mm; }
-      .swB-f::before, .swB-o::before{ content:''; position:absolute; bottom:-4.5mm; height:1px; background:#e1e6e8; }
-      .swB-f::before{ left:10mm; right:-5mm; }
-      .swB-o::before{ left:-5mm; right:10mm; }
-      .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:2.5mm; }
+      .swB{ flex:1; min-height:0; display:flex; flex-direction:column; margin-top:4mm; margin-bottom:3mm; }
+      .swB-titles{ display:grid; grid-template-columns:1fr 1fr; flex-shrink:0; }
+      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding:0 8mm 2.5mm; border-bottom:1px solid #e1e6e8; }
+      /* Quadrillage 2×2 : quadrants strictement égaux + croix centrée (50%/50%) */
+      .swB-grid{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; position:relative; }
+      .swB-grid::before{ content:''; position:absolute; left:50%; top:0; bottom:0; width:1px; background:#b3bbbe; transform:translateX(-.5px); }
+      .swB-grid::after{ content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:#b3bbbe; transform:translateY(-.5px); }
+      .swB-block{ display:flex; flex-direction:column; min-height:0; overflow:hidden; padding:5mm 8mm; }
+      .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:2mm; }
       .swB-sign{ width:9mm; height:9mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
       .swB-sign svg{ width:5mm; height:5mm; }
       .swB-h b{ font-size:14pt; letter-spacing:.02em; color:#222; }
       .swB-ul{ margin:0; padding:0; list-style:none; font-size:11.5pt; color:#2a3340; }
-      .swB-ul li{ position:relative; padding-left:5.5mm; margin:0 0 2.4mm; line-height:1.4; }
+      .swB-ul li{ position:relative; padding-left:5.5mm; margin:0 0 1.8mm; line-height:1.3; }
       .swB-ul li::before{ content:''; position:absolute; left:0; top:.45em; width:2mm; height:2mm; border-radius:50%; }
       .swB-f .swB-sign{ background:var(--teal); } .swB-f li::before{ background:var(--teal); }
       .swB-w .swB-sign{ background:#b5683f; } .swB-w li::before{ background:#b5683f; }
@@ -503,33 +497,41 @@
       .av-sommaire{ list-style:none; margin:0; padding:0 0 0 6mm; height:100%; display:flex; flex-direction:column; justify-content:space-evenly; }
       .av-sommaire li{ display:flex; align-items:center; gap:10mm; font-size:18pt; color:#222; }
       .av-sommaire .num{ flex-shrink:0; width:13mm; height:13mm; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13pt; font-weight:700; }
-      .av-presit{ display:flex; gap:10mm; padding-top:4mm; height:100%; } .av-presit-txt{ flex:1; }
-      .av-pres-ens{ font-size:24pt; font-weight:700; color:var(--navy); }
-      .av-pres-ville{ font-size:15pt; color:var(--teal-d); font-weight:600; margin-top:1mm; }
-      .av-pres-adr{ font-size:12pt; color:#555; margin:2mm 0 6mm; }
-      .av-presit-img{ width:120mm; background:#eef0f2; border-radius:3px; overflow:hidden; }
-      .av-presit-img img{ width:100%; height:130mm; object-fit:cover; } .av-presit-img .ph{ height:130mm; display:flex; align-items:center; justify-content:center; }
+      .av-presit{ display:flex; gap:10mm; padding-top:3mm; height:100%; } .av-presit-txt{ flex:1; min-width:0; }
+      .av-pres-ens{ font-size:22pt; font-weight:700; color:var(--navy); line-height:1.1; }
+      .av-pres-ville{ font-size:14pt; color:var(--teal-d); font-weight:600; margin-top:1mm; }
+      .av-pres-adr{ font-size:11.5pt; color:#555; margin:1.5mm 0 4mm; }
+      /* Cadre photo standard du dossier = carré 120 mm (présentation, localisation, page photos) */
+      .av-presit-img{ width:120mm; height:120mm; align-self:flex-start; background:#eef0f2; border-radius:3px; overflow:hidden; flex-shrink:0; }
+      .av-presit-img img{ width:100%; height:100%; object-fit:cover; } .av-presit-img .ph{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
       table.av-mini{ width:100%; border-collapse:collapse; border-top:2px solid var(--navy); }
       table.av-mini th{ text-align:left; font-size:12pt; padding:3.5mm 2mm; width:46%; color:#222; border-bottom:1px solid #d7dadd; font-weight:600; }
       table.av-mini td{ font-size:12pt; padding:3.5mm 2mm; color:#333; border-bottom:1px solid #d7dadd; }
+      /* Page « Présentation de l'actif » : tableau resserré pour tenir sans toucher la barre du bas */
+      .av-presit-txt table.av-mini th, .av-presit-txt table.av-mini td{ padding:2.1mm 2mm; font-size:11pt; }
       .av-loc{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; }
-      .av-map{ position:relative; width:100%; flex:1; min-height:110mm; background:#e9ecef; border-radius:3px; overflow:hidden; }
+      .av-locm{ display:flex; gap:10mm; height:100%; padding-top:2mm; align-items:flex-start; }
+      .av-locm-txt{ flex:1; min-width:0; }
+      .av-locm-img{ flex:0 0 120mm; display:flex; flex-direction:column; }
+      .av-map{ position:relative; width:120mm; height:120mm; flex:0 0 120mm; background:#e9ecef; border-radius:3px; overflow:hidden; }
       .av-map img{ width:100%; height:100%; object-fit:cover; } .av-leaflet{ width:100%; height:100%; }
-      .av-cad-wrap{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center; background:#fff; border-radius:3px; overflow:hidden; }
+      .av-cad-wrap{ width:120mm; height:120mm; flex:0 0 120mm; display:flex; align-items:center; justify-content:center; background:#fff; border-radius:3px; overflow:hidden; }
       .av-cad-wrap img{ width:100%; height:100%; object-fit:contain; display:block; }
       .av-cad-cap{ flex-shrink:0; font-size:9pt; color:#777; font-style:italic; text-align:center; }
       .av-map.ph{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9aa0a6; font-size:13pt; text-align:center; }
       .av-loc-note h4{ margin:0 0 2mm; color:var(--teal-d); font-size:12pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-loc-note p{ margin:0 0 2mm; font-size:11pt; line-height:1.5; color:#333; }
-      .av-vues{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; }
-      .av-vues-ph{ flex:1; min-height:0; border-radius:4px; overflow:hidden; background:#eef0f2; }
+      .av-vues{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; align-items:center; justify-content:center; }
+      .av-vues-ph{ border-radius:4px; overflow:hidden; background:#eef0f2; }
       .av-vues-ph img{ width:100%; height:100%; object-fit:cover; display:block; }
-      /* 2 photos : côte à côte en carré, centrées sur la page */
-      .av-vues-2{ flex-direction:row; align-items:center; justify-content:center; gap:8mm; }
-      .av-vues-2 .av-vues-ph{ flex:0 1 50%; aspect-ratio:1; min-height:0; }
-      /* 3-4 photos : grille carrée 2×2 centrée */
-      .av-vues-3, .av-vues-4{ display:grid; grid-template-columns:1fr 1fr; gap:8mm; align-content:center; justify-content:center; }
-      .av-vues-3 .av-vues-ph, .av-vues-4 .av-vues-ph{ aspect-ratio:1; min-height:0; }
+      /* 1 photo : un grand carré 120 mm centré (même cadre que présentation/localisation) */
+      .av-vues-1 .av-vues-ph{ width:120mm; height:120mm; }
+      /* 2 photos : deux carrés 120 mm identiques côte à côte */
+      .av-vues-2{ flex-direction:row; gap:8mm; }
+      .av-vues-2 .av-vues-ph{ width:120mm; height:120mm; }
+      /* 3-4 photos : carrés réduits identiques en grille 2×2 (façon CRM des offres) */
+      .av-vues-3, .av-vues-4{ display:grid; grid-template-columns:repeat(2,62mm); grid-auto-rows:62mm; gap:8mm; align-content:center; justify-content:center; }
+      .av-vues-3 .av-vues-ph, .av-vues-4 .av-vues-ph{ width:62mm; height:62mm; }
       .av-acc{ display:flex; flex-direction:column; gap:9mm; padding-top:4mm; }
       .av-acc-bloc h4{ margin:0 0 3mm; color:var(--teal-d); font-size:14pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-acc-bloc p{ margin:0 0 3mm; font-size:13pt; line-height:1.6; color:#222; }
@@ -623,7 +625,7 @@
     const geo = await geocoder(a);
     const pages = [
       pageCouverture(a, geo), pageSommaire(), pageGroupe(), pageAvertissement(),
-      pagePresentation(a), pageVuesActif(a), pageLocalisation(a, geo), pageAcces(a),
+      pagePresentation(a), pageVuesActif(a), pageLocalisation(a, geo),
       pageTechnique(a), pageComparatif(a), pageSwot(a), pageValorisation(a), pageConclusion(a),
       pageContact(a)
     ].join('');
@@ -886,7 +888,7 @@
           ${SEL('av-structure','Structure du bâtiment', a.structure_batiment, ['Métallique','Béton','Brique'])}
           ${SEL('av-toiture','Toiture', a.toiture, ['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'])}
           ${SEL('av-isolation','Isolation', a.isolation, ['Simple peau','Double peau','RT 2012','RT 2005','RE2020'])}
-          ${SEL('av-chauffage','Chauffage / Climatisation', a.chauffage, ['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes','Climatisation réversible','Climatisation centralisée'])}
+          ${SEL('av-chauffage','Chauffage', a.chauffage, ['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes','Climatisation réversible','Climatisation centralisée'])}
         </div>
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
@@ -960,8 +962,7 @@
         </div>
 
         <div class="sep">Textes des pages</div>
-        ${TA('av-chalandise','Zone de chalandise (page Accessibilité)', a.zone_chalandise)}
-        ${TA('av-acces','Analyse de l’emplacement (page Accessibilité)', a.accessibilite)}
+        ${TA('av-acces','Analyse de l’emplacement (page Localisation, à gauche du cadastre)', a.accessibilite)}
         ${TA('av-ccl','Commentaire de conclusion', a.commentaire_conclusion)}
         ${TA('av-resp','Mention de responsabilité (phrase type — page Conclusion)', a.commentaire_responsabilite)}
       </div>
@@ -1018,7 +1019,7 @@
       loyer_lignes:collect('#av-loyer-rows'),
       taux_rendement:gn('av-taux'), frais_mutation_pct:gn('av-frais'), valeur_estimee:gn('av-valest'),
       comparables:collect('#av-comp-rows'),
-      zone_chalandise:g('av-chalandise'), accessibilite:g('av-acces'),
+      accessibilite:g('av-acces'),
       commentaire_marche:g('av-commarche'), commentaire_conclusion:g('av-ccl'),
       commentaire_responsabilite:g('av-resp'),
       updated_at:new Date().toISOString()
