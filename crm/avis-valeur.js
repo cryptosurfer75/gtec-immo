@@ -138,7 +138,7 @@
   };
   const PIC_CITIES = [
     { n:'Amiens',        lon:2.2958, lat:49.8942, side:'R' },
-    { n:'Saint-Quentin', lon:3.2876, lat:49.8489, side:'L' },
+    { n:'Saint-Quentin', lon:3.2876, lat:49.8489, side:'R' },
     { n:'Beauvais',      lon:2.0809, lat:49.4295, side:'R' },
     { n:'Compiègne',     lon:2.8261, lat:49.4179, side:'R' }
   ];
@@ -257,12 +257,12 @@
   // Page « Vues de l'actif » : photos intérieures supplémentaires. N'apparaît que si au moins
   // une photo est fournie (page non numérotée, hors sommaire = pas de décalage des numéros).
   function pageVuesActif(a){
-    const ph = [a.photo_int1_url, a.photo_int2_url].filter(Boolean);
+    const ph = [a.photo_int1_url, a.photo_int2_url, a.photo_int3_url, a.photo_int4_url].filter(Boolean);
     if(!ph.length) return '';
     const imgs = ph.map(u=>`<div class="av-vues-ph"><img src="${esc(u)}" alt="Vue de l’actif"></div>`).join('');
     return `<section class="pg">
       <header class="pg-h"><h1>Vues de l’actif</h1>${logoBlock('pg-logo')}</header>
-      <div class="pg-body"><div class="av-vues">${imgs}</div></div>
+      <div class="pg-body"><div class="av-vues av-vues-${ph.length}">${imgs}</div></div>
       <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
     </section>`;
   }
@@ -455,7 +455,7 @@
       .av-cv-titre span{ color:var(--teal-l); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
-      .av-cv-map{ width:52mm; margin:0 0 6mm; }
+      .av-cv-map{ width:62mm; margin:0 auto 6mm; }
       .av-cv-map svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.4)); }
       .av-cv-tag{ border-top:.5mm solid rgba(255,255,255,.25); padding-top:6mm; }
       .av-cv-tag .t1{ font-size:13pt; font-weight:700; letter-spacing:.04em; }
@@ -512,6 +512,12 @@
       .av-vues{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; }
       .av-vues-ph{ flex:1; min-height:0; border-radius:4px; overflow:hidden; background:#eef0f2; }
       .av-vues-ph img{ width:100%; height:100%; object-fit:cover; display:block; }
+      /* 2 photos : côte à côte en carré, centrées sur la page */
+      .av-vues-2{ flex-direction:row; align-items:center; justify-content:center; gap:8mm; }
+      .av-vues-2 .av-vues-ph{ flex:0 1 50%; aspect-ratio:1; min-height:0; }
+      /* 3-4 photos : grille carrée 2×2 centrée */
+      .av-vues-3, .av-vues-4{ display:grid; grid-template-columns:1fr 1fr; gap:8mm; align-content:center; justify-content:center; }
+      .av-vues-3 .av-vues-ph, .av-vues-4 .av-vues-ph{ aspect-ratio:1; min-height:0; }
       .av-acc{ display:flex; flex-direction:column; gap:9mm; padding-top:4mm; }
       .av-acc-bloc h4{ margin:0 0 3mm; color:var(--teal-d); font-size:14pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-acc-bloc p{ margin:0 0 3mm; font-size:13pt; line-height:1.6; color:#222; }
@@ -800,6 +806,20 @@
     r.onload=e=>{ const p=document.getElementById('av-int2-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
     r.readAsDataURL(f);
   }
+  function _int3Photo(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    A.int3File=f;
+    const r=new FileReader();
+    r.onload=e=>{ const p=document.getElementById('av-int3-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(f);
+  }
+  function _int4Photo(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    A.int4File=f;
+    const r=new FileReader();
+    r.onload=e=>{ const p=document.getElementById('av-int4-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(f);
+  }
   function fermer(){ const e=document.getElementById('av-ed-bg'); if(e) e.remove(); }
 
   async function uploadPhoto(file){
@@ -825,7 +845,7 @@
     if(id){ try{ a = await charger(id); }catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; } }
     // Rafraîchit la liste des clients pour alimenter le menu déroulant de rattachement.
     try{ if(typeof chargerClients==='function') await chargerClients(); }catch(e){}
-    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, cadastre_url:a.cadastre_url||null, cadFile:null, photo_int1_url:a.photo_int1_url||null, int1File:null, photo_int2_url:a.photo_int2_url||null, int2File:null, client_id:a.client_id||null };
+    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, cadastre_url:a.cadastre_url||null, cadFile:null, photo_int1_url:a.photo_int1_url||null, int1File:null, photo_int2_url:a.photo_int2_url||null, int2File:null, photo_int3_url:a.photo_int3_url||null, int3File:null, photo_int4_url:a.photo_int4_url||null, int4File:null, client_id:a.client_id||null };
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
@@ -864,6 +884,12 @@
           <div class="f"><label>Photo intérieure 2</label>
             <input type="file" accept="image/*" onchange="GTEC_AVIS._int2Photo(this)">
             <div class="photo" id="av-int2-prev">${a.photo_int2_url?`<img src="${esc(a.photo_int2_url)}" alt="">`:''}</div></div>
+          <div class="f"><label>Photo intérieure 3</label>
+            <input type="file" accept="image/*" onchange="GTEC_AVIS._int3Photo(this)">
+            <div class="photo" id="av-int3-prev">${a.photo_int3_url?`<img src="${esc(a.photo_int3_url)}" alt="">`:''}</div></div>
+          <div class="f"><label>Photo intérieure 4</label>
+            <input type="file" accept="image/*" onchange="GTEC_AVIS._int4Photo(this)">
+            <div class="photo" id="av-int4-prev">${a.photo_int4_url?`<img src="${esc(a.photo_int4_url)}" alt="">`:''}</div></div>
         </div>
 
         <div class="sep">Détail des lots & surfaces</div>
@@ -945,12 +971,16 @@
     let cadastre_url = A.cadastre_url || null;
     let photo_int1_url = A.photo_int1_url || null;
     let photo_int2_url = A.photo_int2_url || null;
+    let photo_int3_url = A.photo_int3_url || null;
+    let photo_int4_url = A.photo_int4_url || null;
     try{
       if(A.photoFile) cover_url = await uploadPhoto(A.photoFile);
       if(A.presFile)  photo_presentation_url = await uploadPhoto(A.presFile);
       if(A.cadFile)   cadastre_url = await uploadPhoto(A.cadFile);
       if(A.int1File)  photo_int1_url = await uploadPhoto(A.int1File);
       if(A.int2File)  photo_int2_url = await uploadPhoto(A.int2File);
+      if(A.int3File)  photo_int3_url = await uploadPhoto(A.int3File);
+      if(A.int4File)  photo_int4_url = await uploadPhoto(A.int4File);
     }
     catch(e){ alert('Échec de l’envoi de la photo : '+(e.message||e)); return; }
     const lotsArr = collect('#av-lots-rows');
@@ -959,7 +989,7 @@
       client_id:A.client_id||null,
       agent:g('av-agent'), proprietaire:g('av-proprietaire'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
-      cover_url, photo_presentation_url, photo_int1_url, photo_int2_url, annee:gn('av-annee'),
+      cover_url, photo_presentation_url, photo_int1_url, photo_int2_url, photo_int3_url, photo_int4_url, annee:gn('av-annee'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
       swot:{ forces:g('av-swot-f'), faiblesses:g('av-swot-w'), opportunites:g('av-swot-o'), menaces:g('av-swot-t') },
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'), cadastre_url,
@@ -1025,5 +1055,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
