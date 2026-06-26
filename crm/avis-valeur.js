@@ -404,9 +404,9 @@
       ${f.valeurM2!=null?`<div class="av-ccl-m2">soit environ ${eur(f.valeurM2)} / m²</div>`:''}
       <div class="av-ccl-note">
         ${note?`<p>${esc(note).replace(/\n+/g,'</p><p>')}</p>`:''}
-        ${resp?`<p>${esc(resp).replace(/\n+/g,'</p><p>')}</p>`:''}
         <p>Nous vous remercions pour votre confiance et restons à votre disposition pour tout complément d’information.</p>
       </div>
+      ${resp?`<div class="av-ccl-legal"><div class="av-ccl-legal-h">Mention légale</div><p>${esc(resp).replace(/\n+/g,'</p><p>')}</p></div>`:''}
     </div>`;
     return page('Conclusion', body, 'Valorisation & conclusion', 9);
   }
@@ -571,7 +571,7 @@
       .av-card{ flex:1; border:1px solid #d7dadd; border-radius:6px; padding:4mm; }
       .av-card.teal{ background:var(--teal); border-color:var(--teal); color:#fff; }
       .av-card-l{ font-size:9.5pt; opacity:.85; min-height:3em; } .av-card-v{ font-size:15pt; font-weight:700; margin-top:2mm; }
-      .av-ccl{ padding-top:3mm; text-align:center; } .av-ccl-intro{ font-size:15pt; color:#333; margin:2mm 0; }
+      .av-ccl{ padding-top:3mm; text-align:center; display:flex; flex-direction:column; flex:1; min-height:0; } .av-ccl-intro{ font-size:15pt; color:#333; margin:2mm 0; }
       .av-ccl-row{ display:flex; align-items:center; justify-content:center; gap:6mm; margin:4mm 0; }
       .av-ccl-side{ flex:0 0 60mm; display:flex; flex-direction:column; justify-content:center; min-height:26mm; border:1px solid #d6dcde; border-radius:8px; padding:3mm 5mm; background:#fafbfb; }
       .av-ccl-side-l{ font-size:11pt; color:#555; line-height:1.3; } .av-ccl-side-l small{ display:block; font-size:8.5pt; color:#9aa0a6; margin-top:.5mm; }
@@ -579,7 +579,10 @@
       .av-ccl-val{ font-size:29pt; font-weight:700; color:var(--navy); margin:0; padding:5mm 10mm; border:.8mm solid var(--teal); border-radius:8px; display:inline-block; line-height:1.1; background:linear-gradient(135deg,#f3f9f7 0%,#d9ede7 55%,#cbe6dd 100%); }
       .av-ccl-hdhh{ display:block; font-size:11pt; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:#8a9199; margin-top:2mm; }
       .av-ccl-m2{ font-size:15pt; color:var(--teal-d); font-weight:600; }
-      .av-ccl-note{ max-width:200mm; margin:4mm auto 0; text-align:left; font-size:10.5pt; line-height:1.45; color:#444; } .av-ccl-note p{ margin:0 0 2mm; }
+      .av-ccl-note{ max-width:200mm; margin:4mm auto 0; padding:0 6mm; text-align:left; font-size:10.5pt; line-height:1.45; color:#444; } .av-ccl-note p{ margin:0 0 2mm; }
+      .av-ccl-legal{ max-width:200mm; margin:auto auto 0; border:1px solid var(--teal-l); border-radius:6px; background:#f5f9f8; padding:3.5mm 6mm; }
+      .av-ccl-legal-h{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.10em; color:var(--teal-d); font-weight:700; margin-bottom:1.5mm; }
+      .av-ccl-legal p{ font-size:9pt; line-height:1.5; color:#5a5a5a; font-style:italic; margin:0 0 1.5mm; } .av-ccl-legal p:last-child{ margin-bottom:0; }
       .av-contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; }
       .av-ct-logo{ display:flex; flex-direction:column; align-items:center; margin-top:30mm; } .av-ct-logo img{ height:50mm; }
       .av-ct-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
