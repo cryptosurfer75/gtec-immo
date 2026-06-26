@@ -21,8 +21,8 @@
 
   // -- Identité GTEC -----------------------------------------------------------
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=1';
-  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=1';
+  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=2';
+  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=2';
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
