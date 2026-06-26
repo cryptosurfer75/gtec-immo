@@ -880,7 +880,7 @@
     _dvfClose();
     if(!document.getElementById('dvf-ov-style')){
       const st=document.createElement('style'); st.id='dvf-ov-style'; st.textContent=`
-        #dvf-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center}
+        #dvf-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10010;display:flex;align-items:center;justify-content:center}
         #dvf-ov .box{background:#fff;border-radius:12px;width:min(900px,95vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;font-family:inherit}
         #dvf-ov .dvf-h{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#1A2738;color:#fff;font-size:16px}
         #dvf-ov .dvf-h button{background:none;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
