@@ -58,11 +58,12 @@ button{font:inherit;cursor:pointer}
   border-bottom:3px solid transparent;transition:.15s}
 .topnav nav a:hover{background:rgba(255,255,255,.08);color:#fff}
 .topnav nav a.on{background:var(--teal);color:#fff}
-.topnav .who{display:flex;align-items:center;gap:10px;font-size:.82rem;white-space:nowrap}
-.topnav .who .mail{color:#fff;font-weight:600}
-.topnav .who .btn{padding:8px 14px;font-size:.8rem}
-.topnav .who .btn-ghost{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.45)}
-.topnav .who .btn-ghost:hover{background:rgba(255,255,255,.24);color:#fff;border-color:#fff}
+.topnav .who{display:flex;align-items:center;gap:2px;white-space:nowrap}
+.topnav .who .navlink{display:flex;align-items:center;height:62px;padding:0 18px;font:inherit;font-weight:500;color:#c5cfdb;background:none;border:none;cursor:pointer;transition:.15s}
+.topnav .who .navlink:hover{background:rgba(255,255,255,.08);color:#fff}
+.topnav .who .who-init{display:flex;align-items:center;justify-content:center;min-width:40px;height:40px;padding:0 9px;border-radius:50%;background:var(--teal);color:#fff;font-weight:800;font-size:.9rem;margin-left:10px}
+.topnav .who .who-logout{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:#c0392b;color:#fff;border:none;cursor:pointer;font-size:1.1rem;line-height:1;margin-left:8px;transition:.15s}
+.topnav .who .who-logout:hover{background:#e04434}
 .main{flex:1;min-width:0;width:100%}
 .topbar{background:#fff;border-bottom:1px solid var(--gris-clair);padding:0 30px;height:60px;
   display:flex;align-items:center;justify-content:space-between}
@@ -222,11 +223,12 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
       <a data-vue="teams" onclick="aller('teams')">🗂️ Teams</a>
       <a data-vue="mandats" onclick="aller('mandats')">📄 Mandats</a>
       <a data-vue="avis" onclick="aller('avis')">💶 Avis de valeur</a>
+      <a data-vue="factures" onclick="aller('factures')">🧾 Devis / Factures</a>
     </nav>
     <div class="who">
-      <span class="mail" id="who-mail">…</span>
-      <a class="btn btn-ghost btn-sm" href="../index.html" target="_blank">Voir la vitrine ↗</a>
-      <button class="btn btn-ghost btn-sm" onclick="seDeconnecter()">Se déconnecter</button>
+      <a class="navlink" href="../index.html" target="_blank">🌐 Site internet</a>
+      <span class="who-init" id="who-init" title="Session active">FB</span>
+      <button class="who-logout" onclick="seDeconnecter()" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
     </div>
   </header>
 
@@ -385,20 +387,20 @@ async function seDeconnecter(){ await sb.auth.signOut(); montrerLogin(); }
 function ouvrirApp(session){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('who-mail').textContent = session.user.email;
   const mail = (session.user.email||'').toLowerCase();
   ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere')) ? 'VDM'
            : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'FB';
+  document.getElementById('who-init').textContent = ME_AGENT;
   aller('dashboard');
   reouvrirDraft();
 }
 
 /* ===== NAVIGATION ===== */
-const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams'};
+const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures'};
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -1934,8 +1936,9 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
-<script src="dossier.js?v=6"></script>
-<script src="avis-valeur.js?v=46"></script>
+<script src="dossier.js?v=7"></script>
+<script src="avis-valeur.js?v=47"></script>
 <script src="teams.js?v=2"></script>
+<script src="facture.js?v=1"></script>
 </body>
 </html>
