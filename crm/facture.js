@@ -251,6 +251,7 @@
       #fa-ed label{font-size:.82rem;font-weight:600;color:var(--gris-fonce,#4A5A5E)}
       #fa-ed input,#fa-ed select,#fa-ed textarea{padding:9px 11px;border:1.5px solid #C9D0D3;border-radius:8px;font:inherit;width:100%;box-sizing:border-box}
       #fa-ed input[readonly],#fa-ed select[disabled],#fa-ed textarea[readonly]{background:#f4f6f7;color:#607d8b}
+      #fa-ed .cli-row{display:flex;gap:6px;align-items:center} #fa-ed .cli-row input{flex:1;width:auto} #fa-ed .cli-row .btn{white-space:nowrap;width:auto}
       #fa-lignes{width:100%;border-collapse:collapse;margin-top:6px}
       #fa-lignes th{font-size:.72rem;text-transform:uppercase;color:var(--gris-fonce,#4A5A5E);text-align:left;padding:6px 8px;border-bottom:2px solid #eceff1}
       #fa-lignes td{padding:5px 6px;border-bottom:1px solid #f4f6f7;vertical-align:middle}
@@ -295,7 +296,7 @@
           <button class="x" onclick="GTEC_FACTURE._fermer()">×</button></div>
         <div class="b">
           <div class="grid">
-            <div class="f"><label>Client</label><select id="fa-client" ${dis}>${optClients(f.client_id)}</select></div>
+            <div class="f"><label>Client</label><div class="cli-row">${clientCombo('fa-client', f.client_id, ED.gel)}${ED.gel?'':`<button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addClient()">+ Client</button>`}</div></div>
             <div class="f"><label>Objet</label><input id="fa-objet" value="${esc(f.objet||'')}" placeholder="Honoraires de transaction…" ${ro}></div>
             <div class="f"><label>Bien lié (optionnel)</label><select id="fa-offre" ${dis}>${optOffres(f.offre_id)}</select></div>
             <div class="f"><label>Mandat lié (optionnel)</label><select id="fa-mandat" ${dis}>${optMandats(f.mandat_id)}</select></div>
@@ -369,8 +370,8 @@
     try{
       const lignesRaw = lireLignes().filter(l=>l.designation || l.prix_unitaire_ht);
       if(!lignesRaw.length) throw new Error('Ajoutez au moins une ligne.');
-      const clientId = document.getElementById('fa-client').value || null;
-      if(!clientId) throw new Error('Sélectionnez un client.');
+      const clientId = resolveClientCombo('fa-client');
+      if(!clientId) throw new Error('Client inconnu : choisis-en un existant ou clique sur « + Client » pour l’ajouter.');
       const t = calculTotaux(lignesRaw);
       const payload = {
         type: ED.type,
@@ -647,6 +648,7 @@
     _statut:(v)=>{ FILTRE_STATUT=v; rafraichirTbody(); },
     _search:(v)=>{ RECHERCHE=v; rafraichirTbody(); },
     _addLigne:addLigne, _save:sauvegarder, _fermer:fermer,
+    _addClient: async ()=>{ const id = await creerClientRapide('fa-client'); if(id){ const m=document.getElementById('fa-msg'); if(m){ m.className='fa-msg'; m.textContent='Nouveau client ajouté ✓'; } } },
     _saveEnc:saveEnc, _fermerEnc:()=>{ document.getElementById('modal-root2').innerHTML=''; }
   };
 })();

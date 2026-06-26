@@ -953,6 +953,34 @@ function optOffres(sel){
   return [['','— Choisir un bien —'], ...OFFRES_LISTE.map(o=>[o.id,(o.reference?o.reference+' · ':'')+(o.titre||LABELS[o.type_bien]||'Bien')])]
     .map(([v,t])=>`<option value="${v}" ${String(sel)===String(v)?'selected':''}>${esc(t)}</option>`).join('');
 }
+/* Champ client à saisie libre + autocomplétion des clients existants.
+   Utilisé là où l'on veut taper un nom (même pas encore en base) plutôt que dérouler 300 clients. */
+function clientCombo(base, selId, lock){
+  const sel = CLIENTS.find(c=>String(c.id)===String(selId));
+  const opts = CLIENTS.map(c=>`<option value="${esc(nomClient(c))}"></option>`).join('');
+  return `<input id="${base}" list="${base}-list" autocomplete="off" placeholder="Tapez un nom de client…" value="${sel?esc(nomClient(sel)):''}" ${lock?'readonly':''}>`
+    + `<datalist id="${base}-list">${opts}</datalist>`;
+}
+/* Renvoie l'id du client tapé s'il existe déjà (nom identique), sinon null (aucune création auto). */
+function resolveClientCombo(base){
+  const el = document.getElementById(base); if(!el) return null;
+  const txt = (el.value||'').trim(); if(!txt) return null;
+  const low = txt.toLowerCase();
+  const hit = CLIENTS.find(c=>nomClient(c).toLowerCase()===low);
+  return hit ? hit.id : null;
+}
+/* Création explicite (bouton « + Client ») d'un client minimal à partir du nom tapé. */
+async function creerClientRapide(base){
+  const el = document.getElementById(base); if(!el) return null;
+  const txt = (el.value||'').trim();
+  if(!txt){ alert('Tape d’abord le nom du client.'); return null; }
+  if(CLIENTS.find(c=>nomClient(c).toLowerCase()===txt.toLowerCase())){ alert('Ce client est déjà dans la base.'); return resolveClientCombo(base); }
+  const { data, error } = await sb.from('clients').insert({ type_client:'particulier', nom:titleStr(txt) }).select('id').single();
+  if(error){ alert('Erreur lors de la création du client : '+error.message); return null; }
+  await chargerClients();
+  const dl = document.getElementById(base+'-list'); if(dl) dl.innerHTML = CLIENTS.map(c=>`<option value="${esc(nomClient(c))}"></option>`).join('');
+  return data.id;
+}
 
 /* Lecture des champs */
 const val = id => { const el=document.getElementById(id); if(!el) return null; if(el.type==='checkbox') return el.checked;
@@ -1939,6 +1967,6 @@ init();
 <script src="dossier.js?v=7"></script>
 <script src="avis-valeur.js?v=47"></script>
 <script src="teams.js?v=2"></script>
-<script src="facture.js?v=1"></script>
+<script src="facture.js?v=2"></script>
 </body>
 </html>
