@@ -206,6 +206,19 @@
     return page('Présentation de l’actif', body, 'Présentation de l’actif', 3);
   }
 
+  // Page « Vues de l'actif » : photos intérieures supplémentaires. N'apparaît que si au moins
+  // une photo est fournie (page non numérotée, hors sommaire = pas de décalage des numéros).
+  function pageVuesActif(a){
+    const ph = [a.photo_int1_url, a.photo_int2_url].filter(Boolean);
+    if(!ph.length) return '';
+    const imgs = ph.map(u=>`<div class="av-vues-ph"><img src="${esc(u)}" alt="Vue de l’actif"></div>`).join('');
+    return `<section class="pg">
+      <header class="pg-h"><h1>Vues de l’actif</h1>${logoBlock('pg-logo')}</header>
+      <div class="pg-body"><div class="av-vues">${imgs}</div></div>
+      <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
+    </section>`;
+  }
+
   function pageLocalisation(a, geo){
     // Si un extrait cadastral a été importé, il sert de plan de localisation (plus précis que la carte auto).
     const visuel = a.cadastre_url
@@ -446,6 +459,9 @@
       .av-map.ph{ display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9aa0a6; font-size:13pt; text-align:center; }
       .av-loc-note h4{ margin:0 0 2mm; color:var(--teal-d); font-size:12pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-loc-note p{ margin:0 0 2mm; font-size:11pt; line-height:1.5; color:#333; }
+      .av-vues{ display:flex; flex-direction:column; gap:6mm; height:100%; padding-top:2mm; }
+      .av-vues-ph{ flex:1; min-height:0; border-radius:4px; overflow:hidden; background:#eef0f2; }
+      .av-vues-ph img{ width:100%; height:100%; object-fit:cover; display:block; }
       .av-acc{ display:flex; flex-direction:column; gap:9mm; padding-top:4mm; }
       .av-acc-bloc h4{ margin:0 0 3mm; color:var(--teal-d); font-size:14pt; text-transform:uppercase; letter-spacing:.04em; }
       .av-acc-bloc p{ margin:0 0 3mm; font-size:13pt; line-height:1.6; color:#222; }
@@ -539,7 +555,7 @@
     const geo = await geocoder(a);
     const pages = [
       pageCouverture(a), pageSommaire(), pageGroupe(), pageAvertissement(),
-      pagePresentation(a), pageLocalisation(a, geo), pageAcces(a),
+      pagePresentation(a), pageVuesActif(a), pageLocalisation(a, geo), pageAcces(a),
       pageTechnique(a), pageComparatif(a), pageSwot(a), pageValorisation(a), pageConclusion(a),
       pageContact(a)
     ].join('');
@@ -720,6 +736,20 @@
     r.onload=e=>{ const p=document.getElementById('av-cad-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
     r.readAsDataURL(f);
   }
+  function _int1Photo(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    A.int1File=f;
+    const r=new FileReader();
+    r.onload=e=>{ const p=document.getElementById('av-int1-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(f);
+  }
+  function _int2Photo(input){
+    const f=input.files&&input.files[0]; if(!f) return;
+    A.int2File=f;
+    const r=new FileReader();
+    r.onload=e=>{ const p=document.getElementById('av-int2-prev'); if(p) p.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(f);
+  }
   function fermer(){ const e=document.getElementById('av-ed-bg'); if(e) e.remove(); }
 
   async function uploadPhoto(file){
@@ -745,7 +775,7 @@
     if(id){ try{ a = await charger(id); }catch(e){ alert('Impossible de charger l’avis : '+(e.message||e)); return; } }
     // Rafraîchit la liste des clients pour alimenter le menu déroulant de rattachement.
     try{ if(typeof chargerClients==='function') await chargerClients(); }catch(e){}
-    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, cadastre_url:a.cadastre_url||null, cadFile:null, client_id:a.client_id||null };
+    A = { id:id||null, cover_url:a.cover_url||null, photoFile:null, photo_presentation_url:a.photo_presentation_url||null, presFile:null, cadastre_url:a.cadastre_url||null, cadFile:null, photo_int1_url:a.photo_int1_url||null, int1File:null, photo_int2_url:a.photo_int2_url||null, int2File:null, client_id:a.client_id||null };
     const loyer = Array.isArray(a.loyer_lignes) && a.loyer_lignes.length ? a.loyer_lignes : [{designation:'',surface:null,loyer_m2:null}];
     const comp  = Array.isArray(a.comparables) ? a.comparables : [];
     const lots  = Array.isArray(a.lots) && a.lots.length ? a.lots : [{}];
@@ -775,6 +805,16 @@
         <div class="f full" style="margin-top:12px"><label>Photo de présentation de l’actif <span style="font-weight:400;color:#6b7280">(facultatif — sinon la photo de couverture est reprise)</span></label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._presPhoto(this)">
           <div class="photo" id="av-pres-prev">${a.photo_presentation_url?`<img src="${esc(a.photo_presentation_url)}" alt="">`:''}</div></div>
+
+        <div class="sep">Vues intérieures <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#6b7280">(facultatif — page « Vues de l’actif », n’apparaît que si au moins une photo)</span></div>
+        <div class="grid">
+          <div class="f"><label>Photo intérieure 1</label>
+            <input type="file" accept="image/*" onchange="GTEC_AVIS._int1Photo(this)">
+            <div class="photo" id="av-int1-prev">${a.photo_int1_url?`<img src="${esc(a.photo_int1_url)}" alt="">`:''}</div></div>
+          <div class="f"><label>Photo intérieure 2</label>
+            <input type="file" accept="image/*" onchange="GTEC_AVIS._int2Photo(this)">
+            <div class="photo" id="av-int2-prev">${a.photo_int2_url?`<img src="${esc(a.photo_int2_url)}" alt="">`:''}</div></div>
+        </div>
 
         <div class="sep">Détail des lots & surfaces</div>
         <div class="rowhead row lot"><span>Bâtiment</span><span>Niveau</span><span>Désignation (usage / occupant)</span><span>Surface m²</span><span></span></div>
@@ -853,10 +893,14 @@
     let cover_url = A.cover_url || null;
     let photo_presentation_url = A.photo_presentation_url || null;
     let cadastre_url = A.cadastre_url || null;
+    let photo_int1_url = A.photo_int1_url || null;
+    let photo_int2_url = A.photo_int2_url || null;
     try{
       if(A.photoFile) cover_url = await uploadPhoto(A.photoFile);
       if(A.presFile)  photo_presentation_url = await uploadPhoto(A.presFile);
       if(A.cadFile)   cadastre_url = await uploadPhoto(A.cadFile);
+      if(A.int1File)  photo_int1_url = await uploadPhoto(A.int1File);
+      if(A.int2File)  photo_int2_url = await uploadPhoto(A.int2File);
     }
     catch(e){ alert('Échec de l’envoi de la photo : '+(e.message||e)); return; }
     const lotsArr = collect('#av-lots-rows');
@@ -865,7 +909,7 @@
       client_id:A.client_id||null,
       agent:g('av-agent'), proprietaire:g('av-proprietaire'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
-      cover_url, photo_presentation_url, annee:gn('av-annee'),
+      cover_url, photo_presentation_url, photo_int1_url, photo_int2_url, annee:gn('av-annee'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
       swot:{ forces:g('av-swot-f'), faiblesses:g('av-swot-w'), opportunites:g('av-swot-o'), menaces:g('av-swot-t') },
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'), cadastre_url,
@@ -931,5 +975,5 @@
   }
 
   window.GTEC_AVIS = { nouveau, editer, generer, resume,
-    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
+    _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();
