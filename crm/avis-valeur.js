@@ -460,7 +460,7 @@
       .av-cv-titre span{ color:var(--teal-l); }
       .av-cv-bien{ margin-top:12mm; } .av-cv-ens{ font-size:15pt; font-weight:600; } .av-cv-adr{ font-size:12pt; color:#c9d0d3; margin-top:2mm; }
       .av-cv-spacer{ flex:1; }
-      .av-cv-map{ width:59mm; margin:0 0 1mm; }
+      .av-cv-map{ width:48mm; margin:0 0 1mm; }
       .av-cv-map svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.4)); }
       .av-cv-tag{ border-top:.5mm solid rgba(255,255,255,.25); padding-top:6mm; }
       .av-cv-tag .t1{ font-size:13pt; font-weight:700; letter-spacing:.04em; }
@@ -883,10 +883,10 @@
           ${I('av-ville','Ville', a.ville)}
           ${I('av-cp','Code postal', a.code_postal)}
           ${I('av-annee','Année de construction', a.annee, {type:'number'})}
-          ${I('av-structure','Structure du bâtiment', a.structure_batiment)}
-          ${I('av-toiture','Toiture', a.toiture)}
-          ${I('av-isolation','Isolation', a.isolation)}
-          <div class="f"><label>Chauffage / Climatisation</label><select id="av-chauffage">${['','Gaz','Électrique','Pompe à chaleur','Climatisation réversible','Aérothermie','Plancher chauffant','Collectif','Aucun'].map(o=>`<option value="${esc(o)}" ${(a.chauffage||'')===o?'selected':''}>${o||'—'}</option>`).join('')}</select></div>
+          ${SEL('av-structure','Structure du bâtiment', a.structure_batiment, ['Métallique','Béton','Brique'])}
+          ${SEL('av-toiture','Toiture', a.toiture, ['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'])}
+          ${SEL('av-isolation','Isolation', a.isolation, ['Simple peau','Double peau','RT 2012','RT 2005','RE2020'])}
+          ${SEL('av-chauffage','Chauffage / Climatisation', a.chauffage, ['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes','Climatisation réversible','Climatisation centralisée'])}
         </div>
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
