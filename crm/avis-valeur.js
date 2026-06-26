@@ -246,6 +246,10 @@
           ${occ.length?`<tr><th>Occupant${occ.length>1?'s':''}</th><td>${esc(occ.join(', '))}</td></tr>`:''}
           ${a.surface_totale?`<tr><th>Surface totale</th><td>${nb(a.surface_totale)} m²</td></tr>`:''}
           ${a.annee?`<tr><th>Année</th><td>${esc(a.annee)}</td></tr>`:''}
+          ${a.structure_batiment?`<tr><th>Structure du bâtiment</th><td>${esc(a.structure_batiment)}</td></tr>`:''}
+          ${a.toiture?`<tr><th>Toiture</th><td>${esc(a.toiture)}</td></tr>`:''}
+          ${a.isolation?`<tr><th>Isolation</th><td>${esc(a.isolation)}</td></tr>`:''}
+          ${a.chauffage?`<tr><th>Chauffage / Climatisation</th><td>${esc(a.chauffage)}</td></tr>`:''}
         </table>
       </div>
       <div class="av-presit-img">${photo?`<img src="${esc(photo)}" alt="">`:'<div class="ph">Photo</div>'}</div>
@@ -875,6 +879,10 @@
           ${I('av-ville','Ville', a.ville)}
           ${I('av-cp','Code postal', a.code_postal)}
           ${I('av-annee','Année de construction', a.annee, {type:'number'})}
+          ${I('av-structure','Structure du bâtiment', a.structure_batiment)}
+          ${I('av-toiture','Toiture', a.toiture)}
+          ${I('av-isolation','Isolation', a.isolation)}
+          <div class="f"><label>Chauffage / Climatisation</label><select id="av-chauffage">${['','Gaz','Électrique','Pompe à chaleur','Climatisation réversible','Aérothermie','Plancher chauffant','Collectif','Aucun'].map(o=>`<option value="${esc(o)}" ${(a.chauffage||'')===o?'selected':''}>${o||'—'}</option>`).join('')}</select></div>
         </div>
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
           <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
@@ -998,6 +1006,7 @@
       agent:g('av-agent'), proprietaire:g('av-proprietaire'),
       type_actif:g('av-typeactif'), adresse:g('av-adresse'), ville:g('av-ville'), code_postal:g('av-cp'),
       cover_url, photo_presentation_url, photo_int1_url, photo_int2_url, photo_int3_url, photo_int4_url, annee:gn('av-annee'),
+      structure_batiment:g('av-structure'), toiture:g('av-toiture'), isolation:g('av-isolation'), chauffage:g('av-chauffage'),
       lots:lotsArr, surface_totale:surfaceTot, occupants:collect('#av-occ-rows'),
       swot:{ forces:g('av-swot-f'), faiblesses:g('av-swot-w'), opportunites:g('av-swot-o'), menaces:g('av-swot-t') },
       parcelle_cadastrale:g('av-cadastre'), surface_foncier:gn('av-foncier'), cadastre_url,
