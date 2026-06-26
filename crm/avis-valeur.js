@@ -580,9 +580,9 @@
       .av-ccl-hdhh{ display:block; font-size:11pt; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:#8a9199; margin-top:2mm; }
       .av-ccl-m2{ font-size:15pt; color:var(--teal-d); font-weight:600; }
       .av-ccl-note{ max-width:200mm; margin:4mm auto 0; padding:0 6mm; text-align:left; font-size:10.5pt; line-height:1.45; color:#444; } .av-ccl-note p{ margin:0 0 2mm; }
-      .av-ccl-legal{ max-width:200mm; margin:auto auto 0; border:1px solid var(--teal-l); border-radius:6px; background:#f5f9f8; padding:3.5mm 6mm; }
-      .av-ccl-legal-h{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.10em; color:var(--teal-d); font-weight:700; margin-bottom:1.5mm; }
-      .av-ccl-legal p{ font-size:9pt; line-height:1.5; color:#5a5a5a; font-style:italic; margin:0 0 1.5mm; } .av-ccl-legal p:last-child{ margin-bottom:0; }
+      .av-ccl-legal{ max-width:200mm; margin:auto auto 0; border:1px solid #dce2e1; border-radius:4px; background:#fafbfb; padding:1.6mm 4mm; }
+      .av-ccl-legal-h{ font-size:6pt; text-transform:uppercase; letter-spacing:.12em; color:#a6acb2; font-weight:700; margin-bottom:.5mm; }
+      .av-ccl-legal p{ font-size:6.8pt; line-height:1.28; color:#9099a0; font-style:italic; margin:0; }
       .av-contact{ background:var(--navy); color:#fff; align-items:center; justify-content:flex-start; }
       .av-ct-logo{ display:flex; flex-direction:column; align-items:center; margin-top:30mm; } .av-ct-logo img{ height:50mm; }
       .av-ct-sub{ text-transform:uppercase; color:#fff; font-weight:300; letter-spacing:.42em; font-size:15pt; margin-top:5mm; padding-left:.42em; }
