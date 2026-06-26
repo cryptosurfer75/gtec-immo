@@ -289,17 +289,14 @@
       const corps = lines.length ? `<ul class="swB-ul">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="ph">Non renseigné</p>';
       return `<div class="swB-block ${cls}"><div class="swB-h"><span class="swB-sign">${icon}</span><b>${esc(titre)}</b></div>${corps}</div>`;
     };
+    // Grille à lignes partagées : titres gauche/droite toujours alignés (ligne 2 = max des deux blocs du haut).
     const body = `<div class="swB">
-      <div class="swB-col">
-        <div class="swB-coltitle">Analyse interne — le bien</div>
-        ${block('swB-f', SWOT_ICON.plus, 'Forces', s.forces)}
-        ${block('swB-w', SWOT_ICON.minus, 'Faiblesses', s.faiblesses)}
-      </div>
-      <div class="swB-col">
-        <div class="swB-coltitle">Analyse externe — le marché</div>
-        ${block('swB-o', SWOT_ICON.up, 'Opportunités', s.opportunites)}
-        ${block('swB-t', SWOT_ICON.warn, 'Menaces', s.menaces)}
-      </div>
+      <div class="swB-coltitle">Analyse interne — le bien</div>
+      <div class="swB-coltitle">Analyse externe — le marché</div>
+      ${block('swB-f', SWOT_ICON.plus, 'Forces', s.forces)}
+      ${block('swB-o', SWOT_ICON.up, 'Opportunités', s.opportunites)}
+      ${block('swB-w', SWOT_ICON.minus, 'Faiblesses', s.faiblesses)}
+      ${block('swB-t', SWOT_ICON.warn, 'Menaces', s.menaces)}
     </div>`;
     return page('Analyse SWOT', body, 'Analyse SWOT', 8);
   }
@@ -414,11 +411,9 @@
       .av-groupe{ font-size:14pt; line-height:1.65; color:#222; padding-top:6mm; } .av-groupe p{ margin:0 0 5mm; }
       .av-groupe-tags{ display:flex; flex-wrap:wrap; gap:4mm; margin-top:6mm; }
       .av-groupe-tags span{ background:#eef3f1; color:var(--teal-d); border:1px solid var(--teal-l); border-radius:20px; padding:2mm 6mm; font-size:11pt; font-weight:600; }
-      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:4mm; }
-      .swB-col{ display:flex; flex-direction:column; min-height:0; }
-      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:4mm; border-bottom:1px solid #e1e6e8; }
+      .swB{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:min-content; align-content:start; column-gap:10mm; row-gap:9mm; margin-top:4mm; }
+      .swB-coltitle{ font-size:10pt; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#9aa0a6; padding-bottom:2.5mm; margin-bottom:-4mm; border-bottom:1px solid #e1e6e8; }
       .swB-block{ display:flex; flex-direction:column; }
-      .swB-block + .swB-block{ margin-top:9mm; }
       .swB-h{ display:flex; align-items:center; gap:3.5mm; margin-bottom:2.5mm; }
       .swB-sign{ width:9mm; height:9mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
       .swB-sign svg{ width:5mm; height:5mm; }
