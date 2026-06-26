@@ -155,7 +155,7 @@
       const p = picProj(geo.lon, geo.lat);
       if(p[0]>=-20 && p[0]<=PIC_MAP.W+20 && p[1]>=-20 && p[1]<=PIC_MAP.H+20){
         bx=p[0]; by=p[1];
-        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="22" fill="#FFD12E" stroke="#1A2738" stroke-width="4"/>';
+        bld = '<circle cx="'+bx.toFixed(0)+'" cy="'+by.toFixed(0)+'" r="36" fill="rgba(95,160,143,.18)" stroke="#5FA08F" stroke-width="6"/>';
       }
     }
     const dot = (cx,cy)=>'<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>';
