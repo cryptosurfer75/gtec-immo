@@ -556,7 +556,7 @@
       .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);overflow:hidden;padding:0 14mm 30mm}
       .deco{position:absolute;left:0;top:0;width:100%;height:90px;pointer-events:none;z-index:0}
       .deco-b{top:auto;bottom:0}
-      .content{position:relative;z-index:1}
+      .content{position:relative;z-index:1;display:flex;flex-direction:column;min-height:calc(297mm - 30mm)}
       .head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-left:24mm;padding-top:14mm}
       .brand{display:inline-flex;flex-direction:column;align-items:center;gap:2mm}
       .brand .logo{height:22mm;width:auto;display:block}
@@ -591,14 +591,15 @@
       table.paytbl{border-collapse:collapse} table.paytbl td{padding:3px 12px 3px 0;font-size:12.5px;vertical-align:top} table.paytbl .k{color:#5a6b75;white-space:nowrap}
       .cond{font-size:10.5px;line-height:1.6;color:#55626b;max-width:92mm;margin-top:18px}
       .sign{text-align:center;min-width:60mm;padding-top:24px}
-      .sign .fait{font-size:12px;color:#33414b;margin-bottom:10px}
+      .sign .fait{font-size:12px;color:#33414b;margin-bottom:6px;white-space:nowrap}
+      .sign .fait.fait2{margin-bottom:10px}
       .sign .fait .bl{display:inline-block;border-bottom:1px dotted #8a98a0;height:1em;vertical-align:baseline}
-      .sign .fait .bl-ville{width:34mm} .sign .fait .bl-d{width:7mm} .sign .fait .bl-y{width:13mm}
-      .sign .sign-space{height:90px}
+      .sign .fait .bl-ville{width:38mm} .sign .fait .bl-d{width:14mm} .sign .fait .bl-y{width:22mm}
+      .sign .sign-space{height:128px}
       .sign .line{border-top:1.5px solid #b9c3c8;width:54mm;margin:0 auto 6px} .sign .sg{font-weight:700;color:var(--navy)}
       .sign .sg-note{font-size:12px;color:#33414b;font-weight:600;margin-top:4px;line-height:1.4}
       .thanks{margin-top:34px;font-weight:800;color:var(--navy);letter-spacing:.03em;font-size:15px}
-      .engage{border:1.5px solid var(--teal);border-radius:8px;padding:11px 15px;margin-top:22px;background:#f4f8f7}
+      .engage{border:1.5px solid var(--teal);border-radius:8px;padding:11px 15px;margin-top:auto;background:#f4f8f7}
       .engage .eh{color:var(--teal);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
       .engage p{margin:0;font-size:10px;line-height:1.6;color:#44535c;text-align:justify}
       .legal{position:absolute;left:14mm;right:14mm;bottom:13mm;font-size:8px;color:#8a8a8a;line-height:1.5;text-align:center;z-index:1}
@@ -662,7 +663,8 @@
               ${condTxt?`<div class="cond"><span class="h" style="display:block">CONDITIONS</span>${condTxt}</div>`:''}
             </div>
             <div class="sign">
-              <div class="fait">Fait à <span class="bl bl-ville"></span>, le <span class="bl bl-d"></span>/<span class="bl bl-d"></span>/<span class="bl bl-y"></span></div>
+              <div class="fait">Fait à <span class="bl bl-ville"></span></div>
+              <div class="fait fait2">le <span class="bl bl-d"></span> / <span class="bl bl-d"></span> / <span class="bl bl-y"></span></div>
               <div class="sign-space"></div>
               <div class="line"></div>
               <div class="sg">Signature${estDevis?' du client':''}</div>
