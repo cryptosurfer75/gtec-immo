@@ -602,7 +602,7 @@
       .engage{border:1.5px solid var(--teal);border-radius:8px;padding:11px 15px;margin-top:auto;background:#f4f8f7}
       .engage .eh{color:var(--teal);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
       .engage p{margin:0;font-size:10px;line-height:1.6;color:#44535c;text-align:justify}
-      .legal{position:absolute;left:14mm;right:14mm;bottom:13mm;font-size:8px;color:#8a8a8a;line-height:1.5;text-align:center;z-index:1}
+      .legal{position:absolute;left:14mm;right:14mm;bottom:22mm;font-size:8px;color:#8a8a8a;line-height:1.5;text-align:center;z-index:1}
       @media screen and (max-width:760px){
         body{background:#fff}
         .sheet{width:auto;min-height:0;margin:0;padding:0 14px 90px;box-shadow:none}
