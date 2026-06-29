@@ -19,10 +19,10 @@
     forme_juridique:  '',            // ex. SAS, SARL…
     capital:          '',            // ex. 10 000 €
     adresse:          '',            // siège complet
-    siret:            '',            // 14 chiffres
+    siret:            '10061953500014',   // SIREN 100 619 535
     rcs:              '',            // ex. Amiens 000 000 000
-    tva_intra:        '',            // ex. FR00 000000000
-    carte_pro:        '',            // n° CPI (transaction) — loi Hoguet
+    tva_intra:        'FR49100619535',
+    carte_pro:        'CPI 80012026000000003',   // n° CPI (transaction) — loi Hoguet
     garantie_fin:     '',            // organisme + montant (ou « Pas de maniement de fonds »)
     rcp:              '',            // assureur RC professionnelle
     mediateur:        '',            // médiateur de la consommation (nom + site)
