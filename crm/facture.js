@@ -591,7 +591,7 @@
       table.paytbl{border-collapse:collapse} table.paytbl td{padding:3px 12px 3px 0;font-size:12.5px;vertical-align:top} table.paytbl .k{color:#5a6b75;white-space:nowrap}
       .cond{font-size:10.5px;line-height:1.6;color:#55626b;max-width:92mm;margin-top:18px}
       .sign{text-align:center;min-width:60mm;padding-top:24px}
-      .sign .fait{font-size:12px;color:#33414b;margin-bottom:6px;white-space:nowrap}
+      .sign .fait{font-size:12px;color:#33414b;margin-bottom:18px;white-space:nowrap}
       .sign .fait.fait2{margin-bottom:10px}
       .sign .fait .bl{display:inline-block;border-bottom:1px dotted #8a98a0;height:1em;vertical-align:baseline}
       .sign .fait .bl-ville{width:38mm} .sign .fait .bl-d{width:14mm} .sign .fait .bl-y{width:22mm}
