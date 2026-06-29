@@ -299,10 +299,10 @@
             <div class="f"><label>Client</label><div class="cli-row">${clientCombo('fa-client', f.client_id, ED.gel)}${ED.gel?'':`<button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addClient()">+ Client</button>`}</div></div>
             <div class="f"><label>Objet</label><input id="fa-objet" list="fa-objet-list" value="${esc(f.objet||'')}" placeholder="Honoraires de transaction…" ${ro}>
               <datalist id="fa-objet-list">
-                <option value="Honoraires de transaction"></option>
+                <option value="Honoraires de transaction location"></option>
+                <option value="Honoraires de transaction vente"></option>
                 <option value="Avis de valeur"></option>
-                <option value="Honoraires"></option>
-                <option value="Conseil"></option>
+                <option value="Honoraires de conseil"></option>
               </datalist></div>
             <div class="f"><label>Bien lié (optionnel)</label><select id="fa-offre" ${dis}>${optOffres(f.offre_id)}</select></div>
             <div class="f"><label>Mandat lié (optionnel)</label><select id="fa-mandat" ${dis}>${optMandats(f.mandat_id)}</select></div>
