@@ -16,11 +16,11 @@
    * ------------------------------------------------------------------ */
   const AGENCE = {
     raison_sociale:   'GTEC Immobilier',
-    forme_juridique:  '',            // ex. SAS, SARL…
-    capital:          '',            // ex. 10 000 €
+    forme_juridique:  'SAS',         // ex. SAS, SARL…
+    capital:          '1 000 €',     // ex. 10 000 €
     adresse:          '',            // siège complet
     siret:            '10061953500014',   // SIREN 100 619 535
-    rcs:              '',            // ex. Amiens 000 000 000
+    rcs:              'Amiens 100 619 535',
     tva_intra:        'FR49100619535',
     carte_pro:        'CPI 80012026000000003',   // n° CPI (transaction) — loi Hoguet
     garantie_fin:     '',            // organisme + montant (ou « Pas de maniement de fonds »)
