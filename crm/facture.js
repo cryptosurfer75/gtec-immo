@@ -19,6 +19,7 @@
     forme_juridique:  'SAS',         // ex. SAS, SARL…
     capital:          '1 000 €',     // ex. 10 000 €
     adresse:          '',            // siège complet
+    ville:            'Amiens',      // ville de signature (« Fait à … »)
     siret:            '10061953500014',   // SIREN 100 619 535
     rcs:              'Amiens 100 619 535',
     tva_intra:        'FR49100619535',
@@ -26,10 +27,12 @@
     garantie_fin:     '',            // organisme + montant (ou « Pas de maniement de fonds »)
     rcp:              '',            // assureur RC professionnelle
     mediateur:        '',            // médiateur de la consommation (nom + site)
+    banque:           '',            // nom de la banque (coordonnées bancaires)
     iban:             '',
     bic:              '',
     email:            '',            // email comptabilité (relances)
     telephone:        '',
+    site:             'gtec-immobilier.fr',   // site web (en-tête du document)
     taux_penalites:   '3 fois le taux d’intérêt légal',  // pénalités de retard
     echeance_jours:   30,            // délai de paiement par défaut
     validite_jours:   30             // durée de validité d'un devis
@@ -251,7 +254,7 @@
       #fa-ed label{font-size:.82rem;font-weight:600;color:var(--gris-fonce,#4A5A5E)}
       #fa-ed input,#fa-ed select,#fa-ed textarea{padding:9px 11px;border:1.5px solid #C9D0D3;border-radius:8px;font:inherit;width:100%;box-sizing:border-box}
       #fa-ed input[readonly],#fa-ed select[disabled],#fa-ed textarea[readonly]{background:#f4f6f7;color:#607d8b}
-      #fa-ed .cli-row{display:flex;gap:6px;align-items:center} #fa-ed .cli-row input{flex:1;width:auto} #fa-ed .cli-row .btn{white-space:nowrap;width:auto}
+      #fa-ed .cli-row{display:flex;gap:6px;align-items:center} #fa-ed .cli-row input,#fa-ed .cli-row select{flex:1;width:auto} #fa-ed .cli-row .btn{white-space:nowrap;width:auto}
       #fa-lignes{width:100%;border-collapse:collapse;margin-top:6px}
       #fa-lignes th{font-size:.72rem;text-transform:uppercase;color:var(--gris-fonce,#4A5A5E);text-align:left;padding:6px 8px;border-bottom:2px solid #eceff1}
       #fa-lignes td{padding:5px 6px;border-bottom:1px solid #f4f6f7;vertical-align:middle}
@@ -288,6 +291,10 @@
     const lignes = (f.lignes && f.lignes.length) ? f.lignes : [{}];
     const ro = ED.gel ? 'readonly' : '';
     const dis = ED.gel ? 'disabled' : '';
+    const OBJETS = ['Honoraires de location','Honoraires de vente'];
+    const objetOpts = [['','— Choisir —'], ...OBJETS.map(o=>[o,o])]
+      .concat(f.objet && !OBJETS.includes(f.objet) ? [[f.objet,f.objet]] : [])
+      .map(([v,t])=>`<option value="${esc(v)}" ${f.objet===v?'selected':''}>${esc(t)}</option>`).join('');
 
     const titre = (id? (f.reference||'Brouillon') : (f.type==='devis'?'Nouveau devis':'Nouvelle facture'));
     document.getElementById('modal-root').innerHTML = `<div id="fa-ed-bg" onclick="if(event.target===this)GTEC_FACTURE._fermer()">
@@ -296,14 +303,8 @@
           <button class="x" onclick="GTEC_FACTURE._fermer()">×</button></div>
         <div class="b">
           <div class="grid">
-            <div class="f"><label>Client</label><div class="cli-row">${clientCombo('fa-client', f.client_id, ED.gel)}${ED.gel?'':`<button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addClient()">+ Client</button>`}</div></div>
-            <div class="f"><label>Objet</label><input id="fa-objet" list="fa-objet-list" value="${esc(f.objet||'')}" placeholder="Honoraires de transaction…" ${ro}>
-              <datalist id="fa-objet-list">
-                <option value="Honoraires de transaction location"></option>
-                <option value="Honoraires de transaction vente"></option>
-                <option value="Avis de valeur"></option>
-                <option value="Honoraires de conseil"></option>
-              </datalist></div>
+            <div class="f"><label>Client</label><div class="cli-row"><select id="fa-client" ${dis}>${optClients(f.client_id)}</select>${ED.gel?'':`<button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addClient()">+ Client</button>`}</div></div>
+            <div class="f"><label>Objet</label><select id="fa-objet" ${dis}>${objetOpts}</select></div>
             <div class="f"><label>Bien lié (optionnel)</label><select id="fa-offre" ${dis}>${optOffres(f.offre_id)}</select></div>
             <div class="f"><label>Mandat lié (optionnel)</label><select id="fa-mandat" ${dis}>${optMandats(f.mandat_id)}</select></div>
             <div class="f"><label>Date d'émission</label><input id="fa-date" type="date" value="${f.date_emission||today()}" ${ro}></div>
@@ -333,6 +334,7 @@
             ${ED.gel?'' : `<button type="button" class="btn btn-sm" style="background:var(--teal-dark,#2E6357)" onclick="GTEC_FACTURE._save(true)">
                 ${f.type==='devis'?'✓ Marquer envoyé':'✓ Émettre la facture'}</button>`}
             <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE.generer('${id||''}','live')">📄 Aperçu</button>
+            ${(id && f.type==='devis') ? `<button type="button" class="btn btn-sm" style="background:#1A2738" onclick="GTEC_FACTURE.convertir('${id}')">➡️ Transformer en facture</button>` : ''}
           </span>
         </div>
       </div></div>`;
@@ -376,8 +378,8 @@
     try{
       const lignesRaw = lireLignes().filter(l=>l.designation || l.prix_unitaire_ht);
       if(!lignesRaw.length) throw new Error('Ajoutez au moins une ligne.');
-      const clientId = resolveClientCombo('fa-client');
-      if(!clientId) throw new Error('Client inconnu : choisis-en un existant ou clique sur « + Client » pour l’ajouter.');
+      const clientId = document.getElementById('fa-client').value || null;
+      if(!clientId) throw new Error('Choisis un client dans la liste, ou clique sur « + Client » pour l’ajouter.');
       const t = calculTotaux(lignesRaw);
       const payload = {
         type: ED.type,
@@ -493,86 +495,186 @@
     const titreDoc = estDevis?'DEVIS':estAvoir?'AVOIR':'FACTURE';
     const ref = f.reference || (estDevis?'(brouillon)':'(non émise)');
     const cliNom = nomClient(c);
-    const cliLignes = [cliNom, c.adresse, c.siret?('SIRET : '+c.siret):''].filter(Boolean).map(esc).join('<br>');
     const ag = AGENCE;
-    const champ = v => v || '<span style="color:#b3261e">[à compléter]</span>';
+    const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=2';
 
     const toolbar = shared ? '' : `<div class="noprint" style="position:sticky;top:0;background:#1A2738;padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:9">
       <button onclick="window.print()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#3D8074;color:#fff">📄 Enregistrer en PDF / Imprimer</button>
       <button onclick="window.close()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button></div>`;
 
-    const lignesHtml = t.lignes.map(l=>`<tr>
-      <td>${esc(l.designation||'')}</td>
-      <td style="text-align:center">${String(l.quantite).replace('.',',')}</td>
-      <td style="text-align:right">${euro2(l.prix_unitaire_ht)}</td>
-      <td style="text-align:center">${String(l.taux_tva).replace('.',',')} %</td>
-      <td style="text-align:right">${euro2(l.montant_ht)}</td></tr>`).join('');
+    const brk = s => esc(s||'').replace(/\r?\n/g,'<br>');
 
-    const mentions = estDevis
-      ? `<p><b>Devis gratuit</b>, valable ${ag.validite_jours} jours${f.validite_date?` (jusqu'au ${fmtDate(f.validite_date)})`:''}.</p>
-         <div style="margin-top:30px;border:1px dashed #1A2738;border-radius:8px;padding:14px;width:60%">
-           <b>Bon pour accord</b> — Date et signature précédées de la mention « Bon pour accord » :<br><br><br></div>`
-      : `<p style="margin:2px 0">Règlement à réception${f.date_echeance?`, au plus tard le ${fmtDate(f.date_echeance)}`:''}. ${ag.iban?`Par virement — IBAN ${esc(ag.iban)}${ag.bic?' / BIC '+esc(ag.bic):''}.`:''}</p>
-         <p style="margin:2px 0;font-size:9px;color:#555">En cas de retard de paiement : pénalités de retard au taux de ${esc(ag.taux_penalites)} et indemnité forfaitaire pour frais de recouvrement de 40 € (art. L441-10 et D441-5 du Code de commerce). Pas d'escompte pour paiement anticipé.</p>`;
+    // Lignes du tableau (N° · Désignation · PU HT · Qté · Total HT)
+    const lignesHtml = t.lignes.map((l,i)=>`<tr>
+      <td class="no">${String(i+1).padStart(2,'0')}</td>
+      <td>${brk(l.designation)||'<span style="color:#999">—</span>'}</td>
+      <td class="r">${euro2(l.prix_unitaire_ht)}</td>
+      <td class="c">${String(l.quantite).replace('.',',')}</td>
+      <td class="r">${euro2(l.montant_ht)}</td></tr>`).join('');
+
+    // Totaux : sous-total HT + une ligne par taux de TVA + total TTC
+    const tvaLignes = (t.detailTva.length?t.detailTva:[{taux:0,montant:0}])
+      .map(d=>`<div class="srow"><span>TVA ${String(d.taux).replace('.',',')} %</span><span>${euro2(d.montant)}</span></div>`).join('');
+
+    // Coordonnées de l'agence (pictos)
+    const contactHtml = [
+      ag.adresse && ['⌖', esc(ag.adresse)],
+      ag.telephone && ['✆', esc(ag.telephone)],
+      ag.email && ['@', esc(ag.email)],
+      ag.site && ['⌂', esc(ag.site)]
+    ].filter(Boolean).map(([ic,tx])=>`<div class="ci"><span class="ic">${ic}</span>${tx}</div>`).join('');
+
+    // Bloc bas-gauche : devis = validité ; facture = coordonnées bancaires + échéance
+    const blocGauche = estDevis
+      ? `<div class="h">VALIDITÉ</div>
+         <div class="pay">Devis gratuit, valable ${ag.validite_jours} jours${f.validite_date?` (jusqu'au ${fmtDate(f.validite_date)})`:''}.</div>`
+      : `${ag.iban?`<div class="h">COORDONNÉES BANCAIRES</div>
+           <table class="paytbl">${ag.banque?`<tr><td class="k">Banque</td><td>${esc(ag.banque)}</td></tr>`:''}
+           <tr><td class="k">IBAN</td><td>${esc(ag.iban)}</td></tr>
+           ${ag.bic?`<tr><td class="k">BIC</td><td>${esc(ag.bic)}</td></tr>`:''}</table>`:''}
+         ${f.date_echeance?`<div class="pay" style="margin-top:8px">Règlement par virement, échéance le <b>${fmtDate(f.date_echeance)}</b>.</div>`:''}`;
+
+    // Conditions (facture = pénalités légales + conditions libres ; devis = conditions libres)
+    const penalites = estDevis ? '' : `Pas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à ${esc(ag.taux_penalites)} sera exigible, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement (art. L441-10 et D441-5 du Code de commerce).`;
+    const condTxt = [penalites, f.conditions&&brk(f.conditions)].filter(Boolean).join('<br>');
+
+    // Clause d'engagement (devis uniquement) : rémunération du travail accompli en amont
+    const engagementDevis = estDevis ? `<div class="engage">
+      <div class="eh">Engagement du client à la signature du devis</div>
+      <p>En signant le présent devis, le client reconnaît la mission de ${esc(ag.raison_sociale)}. En conséquence, en cas de désistement ou de renonciation à la signature de l'acte par le client dès lors que toutes les conditions ont été validées, acceptées et signées entre les parties, ce dernier s'engage à régler une indemnité égale à <b>20 % du montant total des honoraires</b> figurant au présent devis. Ceci en contrepartie des diligences déjà accomplies&nbsp;: constitution et présentation du dossier de location ou de vente, visite du local, explications techniques, échanges entre le preneur et le bailleur, négociation des conditions du bail ou de vente et, plus généralement, toute démarche entreprise en amont de la signature définitive. Le solde des honoraires demeure exigible à la signature de l'acte définitif.</p>
+    </div>` : '';
+
+    // Pied de page légal (identité société)
+    const idLine = [ag.raison_sociale, ag.adresse, ag.telephone&&('Tél. : '+ag.telephone), ag.email&&('Email : '+ag.email),
+      ag.rcs&&('RCS '+ag.rcs), ag.forme_juridique&&(ag.forme_juridique+(ag.capital?' au capital de '+ag.capital:'')),
+      ag.siret&&('SIRET '+ag.siret), ag.tva_intra&&('TVA '+ag.tva_intra), ag.carte_pro&&('Carte pro '+ag.carte_pro)
+    ].filter(Boolean).map(esc).join(' — ');
 
     const styles = `
-      *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659}
-      .sheet{background:#fff;width:210mm;min-height:297mm;margin:16px auto;padding:18mm 16mm;box-shadow:0 6px 30px rgba(0,0,0,.4)}
-      .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1A2738;padding-bottom:14px}
-      .emet{font-size:11px;line-height:1.5} .emet .rs{font-size:17px;font-weight:800;color:#1A2738}
-      .doc-titre{text-align:right} .doc-titre h1{margin:0;font-size:26px;color:#3D8074;letter-spacing:1px} .doc-titre .ref{font-size:14px;font-weight:700}
-      .meta{display:flex;justify-content:space-between;margin:22px 0}
-      .meta .bloc{font-size:12px;line-height:1.6} .meta .bloc .t{font-size:10px;text-transform:uppercase;color:#3D8074;font-weight:700;letter-spacing:.5px}
-      table.l{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
-      table.l th{background:#1A2738;color:#fff;padding:9px 10px;text-align:left;font-size:10px;text-transform:uppercase}
-      table.l td{padding:8px 10px;border-bottom:1px solid #eceff1}
-      .recap{display:flex;justify-content:flex-end;margin-top:12px} .recap table{min-width:240px;font-size:12px}
-      .recap td{padding:5px 10px} .recap .ttc td{font-weight:800;font-size:14px;color:#1A2738;border-top:2px solid #1A2738}
-      .cond{margin-top:24px;font-size:11px;line-height:1.5}
-      .pied{margin-top:30px;border-top:1px solid #C9D0D3;padding-top:10px;font-size:8.5px;color:#666;line-height:1.5;text-align:center}
+      :root{--navy:#1A2738;--teal:#3D8074;--row:#eef3f2;--row-alt:#dfeae8}
+      *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659;font-size:12px}
+      .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);overflow:hidden;padding:0 14mm 30mm}
+      .deco{position:absolute;left:0;top:0;width:100%;height:90px;pointer-events:none;z-index:0}
+      .deco-b{top:auto;bottom:0}
+      .content{position:relative;z-index:1}
+      .head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-left:24mm;padding-top:14mm}
+      .brand{display:inline-flex;flex-direction:column;align-items:center;gap:2mm}
+      .brand .logo{height:22mm;width:auto;display:block}
+      .brand .tl{font-size:9pt;letter-spacing:.30em;text-transform:uppercase;color:var(--teal);font-weight:500;white-space:nowrap;padding-left:.30em}
+      .title{text-align:right}
+      .title h1{margin:0;font-size:48px;font-weight:800;color:var(--navy);letter-spacing:3px;line-height:1}
+      .inv-meta{margin-top:12px;font-size:12.5px;line-height:1.85;color:#33414b}
+      .inv-meta .lab{display:inline-block;min-width:64px;color:#5a6b75} .inv-meta b{color:var(--navy)}
+      .midrow{display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px;padding-left:26mm}
+      .contact{font-size:12px;margin-top:-26px}
+      .contact .ci{display:flex;align-items:center;gap:9px;margin:4px 0}
+      .contact .ic{width:20px;height:20px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex:0 0 auto}
+      .billto{font-size:12px;line-height:1.55;max-width:64mm;text-align:right}
+      .billto .bl{color:var(--teal);font-weight:700;font-size:11px;letter-spacing:.04em}
+      .billto .cn{color:var(--navy);font-weight:800;text-transform:uppercase;margin:3px 0;font-size:19px;line-height:1.15}
+      .objet{font-size:14px;margin:18px 0 0}
+      table.l{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}
+      table.l thead th{background:var(--navy);color:#fff;padding:12px 14px;text-align:left;font-size:11.5px;letter-spacing:.05em;font-weight:700;text-transform:uppercase}
+      table.l thead th.c,table.l td.c{text-align:center;white-space:nowrap;width:16mm}
+      table.l thead th.r,table.l td.r{text-align:right;white-space:nowrap;width:28mm}
+      table.l tbody td{padding:13px 14px;font-size:13px;color:#33414b;vertical-align:top;line-height:1.45}
+      table.l tbody tr:nth-child(odd){background:var(--row)} table.l tbody tr:nth-child(even){background:var(--row-alt)}
+      table.l .no{color:var(--navy);font-weight:700;width:42px;text-align:center}
+      .sums{display:flex;justify-content:flex-end;margin-top:2px}
+      .sums .box{width:66mm}
+      .srow{display:flex;justify-content:space-between;padding:8px 14px;font-size:13px;background:var(--row)}
+      .srow span:first-child{color:#5a6b75} .srow span:last-child{font-weight:600}
+      .grand{display:flex;justify-content:space-between;background:var(--teal);color:#fff;font-weight:800;font-size:15px;padding:12px 14px;margin-top:2px}
+      .foot{display:flex;justify-content:space-between;gap:30px;margin-top:26px}
+      .foot .h{color:var(--teal);font-weight:800;font-size:13.5px;letter-spacing:.04em;margin:0 0 8px}
+      .pay{font-size:12.5px;line-height:1.5;color:#33414b}
+      table.paytbl{border-collapse:collapse} table.paytbl td{padding:3px 12px 3px 0;font-size:12.5px;vertical-align:top} table.paytbl .k{color:#5a6b75;white-space:nowrap}
+      .cond{font-size:10.5px;line-height:1.6;color:#55626b;max-width:92mm;margin-top:18px}
+      .sign{text-align:center;min-width:60mm;padding-top:24px}
+      .sign .fait{font-size:12px;color:#33414b;margin-bottom:10px}
+      .sign .fait .bl{display:inline-block;border-bottom:1px dotted #8a98a0;height:1em;vertical-align:baseline}
+      .sign .fait .bl-ville{width:34mm} .sign .fait .bl-d{width:7mm} .sign .fait .bl-y{width:13mm}
+      .sign .sign-space{height:90px}
+      .sign .line{border-top:1.5px solid #b9c3c8;width:54mm;margin:0 auto 6px} .sign .sg{font-weight:700;color:var(--navy)}
+      .sign .sg-note{font-size:12px;color:#33414b;font-weight:600;margin-top:4px;line-height:1.4}
+      .thanks{margin-top:34px;font-weight:800;color:var(--navy);letter-spacing:.03em;font-size:15px}
+      .engage{border:1.5px solid var(--teal);border-radius:8px;padding:11px 15px;margin-top:22px;background:#f4f8f7}
+      .engage .eh{color:var(--teal);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+      .engage p{margin:0;font-size:10px;line-height:1.6;color:#44535c;text-align:justify}
+      .legal{position:absolute;left:14mm;right:14mm;bottom:13mm;font-size:8px;color:#8a8a8a;line-height:1.5;text-align:center;z-index:1}
       @media screen and (max-width:760px){
         body{background:#fff}
-        .sheet{width:auto;min-height:0;margin:0;padding:16px 13px;box-shadow:none}
-        .top{flex-direction:column;gap:12px} .doc-titre{text-align:left}
-        .meta{flex-direction:column;gap:14px} .meta .bloc{text-align:left!important}
-        table.l th,table.l td{padding:6px 6px;font-size:11px}
-        .recap table{min-width:0;width:100%}
+        .sheet{width:auto;min-height:0;margin:0;padding:0 14px 90px;box-shadow:none}
+        .head,.midrow{padding-left:0;flex-direction:column;gap:14px} .title{text-align:left}
+        .billto{text-align:left;max-width:100%}
+        .sums .box{width:100%} .foot{flex-direction:column;gap:22px} .sign{text-align:left}
+        .legal{position:static;margin-top:26px}
       }
-      @media print{ body{background:#fff} .noprint{display:none!important} .sheet{margin:0;box-shadow:none;width:auto} @page{size:A4;margin:12mm} }`;
+      @media print{ body{background:#fff} .noprint{display:none!important} .sheet{margin:0;box-shadow:none;width:auto;min-height:0} @page{size:A4;margin:0} }`;
 
     return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(titreDoc+' '+ref)} — GTEC</title><style>${styles}</style></head>
       <body>${toolbar}<div class="sheet">
-        <div class="top">
-          <div class="emet"><div class="rs">${esc(ag.raison_sociale)}</div>
-            ${[ag.forme_juridique && ('Société '+ag.forme_juridique+(ag.capital?' au capital de '+ag.capital:'')), ag.adresse, ag.telephone, ag.email].filter(Boolean).map(esc).join('<br>')}
-            <br>SIRET ${champ(esc(ag.siret))}${ag.rcs?' · RCS '+esc(ag.rcs):''}<br>TVA ${champ(esc(ag.tva_intra))}
-            ${ag.carte_pro?'<br>Carte professionnelle '+esc(ag.carte_pro):'<br>Carte pro '+champ('')}
+        <svg class="deco" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M0,0 H470 C300,70 150,210 0,180 Z" fill="#1A2738"/><path d="M0,0 H360 C220,55 110,150 0,128 Z" fill="#3D8074" opacity=".9"/></svg>
+        <svg class="deco deco-b" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M800,300 H330 C500,230 650,90 800,120 Z" fill="#1A2738"/><path d="M800,300 H440 C580,245 690,150 800,172 Z" fill="#3D8074" opacity=".9"/></svg>
+
+        <div class="content">
+          <div class="head">
+            <div class="brand">
+              <img class="logo" src="${LOGO}" alt="${esc(ag.raison_sociale)}">
+              <div class="tl">Immobilier d’entreprise</div>
+            </div>
+            <div class="title">
+              <h1>${titreDoc}</h1>
+              <div class="inv-meta">
+                <div><span class="lab">N°</span>: <b>${esc(ref)}</b></div>
+                <div><span class="lab">Date</span>: ${fmtDate(f.date_emission)}</div>
+                ${!estDevis && f.date_echeance?`<div><span class="lab">Échéance</span>: ${fmtDate(f.date_echeance)}</div>`:''}
+                ${estDevis && f.validite_date?`<div><span class="lab">Validité</span>: ${fmtDate(f.validite_date)}</div>`:''}
+              </div>
+            </div>
           </div>
-          <div class="doc-titre"><h1>${titreDoc}</h1><div class="ref">N° ${esc(ref)}</div>
-            <div style="font-size:12px;margin-top:6px">Émis le ${fmtDate(f.date_emission)}</div>
-            ${!estDevis && f.date_echeance?`<div style="font-size:12px">Échéance : ${fmtDate(f.date_echeance)}</div>`:''}
+
+          <div class="midrow">
+            <div class="contact">${contactHtml}</div>
+            <div class="billto">
+              <div class="bl">${estAvoir?'AVOIR AU PROFIT DE :':'FACTURÉ À :'}</div>
+              <div class="cn">${esc(cliNom)||'—'}</div>
+              <div>${[c.adresse, c.siret&&('SIRET : '+c.siret)].filter(Boolean).map(esc).join('<br>')}</div>
+            </div>
           </div>
+
+          ${f.objet?`<div class="objet"><b>Objet :</b> ${esc(f.objet)}</div>`:''}
+
+          <table class="l">
+            <thead><tr><th class="no">N°</th><th>Désignation</th><th class="r">PU HT</th><th class="c">Qté</th><th class="r">Total HT</th></tr></thead>
+            <tbody>${lignesHtml||'<tr><td colspan="5" style="text-align:center;color:#999;padding:18px">Aucune ligne</td></tr>'}</tbody>
+          </table>
+
+          <div class="sums"><div class="box">
+            <div class="srow"><span>Sous-total HT</span><span>${euro2(t.total_ht)}</span></div>
+            ${tvaLignes}
+            <div class="grand"><span>${estDevis?'Total TTC':'Net à payer TTC'}</span><span>${euro2(t.total_ttc)}</span></div>
+          </div></div>
+
+          <div class="foot">
+            <div class="foot-l">
+              ${blocGauche}
+              ${condTxt?`<div class="cond"><span class="h" style="display:block">CONDITIONS</span>${condTxt}</div>`:''}
+            </div>
+            <div class="sign">
+              <div class="fait">Fait à <span class="bl bl-ville"></span>, le <span class="bl bl-d"></span>/<span class="bl bl-d"></span>/<span class="bl bl-y"></span></div>
+              <div class="sign-space"></div>
+              <div class="line"></div>
+              <div class="sg">Signature${estDevis?' du client':''}</div>
+              ${estDevis?`<div class="sg-note">précédée de la mention manuscrite « Bon pour accord »</div>`:''}
+              <div class="thanks">MERCI DE VOTRE CONFIANCE</div>
+            </div>
+          </div>
+
+          ${engagementDevis}
         </div>
 
-        <div class="meta">
-          <div class="bloc"><span class="t">Émetteur</span><br>${esc(ag.raison_sociale)}</div>
-          <div class="bloc" style="text-align:right"><span class="t">${estAvoir?'Avoir au profit de':'Facturé à'}</span><br>${cliLignes||'—'}</div>
-        </div>
-
-        ${f.objet?`<div style="font-size:13px;margin:6px 0 4px"><b>Objet :</b> ${esc(f.objet)}</div>`:''}
-
-        <table class="l"><thead><tr><th>Désignation</th><th style="text-align:center">Qté</th><th style="text-align:right">PU HT</th><th style="text-align:center">TVA</th><th style="text-align:right">Total HT</th></tr></thead>
-          <tbody>${lignesHtml||'<tr><td colspan="5" style="text-align:center;color:#999">Aucune ligne</td></tr>'}</tbody></table>
-
-        <div class="recap"><table>
-          <tr><td>Total HT</td><td style="text-align:right">${euro2(t.total_ht)}</td></tr>
-          ${t.detailTva.map(d=>`<tr><td>TVA ${String(d.taux).replace('.',',')} % (base ${euro2(d.base)})</td><td style="text-align:right">${euro2(d.montant)}</td></tr>`).join('')}
-          <tr class="ttc"><td>${estDevis?'Total TTC':'Net à payer TTC'}</td><td style="text-align:right">${euro2(t.total_ttc)}</td></tr>
-        </table></div>
-
-        <div class="cond">${mentions}${f.conditions?'<p style="margin-top:10px">'+esc(f.conditions)+'</p>':''}</div>
-
-        <div class="pied">${esc(ag.raison_sociale)}${ag.carte_pro?' — Carte pro '+esc(ag.carte_pro):''}${ag.garantie_fin?' — Garantie financière : '+esc(ag.garantie_fin):''}${ag.rcp?' — RCP : '+esc(ag.rcp):''}${ag.mediateur?'<br>Médiateur de la consommation : '+esc(ag.mediateur):''}</div>
+        <div class="legal">${idLine}</div>
       </div></body></html>`;
   }
 
@@ -654,7 +756,17 @@
     _statut:(v)=>{ FILTRE_STATUT=v; rafraichirTbody(); },
     _search:(v)=>{ RECHERCHE=v; rafraichirTbody(); },
     _addLigne:addLigne, _save:sauvegarder, _fermer:fermer,
-    _addClient: async ()=>{ const id = await creerClientRapide('fa-client'); if(id){ const m=document.getElementById('fa-msg'); if(m){ m.className='fa-msg'; m.textContent='Nouveau client ajouté ✓'; } } },
+    _addClient: async ()=>{
+      const sel = document.getElementById('fa-client'); if(!sel) return;
+      const nom = (prompt('Nom du nouveau client :')||'').trim(); if(!nom) return;
+      const exist = (window.CLIENTS||CLIENTS).find(c=>nomClient(c).toLowerCase()===nom.toLowerCase());
+      if(exist){ sel.value = exist.id; alert('Ce client est déjà dans la base : il est maintenant sélectionné.'); return; }
+      const { data, error } = await sb.from('clients').insert({ type_client:'particulier', nom:titleStr(nom) }).select('id').single();
+      if(error){ alert('Erreur lors de la création du client : '+error.message); return; }
+      await chargerClients();
+      sel.innerHTML = optClients(data.id);
+      const m=document.getElementById('fa-msg'); if(m){ m.className='fa-msg'; m.textContent='Nouveau client ajouté ✓'; }
+    },
     _saveEnc:saveEnc, _fermerEnc:()=>{ document.getElementById('modal-root2').innerHTML=''; }
   };
 })();

@@ -123,7 +123,6 @@
       const a=o.surface_min_m2, b=o.surface_max_m2;
       p1.push(`Les surfaces proposées, approximatives, s’échelonnent ${a&&b?`de ${nbFr(a)} à ${nbFr(b)} m²`:a?`à partir de ${nbFr(a)} m²`:`jusqu’à ${nbFr(b)} m²`}.`);
     }
-    if(o.surface_m2 || o.surface_min_m2 || o.surface_max_m2) p1.push('Les surfaces sont communiquées à titre indicatif.');
     paras.push(p1.join(' '));
 
     // 2) Configuration, état, accessibilité (sans équipements ni conditions financières — détaillés dans le dossier)
