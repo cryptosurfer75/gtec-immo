@@ -551,7 +551,7 @@
     ].filter(Boolean).map(esc).join(' — ');
 
     const styles = `
-      :root{--navy:#1A2738;--teal:#3D8074;--row:#eef3f2;--row-alt:#dfeae8}
+      :root{--navy:#1A2738;--teal:#3D8074;--row:#dbe8e5;--row-alt:#eaf2f0}
       *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659;font-size:12px}
       .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);overflow:hidden;padding:0 14mm 30mm}
       .deco{position:absolute;left:0;top:0;width:100%;height:90px;pointer-events:none;z-index:0}
