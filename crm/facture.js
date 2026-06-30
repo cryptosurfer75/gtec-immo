@@ -544,6 +544,12 @@
       <p>En signant le présent devis, le client reconnaît la mission de ${esc(ag.raison_sociale)}. En conséquence, en cas de désistement ou de renonciation à la signature de l'acte par le client dès lors que toutes les conditions ont été validées, acceptées et signées entre les parties, ce dernier s'engage à régler une indemnité égale à <b>20 % du montant total des honoraires</b> figurant au présent devis. Ceci en contrepartie des diligences déjà accomplies&nbsp;: constitution et présentation du dossier de location ou de vente, visite du local, explications techniques, échanges entre le preneur et le bailleur, négociation des conditions du bail ou de vente et, plus généralement, toute démarche entreprise en amont de la signature définitive. Le solde des honoraires demeure exigible à la signature de l'acte définitif.</p>
     </div>` : '';
 
+    // Conditions (facture) : présentées dans un cadre en bas, comme l'engagement du devis
+    const conditionsFacture = (!estDevis && condTxt) ? `<div class="engage">
+      <div class="eh">Conditions</div>
+      <p>${condTxt}</p>
+    </div>` : '';
+
     // Pied de page légal (identité société)
     const idLine = [ag.raison_sociale, ag.adresse, ag.telephone&&('Tél. : '+ag.telephone), ag.email&&('Email : '+ag.email),
       ag.rcs&&('RCS '+ag.rcs), ag.forme_juridique&&(ag.forme_juridique+(ag.capital?' au capital de '+ag.capital:'')),
@@ -658,9 +664,9 @@
           </div></div>
 
           <div class="foot">
-            <div class="foot-l">
+            <div class="foot-l"${estDevis?'':' style="padding-top:24px"'}>
               ${blocGauche}
-              ${condTxt?`<div class="cond"><span class="h" style="display:block">CONDITIONS</span>${condTxt}</div>`:''}
+              ${(estDevis && condTxt)?`<div class="cond"><span class="h" style="display:block">CONDITIONS</span>${condTxt}</div>`:''}
             </div>
             <div class="sign">
               <div class="fait">Fait à <span class="bl bl-ville"></span></div>
@@ -668,12 +674,12 @@
               <div class="sign-space"></div>
               <div class="line"></div>
               <div class="sg">Signature${estDevis?' du client':''}</div>
-              ${estDevis?`<div class="sg-note">précédée de la mention manuscrite « Bon pour accord »</div>`:''}
+              <div class="sg-note">précédée de la mention manuscrite « Bon pour ${estDevis?'accord':'paiement de cette facture'} »</div>
               <div class="thanks">MERCI DE VOTRE CONFIANCE</div>
             </div>
           </div>
 
-          ${engagementDevis}
+          ${estDevis ? engagementDevis : conditionsFacture}
         </div>
 
         <div class="legal">${idLine}</div>
