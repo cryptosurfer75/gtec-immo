@@ -18,7 +18,7 @@
     raison_sociale:   'GTEC Immobilier',
     forme_juridique:  'SAS',         // ex. SAS, SARL…
     capital:          '1 000 €',     // ex. 10 000 €
-    adresse:          '',            // siège complet
+    adresse:          '2 rue Delambre, 80000 Amiens',   // siège complet
     ville:            'Amiens',      // ville de signature (« Fait à … »)
     siret:            '10061953500014',   // SIREN 100 619 535
     rcs:              'Amiens 100 619 535',
@@ -27,9 +27,9 @@
     garantie_fin:     '',            // organisme + montant (ou « Pas de maniement de fonds »)
     rcp:              '',            // assureur RC professionnelle
     mediateur:        '',            // médiateur de la consommation (nom + site)
-    banque:           '',            // nom de la banque (coordonnées bancaires)
-    iban:             '',
-    bic:              '',
+    banque:           'Qonto',       // nom de la banque (coordonnées bancaires)
+    iban:             'FR76 1695 8000 0187 5250 6549 688',
+    bic:              'QNTOFRP1XXX',
     email:            '',            // email comptabilité (relances)
     telephone:        '',
     site:             'gtec-immobilier.fr',   // site web (en-tête du document)
