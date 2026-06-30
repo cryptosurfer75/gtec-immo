@@ -674,7 +674,7 @@
               <div class="sign-space"></div>
               <div class="line"></div>
               <div class="sg">Signature${estDevis?' du client':''}</div>
-              <div class="sg-note">précédée de la mention manuscrite « Bon pour ${estDevis?'accord':'paiement de cette facture'} »</div>
+              <div class="sg-note">précédée de la mention manuscrite « Bon pour ${estDevis?'accord':'paiement'} »</div>
               <div class="thanks">MERCI DE VOTRE CONFIANCE</div>
             </div>
           </div>
