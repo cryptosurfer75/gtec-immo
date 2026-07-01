@@ -1200,7 +1200,12 @@ function analyserTexteCarteVisite(texte){
 async function scannerCarteVisite(inputEl){
   const file = inputEl.files && inputEl.files[0];
   if(!file) return;
-  const boutons = inputEl.closest('.f').querySelectorAll('button');
+  await traiterPhotoCarteVisite(file);
+  inputEl.value='';
+}
+/* Lecture d'une photo de carte de visite (venant d'un fichier OU d'une capture caméra Mac) */
+async function traiterPhotoCarteVisite(file){
+  const boutons = document.querySelectorAll('#c-scan-zone button');
   const msg = document.getElementById('c-scan-msg');
   const brut = document.getElementById('c-scan-brut');
   boutons.forEach(b=>b.disabled=true);
@@ -1224,8 +1229,47 @@ async function scannerCarteVisite(inputEl){
     msg.textContent = 'Lecture impossible : '+(e.message||e);
   }finally{
     boutons.forEach(b=>b.disabled=false);
-    inputEl.value='';
   }
+}
+/* ----- Capture directe via la caméra de l'ordinateur (webcam Mac/PC) ----- */
+let _camStream=null;
+async function ouvrirCameraCarteVisite(){
+  document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" style="z-index:200" onclick="if(event.target===this)fermerCameraCarteVisite()">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-h"><h3>Caméra de l'ordinateur</h3><button class="x" onclick="fermerCameraCarteVisite()">×</button></div>
+      <div class="modal-b" style="text-align:center">
+        <div id="cam-msg" style="font-size:.85rem;color:var(--gris-fonce);margin-bottom:8px">Démarrage de la caméra…</div>
+        <video id="cam-video" autoplay playsinline style="width:100%;max-width:480px;border-radius:8px;background:#000"></video>
+      </div>
+      <div class="modal-foot"><span class="form-msg">Cadre la carte de visite, bien à plat et bien éclairée.</span>
+        <span><button type="button" class="btn btn-ghost btn-sm" onclick="fermerCameraCarteVisite()">Annuler</button>
+        <button type="button" class="btn btn-sm" id="cam-capture-btn" onclick="capturerPhotoCamera()" disabled>📸 Capturer</button></span></div>
+    </div></div>`;
+  try{
+    _camStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment', width:{ideal:1600} }, audio:false });
+    const video = document.getElementById('cam-video');
+    if(!video) return;              // modale déjà refermée entre-temps
+    video.srcObject = _camStream;
+    document.getElementById('cam-msg').textContent = '';
+    const btn=document.getElementById('cam-capture-btn'); if(btn) btn.disabled=false;
+  }catch(e){
+    const m=document.getElementById('cam-msg');
+    if(m) m.textContent = "Impossible d'accéder à la caméra : "+(e.message||e)+". Vérifie l'autorisation caméra du navigateur (Réglages Système > Confidentialité > Appareil photo).";
+  }
+}
+function fermerCameraCarteVisite(){
+  if(_camStream){ _camStream.getTracks().forEach(t=>t.stop()); _camStream=null; }
+  document.getElementById('modal-root2').innerHTML='';
+}
+async function capturerPhotoCamera(){
+  const video = document.getElementById('cam-video');
+  if(!video || !video.videoWidth) return;
+  const canvas=document.createElement('canvas');
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const blob = await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.9));
+  fermerCameraCarteVisite();
+  if(blob) await traiterPhotoCarteVisite(new File([blob],'carte-camera.jpg',{type:'image/jpeg'}));
 }
 
 /* Briques de formulaire */
@@ -1372,9 +1416,10 @@ function formClient(rec, liens){
     <div class="f full"><label>🔎 Auto-remplissage société (nom ou SIREN)</label>
       <input id="c-recherche" autocomplete="off" placeholder="Ex. : nom de l'entreprise ou n° SIREN">
       <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche. Société absente (trop récente / non immatriculée) : clique « saisir à la main » ou remplis directement les champs ci-dessous.</div></div>
-    <div class="f full" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="f full" id="c-scan-zone" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('c-scan-cam').click()">📇 Scanner une carte (appareil photo)</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('c-scan-lib').click()">🖼️ Depuis la galerie</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirCameraCarteVisite()">💻 Caméra de l'ordinateur</button>
       <input id="c-scan-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scannerCarteVisite(this)">
       <input id="c-scan-lib" type="file" accept="image/*" style="display:none" onchange="scannerCarteVisite(this)">
       <span id="c-scan-msg" style="font-size:.8rem;color:var(--gris-fonce)"></span>
