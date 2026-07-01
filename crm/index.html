@@ -1285,13 +1285,12 @@ async function creerOffrePourClient(clientId){ await chargerClients(); formOffre
 async function creerDemandePourClient(clientId){ await chargerClients(); formDemande({client_id:clientId}); }
 /* Garde-fou anti-doublon : renvoie un client déjà présent (même SIRET, ou même nom/raison sociale), sinon null. */
 function trouverDoublonClient(p){
-  const norm = s => (s||'').toString().trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   const chiffres = s => (s||'').toString().replace(/\D/g,'');
   const sir = chiffres(p.siret);
-  const nom = norm(p.type_client==='societe' ? p.raison_sociale : ((p.prenom||'')+' '+(p.nom||'')));
+  const nom = normTxt(p.type_client==='societe' ? p.raison_sociale : ((p.prenom||'')+' '+(p.nom||''))).trim();
   return (CLIENTS_FULL||[]).find(c=>{
     if(sir && chiffres(c.siret)===sir) return true;
-    const cn = norm(c.type_client==='societe' ? c.raison_sociale : ((c.prenom||'')+' '+(c.nom||'')));
+    const cn = normTxt(c.type_client==='societe' ? c.raison_sociale : ((c.prenom||'')+' '+(c.nom||''))).trim();
     return nom.length>2 && cn===nom;
   }) || null;
 }
