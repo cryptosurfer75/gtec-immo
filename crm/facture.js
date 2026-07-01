@@ -234,6 +234,8 @@
           ? `<button class="btn btn-ghost btn-sm" title="Relancer le client" onclick="GTEC_FACTURE.relancer('${f.id}')">✉️</button>` : ''}
         ${f.type==='devis' && ['envoye','accepte','brouillon'].includes(f.statut)
           ? `<button class="btn btn-ghost btn-sm" title="Transformer en facture" onclick="GTEC_FACTURE.convertir('${f.id}')">➡️</button>` : ''}
+        ${!f.reference
+          ? `<button class="btn btn-ghost btn-sm" title="Supprimer ce brouillon" style="color:#b3261e" onclick="GTEC_FACTURE.supprimer('${f.id}')">🗑</button>` : ''}
       </td></tr>`;
   }
 
@@ -408,6 +410,17 @@
     }catch(e){ msg.className='fa-msg err'; msg.textContent='Erreur : '+(e.message||e); }
   }
   function fermer(){ const bg=document.getElementById('fa-ed-bg'); if(bg) bg.remove(); }
+
+  /* Suppression d'un brouillon (jamais un document déjà numéroté = valeur comptable). */
+  async function supprimer(id){
+    const f = LISTE.find(x=>String(x.id)===String(id));
+    if(f && f.reference){ alert('Ce document porte déjà un numéro officiel : il ne peut pas être supprimé.'); return; }
+    const quoi = f && f.type==='devis' ? 'ce devis en brouillon' : 'ce brouillon de facture';
+    if(!confirm('Supprimer définitivement '+quoi+' ?\n\nUn brouillon n’a pas de valeur comptable : la suppression est sans risque, mais irréversible.')) return;
+    const { error } = await sb.from('factures').delete().eq('id', id);
+    if(error){ alert('Suppression impossible : '+error.message); return; }
+    vueFactures();
+  }
 
   /* ==================================================================
      ENCAISSEMENTS
@@ -758,7 +771,7 @@
   window.vueFactures = vueFactures;   // pour la map de dispatch de index.html
   window.GTEC_FACTURE = {
     nouveau:(type)=>{ ED.type=(type==='facture'?'facture':'devis'); editer(null); },
-    editer, generer, publierLien, revoquerLien, convertir,
+    editer, generer, publierLien, revoquerLien, convertir, supprimer,
     encaisser, relancer,
     _type:(v)=>{ FILTRE_TYPE=v; vueFactures(); },   // re-render complet (boutons + indicateurs)
     _statut:(v)=>{ FILTRE_STATUT=v; rafraichirTbody(); },
