@@ -224,8 +224,10 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
       <a data-vue="mandats" onclick="aller('mandats')">📄 Mandats</a>
       <a data-vue="avis" onclick="aller('avis')">💶 Avis de valeur</a>
       <a data-vue="factures" onclick="aller('factures')">🧾 Devis / Factures</a>
+      <a data-vue="loi" onclick="aller('loi')">✍️ LOI</a>
     </nav>
     <div class="who">
+      <span id="google-statut" onclick="clicStatutGoogle()" style="cursor:pointer;font-size:.78rem;padding:4px 10px;border-radius:20px;border:1px solid var(--bord);color:var(--gris-fonce)" title="Connexion Google Contacts (import carte de visite)">🔗 …</span>
       <a class="navlink" href="../index.html" target="_blank">🌐 Site internet</a>
       <span class="who-init" id="who-init" title="Session active">FB</span>
       <button class="who-logout" onclick="seDeconnecter()" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
@@ -384,7 +386,7 @@ async function seConnecter(e){
   ouvrirApp(data.session);
 }
 async function seDeconnecter(){ await sb.auth.signOut(); montrerLogin(); }
-function ouvrirApp(session){
+async function ouvrirApp(session){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   const mail = (session.user.email||'').toLowerCase();
@@ -392,15 +394,51 @@ function ouvrirApp(session){
            : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'FB';
   document.getElementById('who-init').textContent = ME_AGENT;
   aller('dashboard');
+
+  // Retour de la connexion Google (?code=...) : on échange le code puis on nettoie l'adresse.
+  const codeGoogle = new URLSearchParams(location.search).get('code');
+  if(codeGoogle){
+    history.replaceState({}, '', location.pathname);
+    try{ await sb.functions.invoke('google-oauth', { body:{ action:'exchange', code:codeGoogle } }); }catch(e){}
+  }
+  await chargerStatutGoogle();
   reouvrirDraft();
+}
+/* ----- Connexion Google Contacts (import carte de visite scannée) ----- */
+async function chargerStatutGoogle(){
+  const el = document.getElementById('google-statut'); if(!el) return;
+  try{
+    const { data } = await sb.functions.invoke('google-oauth', { body:{ action:'status' } });
+    if(data && data.connected){
+      el.textContent = '🔗 Google connecté'; el.style.borderColor = 'var(--vert)'; el.style.color = 'var(--vert)';
+      el.title = (data.email||'')+' — cliquer pour déconnecter';
+    }else{
+      el.textContent = '🔗 Connecter Google'; el.style.borderColor = 'var(--bord)'; el.style.color = 'var(--gris-fonce)';
+      el.title = 'Connexion Google Contacts (import carte de visite)';
+    }
+  }catch(e){}
+}
+async function clicStatutGoogle(){
+  const el = document.getElementById('google-statut');
+  const connecte = el && el.textContent.includes('connecté');
+  if(connecte){
+    if(!confirm('Déconnecter Google Contacts ?')) return;
+    await sb.functions.invoke('google-oauth', { body:{ action:'deauthorize' } });
+    await chargerStatutGoogle();
+    return;
+  }
+  draftCollect(CURRENT_FORM_KEY);
+  const { data, error } = await sb.functions.invoke('google-oauth', { body:{ action:'authorize' } });
+  if(error || !data?.url){ alert('Connexion Google impossible.'); return; }
+  location.href = data.url;
 }
 
 /* ===== NAVIGATION ===== */
-const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures'};
+const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures', loi:'LOI'};
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -1272,6 +1310,39 @@ async function capturerPhotoCamera(){
   if(blob) await traiterPhotoCarteVisite(new File([blob],'carte-camera.jpg',{type:'image/jpeg'}));
 }
 
+/* Récupère les derniers contacts scannés avec l'appli Google Contacts du téléphone */
+async function importerGoogleContact(){
+  const zone = document.getElementById('c-scan-google');
+  const msg = document.getElementById('c-scan-msg');
+  zone.classList.remove('hidden'); zone.innerHTML = 'Recherche des contacts récents…';
+  const { data, error } = await sb.functions.invoke('google-oauth', { body:{ action:'contacts-recent' } });
+  if(error || data?.error){
+    zone.innerHTML = '';
+    if(String(data?.error||'').includes('non connecté')){
+      if(confirm("Google Contacts n'est pas encore connecté. Se connecter maintenant ?")) clicStatutGoogle();
+    }else{
+      msg.textContent = 'Import Google impossible : '+(data?.error||error?.message||'erreur');
+    }
+    return;
+  }
+  const contacts = data?.contacts || [];
+  if(!contacts.length){ zone.innerHTML = 'Aucun contact récent trouvé dans Google Contacts.'; return; }
+  zone.innerHTML = '<div style="margin-bottom:6px;color:var(--gris-fonce)">Contacts scannés récemment — clique celui à importer :</div>' +
+    contacts.map((c,i)=>`<div class="ac-list" style="position:static;display:block;margin-bottom:4px" onclick="remplirDepuisGoogle(${i})">
+      <div>${esc([c.prenom,c.nom].filter(Boolean).join(' ')||c.societe||'—')}${c.societe?` <span class="cp">${esc(c.societe)}</span>`:''}</div>
+    </div>`).join('');
+  window.__googleContactsRecents = contacts;
+}
+function remplirDepuisGoogle(i){
+  const c = (window.__googleContactsRecents||[])[i]; if(!c) return;
+  const setV=(id,v)=>{ const el=document.getElementById(id); if(el && v && !el.value.trim()) el.value=v; };
+  if(c.societe){ const tsel=document.getElementById('c-type'); if(tsel) tsel.value='societe'; setV('c-raison', c.societe); }
+  setV('c-nom', titleStr(c.nom)); setV('c-prenom', titleStr(c.prenom)); setV('c-fonction', capStr(c.fonction));
+  setV('c-tel', formatTel(c.telephone)||c.telephone); setV('c-email', (c.email||'').toLowerCase()); setV('c-adresse', c.adresse);
+  document.getElementById('c-scan-google').classList.add('hidden');
+  document.getElementById('c-scan-msg').textContent = 'Contact Google importé — vérifie les champs avant d\'enregistrer.';
+}
+
 /* Briques de formulaire */
 function fText(id,label,v,o={}){ return `<div class="f ${o.full?'full':''}"><label>${label}</label><input id="${id}" class="${o.title?'cap-title':o.cap?'cap':o.tel?'tel':''}" type="${o.type||'text'}" value="${v==null?'':esc(v)}"></div>`; }
 function fNum(id,label,v,o={}){ return fText(id,label,v,{...o,type:'number'}); }
@@ -1420,10 +1491,12 @@ function formClient(rec, liens){
       <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('c-scan-cam').click()">📇 Scanner une carte (appareil photo)</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('c-scan-lib').click()">🖼️ Depuis la galerie</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirCameraCarteVisite()">💻 Caméra de l'ordinateur</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="importerGoogleContact()">🔗 Depuis Google Contacts</button>
       <input id="c-scan-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scannerCarteVisite(this)">
       <input id="c-scan-lib" type="file" accept="image/*" style="display:none" onchange="scannerCarteVisite(this)">
       <span id="c-scan-msg" style="font-size:.8rem;color:var(--gris-fonce)"></span>
       <div id="c-scan-brut" class="full hidden" style="width:100%;font-size:.78rem;background:var(--gris);border:1px solid var(--bord);border-radius:8px;padding:8px;white-space:pre-wrap"></div>
+      <div id="c-scan-google" class="full hidden" style="width:100%;font-size:.85rem;background:var(--gris);border:1px solid var(--bord);border-radius:8px;padding:8px"></div>
     </div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
     ${fSel('c-role1','Rôle',clientRoles(rec)[0]||'',ROLE_OPTS)}
@@ -2119,5 +2192,6 @@ init();
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=2"></script>
 <script src="facture.js?v=2"></script>
+<script src="loi.js?v=1"></script>
 </body>
 </html>

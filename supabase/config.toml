@@ -7,3 +7,7 @@ verify_jwt = false
 # Relances d'impayés : appelée par le cron (service role) et par le CRM (session).
 [functions.relance-impayes]
 verify_jwt = true
+
+# Connexion Google Contacts (import carte de visite scannée) : appelée par le CRM (session).
+[functions.google-oauth]
+verify_jwt = true
