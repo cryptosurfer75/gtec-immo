@@ -393,14 +393,16 @@ async function ouvrirApp(session){
   ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere')) ? 'VDM'
            : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'FB';
   document.getElementById('who-init').textContent = ME_AGENT;
-  aller('dashboard');
 
-  // Retour de la connexion Google (?code=...) : on échange le code puis on nettoie l'adresse.
+  // Retour de la connexion Google (?code=...) : on échange le code tout de suite (avant tout le
+  // reste, code Google valable une seule fois) puis on nettoie l'adresse.
   const codeGoogle = new URLSearchParams(location.search).get('code');
   if(codeGoogle){
     history.replaceState({}, '', location.pathname);
     try{ await sb.functions.invoke('google-oauth', { body:{ action:'exchange', code:codeGoogle } }); }catch(e){}
   }
+  try{ aller('dashboard'); }catch(e){ console.error(e); }
+
   await chargerStatutGoogle();
   reouvrirDraft();
 }
@@ -2192,6 +2194,6 @@ init();
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=2"></script>
 <script src="facture.js?v=2"></script>
-<script src="loi.js?v=1"></script>
+<script src="loi.js?v=2"></script>
 </body>
 </html>
