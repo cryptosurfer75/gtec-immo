@@ -37,6 +37,8 @@
   .ac-list div:last-child{border-bottom:none}
   .ac-list div:hover{background:var(--gris)}
   .ac-list .cp{color:var(--vert);font-weight:600;margin-left:6px}
+  .ac-list .ac-manuel{color:var(--marine);font-weight:700;background:#f4f6f8;white-space:normal}
+  .ac-list .ac-manuel:hover{background:#e9edf1}
   details.gtec{border:1px solid var(--bord);border-radius:8px;padding:6px 12px;background:var(--gris);margin-top:6px}
   details.gtec summary{cursor:pointer;font-weight:700;color:var(--marine);font-size:13px;padding:6px 0}
   .typebar{background:var(--gris);border:1px solid var(--bord);border-radius:8px;padding:12px;margin-bottom:6px}
@@ -150,7 +152,7 @@
     <div class="entr-search">
       <label>🔎 Rechercher la société (nom ou SIREN)</label>
       <input id="mandantRecherche" autocomplete="off" placeholder="Ex. : nom de l'entreprise ou n° SIREN">
-      <p class="hint">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche automatiquement (laisse vide pour un particulier).</p>
+      <p class="hint">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche automatiquement. Société absente (trop récente / non immatriculée) ou particulier : clique « saisir à la main » ou remplis directement les champs ci-dessous.</p>
     </div>
     <label>Dénomination / Nom</label><input id="mandantNom" placeholder="SCI … / M. …">
     <div class="row">
@@ -317,18 +319,24 @@ function brancherEntrepriseAuto(el){
   el.addEventListener('blur', ()=>setTimeout(fermerAuto, 180));
 }
 async function chercherEntreprises(q, el){
-  ENTR_RESULTS=[];
+  ENTR_RESULTS=[]; let erreur=false;
   try{
     const r=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+encodeURIComponent(q)+'&page=1&per_page=7');
     const j=await r.json(); ENTR_RESULTS=j.results||[];
-  }catch(e){ return; }
+  }catch(e){ erreur=true; }
   fermerAuto();
-  if(!ENTR_RESULTS.length) return;
   acBox=document.createElement('div'); acBox.className='ac-list';
-  acBox.innerHTML=ENTR_RESULTS.map((e,i)=>{ const sg=e.siege||{};
+  const liste = ENTR_RESULTS.map((e,i)=>{ const sg=e.siege||{};
     const ville=[sg.code_postal, sg.libelle_commune].filter(Boolean).join(' ');
     const nom=e.nom_complet||e.nom_raison_sociale||'—';
     return `<div data-i="${i}">${escapeHtml(nom)}<span class="cp">${escapeHtml(ville||e.siren||'')}</span></div>`; }).join('');
+  // On propose TOUJOURS la saisie manuelle : société trop récente, non immatriculée, ou registre indisponible.
+  const libManuel = erreur
+    ? '✍️ Registre indisponible — saisir « '+escapeHtml(q)+' » à la main'
+    : (ENTR_RESULTS.length
+        ? '✍️ Pas dans la liste ? Saisir « '+escapeHtml(q)+' » à la main'
+        : '✍️ Aucun résultat — saisir « '+escapeHtml(q)+' » à la main');
+  acBox.innerHTML = liste + `<div class="ac-manuel" data-manuel="1">${libManuel}</div>`;
   const cont=el.parentElement; cont.style.position='relative';
   acBox.style.top=(el.offsetTop+el.offsetHeight+2)+'px'; acBox.style.left=el.offsetLeft+'px';
   acBox.style.width=Math.max(el.offsetWidth,300)+'px';
@@ -336,6 +344,17 @@ async function chercherEntreprises(q, el){
   acBox.querySelectorAll('div[data-i]').forEach(d=>d.addEventListener('mousedown', ev=>{
     ev.preventDefault(); remplirEntreprise(ENTR_RESULTS[+d.dataset.i]); fermerAuto();
   }));
+  const man=acBox.querySelector('[data-manuel]');
+  if(man) man.addEventListener('mousedown', ev=>{ ev.preventDefault(); saisieManuelle(q); fermerAuto(); });
+}
+/* Société absente du registre (trop récente / non immatriculée) : on ouvre la fiche en saisie libre. */
+function saisieManuelle(q){
+  const nom=document.getElementById('mandantNom');
+  if(nom && !nom.value.trim()) nom.value=q;   // pré-remplit la dénomination avec ce qui a été tapé
+  const rech=document.getElementById('mandantRecherche'); if(rech) rech.value='';
+  const forme=document.getElementById('mandantForme');
+  if(forme) forme.focus();                    // curseur sur le champ suivant à compléter
+  generer();
 }
 /* Traduit le code "catégorie juridique" (INSEE) en forme lisible */
 function formeJuridique(code){

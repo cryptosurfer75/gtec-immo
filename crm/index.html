@@ -1090,18 +1090,24 @@ function brancherEntrepriseAuto(el){
   el.addEventListener('blur', ()=>setTimeout(fermerAuto, 180));
 }
 async function chercherEntreprises(q, el){
-  ENTR_RESULTS=[];
+  ENTR_RESULTS=[]; let erreur=false;
   try{
     const r=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+encodeURIComponent(q)+'&page=1&per_page=7');
     const j=await r.json(); ENTR_RESULTS=j.results||[];
-  }catch(e){ return; }
+  }catch(e){ erreur=true; }
   fermerAuto();
-  if(!ENTR_RESULTS.length) return;
   acBox=document.createElement('div'); acBox.className='ac-list';
-  acBox.innerHTML=ENTR_RESULTS.map((e,i)=>{ const sg=e.siege||{};
+  const liste=ENTR_RESULTS.map((e,i)=>{ const sg=e.siege||{};
     const ville=[sg.code_postal, sg.libelle_commune].filter(Boolean).join(' ');
     const nom=e.nom_complet||e.nom_raison_sociale||'—';
     return `<div data-i="${i}">${esc(nom)}<span class="cp">${esc(ville||e.siren||'')}</span></div>`; }).join('');
+  // On propose TOUJOURS la saisie manuelle : société trop récente, non immatriculée, ou registre indisponible.
+  const libManuel = erreur
+    ? '✍️ Registre indisponible — saisir « '+esc(q)+' » à la main'
+    : (ENTR_RESULTS.length
+        ? '✍️ Pas dans la liste ? Saisir « '+esc(q)+' » à la main'
+        : '✍️ Aucun résultat — saisir « '+esc(q)+' » à la main');
+  acBox.innerHTML = liste + `<div class="ac-manuel" data-manuel="1">${libManuel}</div>`;
   const cont=el.closest('.f')||el.parentElement; cont.style.position='relative';
   acBox.style.top=(el.offsetTop+el.offsetHeight+2)+'px'; acBox.style.left=el.offsetLeft+'px';
   acBox.style.width=Math.max(el.offsetWidth,300)+'px';
@@ -1109,6 +1115,17 @@ async function chercherEntreprises(q, el){
   acBox.querySelectorAll('div[data-i]').forEach(d=>d.addEventListener('mousedown', ev=>{
     ev.preventDefault(); remplirEntreprise(ENTR_RESULTS[+d.dataset.i]); fermerAuto();
   }));
+  const man=acBox.querySelector('[data-manuel]');
+  if(man) man.addEventListener('mousedown', ev=>{ ev.preventDefault(); saisieManuelle(q); fermerAuto(); });
+}
+/* Société absente du registre (trop récente / non immatriculée) : on ouvre la fiche en saisie libre. */
+function saisieManuelle(q){
+  const tsel=document.getElementById('c-type'); if(tsel) tsel.value='societe';
+  const raison=document.getElementById('c-raison');
+  if(raison && !raison.value.trim()) raison.value=q;   // pré-remplit la raison sociale avec ce qui a été tapé
+  const rech=document.getElementById('c-recherche'); if(rech) rech.value='';
+  const forme=document.getElementById('c-forme');
+  if(forme) forme.focus();                             // curseur sur le champ suivant à compléter
 }
 /* Traduit le code officiel "catégorie juridique" (INSEE) en forme lisible */
 function formeJuridique(code){
@@ -1266,6 +1283,18 @@ function listeLiens(l){
 }
 async function creerOffrePourClient(clientId){ await chargerClients(); formOffre({client_id:clientId}); }
 async function creerDemandePourClient(clientId){ await chargerClients(); formDemande({client_id:clientId}); }
+/* Garde-fou anti-doublon : renvoie un client déjà présent (même SIRET, ou même nom/raison sociale), sinon null. */
+function trouverDoublonClient(p){
+  const norm = s => (s||'').toString().trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const chiffres = s => (s||'').toString().replace(/\D/g,'');
+  const sir = chiffres(p.siret);
+  const nom = norm(p.type_client==='societe' ? p.raison_sociale : ((p.prenom||'')+' '+(p.nom||'')));
+  return (CLIENTS_FULL||[]).find(c=>{
+    if(sir && chiffres(c.siret)===sir) return true;
+    const cn = norm(c.type_client==='societe' ? c.raison_sociale : ((c.prenom||'')+' '+(c.nom||'')));
+    return nom.length>2 && cn===nom;
+  }) || null;
+}
 function formClient(rec, liens){
   rec=rec||{}; liens=liens||{offres:[],demandes:[]};
   const liensHtml = rec.id ? `${fSep('Offres &amp; demandes de ce client')}
@@ -1277,7 +1306,7 @@ function formClient(rec, liens){
   const corps=`<div class="form-grid">
     <div class="f full"><label>🔎 Auto-remplissage société (nom ou SIREN)</label>
       <input id="c-recherche" autocomplete="off" placeholder="Ex. : nom de l'entreprise ou n° SIREN">
-      <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche automatiquement.</div></div>
+      <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche. Société absente (trop récente / non immatriculée) : clique « saisir à la main » ou remplis directement les champs ci-dessous.</div></div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
     ${fSel('c-role1','Rôle',clientRoles(rec)[0]||'',ROLE_OPTS)}
     ${fSel('c-role2','Rôle (2ᵉ, optionnel)',clientRoles(rec)[1]||'',ROLE_OPTS)}
@@ -1293,6 +1322,10 @@ function formClient(rec, liens){
     ${fArea('c-notes','Notes',rec.notes)}
   </div>${liensHtml}`;
   ouvrirForm(rec.id?'Modifier le client':'Nouveau client', corps, async()=>{
+    if(!rec.id){
+      const dup = trouverDoublonClient({ type_client:val('c-type'), raison_sociale:capTitle('c-raison'), siret:val('c-siret'), prenom:cap('c-prenom'), nom:cap('c-nom') });
+      if(dup && !confirm('« '+nomClient(dup)+' » existe déjà dans ton fichier.\n\nMieux vaut ouvrir la fiche existante que d\'en créer une seconde (source de doublons).\n\nCréer quand même une nouvelle fiche ?')) throw new Error('Doublon : rien n\'a été créé. Ouvre la fiche existante.');
+    }
     await save('clients', rec.id, { type_client:val('c-type'), roles:[val('c-role1'),val('c-role2')].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i), forme_juridique:val('c-forme'), raison_sociale:capTitle('c-raison'),
       siret:val('c-siret'), adresse:val('c-adresse'), prenom:cap('c-prenom'), nom:cap('c-nom'), fonction:cap('c-fonction'), telephone:telVal('c-tel'),
       email:(val('c-email')||'').toLowerCase()||null, notes:val('c-notes') });
