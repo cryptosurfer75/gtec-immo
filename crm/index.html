@@ -974,7 +974,8 @@ async function creerClientRapide(base){
   const el = document.getElementById(base); if(!el) return null;
   const txt = (el.value||'').trim();
   if(!txt){ alert('Tape d’abord le nom du client.'); return null; }
-  if(CLIENTS.find(c=>nomClient(c).toLowerCase()===txt.toLowerCase())){ alert('Ce client est déjà dans la base.'); return resolveClientCombo(base); }
+  const exist = (CLIENTS||[]).find(c=>normTxt(nomClient(c)).trim()===normTxt(txt).trim());
+  if(exist){ alert('« '+nomClient(exist)+' » existe déjà : la fiche existante a été sélectionnée (pas de doublon créé).'); return exist.id; }
   const { data, error } = await sb.from('clients').insert({ type_client:'particulier', nom:titleStr(txt) }).select('id').single();
   if(error){ alert('Erreur lors de la création du client : '+error.message); return null; }
   await chargerClients();
