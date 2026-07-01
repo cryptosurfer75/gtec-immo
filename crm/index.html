@@ -1163,6 +1163,71 @@ function remplirEntreprise(e){
   const rech=document.getElementById('c-recherche'); if(rech) rech.value='';
 }
 
+/* Charge à la demande la lecture de texte (Tesseract.js, gratuit/local, aucun compte ni coût) */
+let _tesseractP=null;
+function chargerTesseract(){
+  if(window.Tesseract) return Promise.resolve(window.Tesseract);
+  if(_tesseractP) return _tesseractP;
+  _tesseractP=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload=()=> window.Tesseract ? resolve(window.Tesseract) : reject(new Error('Tesseract indisponible'));
+    s.onerror=()=>reject(new Error('chargement du lecteur de texte'));
+    document.head.appendChild(s);
+  });
+  return _tesseractP;
+}
+/* Redimensionne une image trop grande (photo de téléphone) avant lecture, pour aller plus vite */
+async function redimensionnerImage(file, maxDim){
+  const bmp = await createImageBitmap(file).catch(()=>null);
+  if(!bmp) return file;
+  const scale = Math.min(1, maxDim/Math.max(bmp.width,bmp.height));
+  if(scale>=1) return file;
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.round(bmp.width*scale); canvas.height=Math.round(bmp.height*scale);
+  canvas.getContext('2d').drawImage(bmp,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.9));
+  return blob ? new File([blob], file.name||'carte.jpg', {type:'image/jpeg'}) : file;
+}
+/* Repère e-mail / téléphone / adresse dans le texte lu sur la carte (le reste = à recopier à la main) */
+function analyserTexteCarteVisite(texte){
+  const lignes = String(texte||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  const email = (texte.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i)||[])[0] || '';
+  const tel = (texte.match(/(?:\+33\s?|0)[1-9](?:[\s.-]?\d{2}){4}/)||[])[0] || '';
+  const ligneAdresse = lignes.find(l=>/\b\d{5}\b/.test(l)) || '';
+  return { email, telephone: tel, adresse: ligneAdresse, texteBrut: lignes.join('\n') };
+}
+async function scannerCarteVisite(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const boutons = inputEl.closest('.f').querySelectorAll('button');
+  const msg = document.getElementById('c-scan-msg');
+  const brut = document.getElementById('c-scan-brut');
+  boutons.forEach(b=>b.disabled=true);
+  msg.textContent = 'Lecture en cours…';
+  brut.classList.add('hidden'); brut.textContent='';
+  try{
+    let f = await convertHeic(file);
+    f = await redimensionnerImage(f, 1800);
+    const T = await chargerTesseract();
+    const { data } = await T.recognize(f, 'fra');
+    const champs = analyserTexteCarteVisite(data.text||'');
+    if(!champs.texteBrut){ msg.textContent = "Rien trouvé sur cette photo — réessaie avec plus de lumière ou remplis à la main."; return; }
+    const setV=(id,v)=>{ const el=document.getElementById(id); if(el && v && !el.value.trim()) el.value=v; };
+    setV('c-email', champs.email.toLowerCase());
+    setV('c-tel', formatTel(champs.telephone)||champs.telephone);
+    setV('c-adresse', champs.adresse);
+    brut.textContent = champs.texteBrut;
+    brut.classList.remove('hidden');
+    msg.textContent = 'Texte lu ci-dessous — complète/corrige les champs si besoin.';
+  }catch(e){
+    msg.textContent = 'Lecture impossible : '+(e.message||e);
+  }finally{
+    boutons.forEach(b=>b.disabled=false);
+    inputEl.value='';
+  }
+}
+
 /* Briques de formulaire */
 function fText(id,label,v,o={}){ return `<div class="f ${o.full?'full':''}"><label>${label}</label><input id="${id}" class="${o.title?'cap-title':o.cap?'cap':o.tel?'tel':''}" type="${o.type||'text'}" value="${v==null?'':esc(v)}"></div>`; }
 function fNum(id,label,v,o={}){ return fText(id,label,v,{...o,type:'number'}); }
@@ -1307,6 +1372,14 @@ function formClient(rec, liens){
     <div class="f full"><label>🔎 Auto-remplissage société (nom ou SIREN)</label>
       <input id="c-recherche" autocomplete="off" placeholder="Ex. : nom de l'entreprise ou n° SIREN">
       <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche. Société absente (trop récente / non immatriculée) : clique « saisir à la main » ou remplis directement les champs ci-dessous.</div></div>
+    <div class="f full" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('c-scan-cam').click()">📇 Scanner une carte (appareil photo)</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('c-scan-lib').click()">🖼️ Depuis la galerie</button>
+      <input id="c-scan-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scannerCarteVisite(this)">
+      <input id="c-scan-lib" type="file" accept="image/*" style="display:none" onchange="scannerCarteVisite(this)">
+      <span id="c-scan-msg" style="font-size:.8rem;color:var(--gris-fonce)"></span>
+      <div id="c-scan-brut" class="full hidden" style="width:100%;font-size:.78rem;background:var(--gris);border:1px solid var(--bord);border-radius:8px;padding:8px;white-space:pre-wrap"></div>
+    </div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
     ${fSel('c-role1','Rôle',clientRoles(rec)[0]||'',ROLE_OPTS)}
     ${fSel('c-role2','Rôle (2ᵉ, optionnel)',clientRoles(rec)[1]||'',ROLE_OPTS)}
