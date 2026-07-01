@@ -1211,10 +1211,15 @@ async function importerGoogleContact(){
   const { data, error } = await sb.functions.invoke('google-oauth', { body:{ action:'contacts-recent' } });
   if(error || data?.error){
     zone.innerHTML = '';
-    if(String(data?.error||'').includes('non connecté')){
+    // Sur une erreur HTTP, supabase-js ne remplit pas `data` : le vrai message est dans error.context (la réponse brute).
+    let messageServeur = data?.error || '';
+    if(!messageServeur && error?.context){
+      try{ messageServeur = (await error.context.clone().json())?.error || ''; }catch(e){}
+    }
+    if(messageServeur.includes('non connecté')){
       if(confirm("Google Contacts n'est pas encore connecté. Se connecter maintenant ?")) clicStatutGoogle();
     }else{
-      msg.textContent = 'Import Google impossible : '+(data?.error||error?.message||'erreur');
+      msg.textContent = 'Import Google impossible : '+(messageServeur||error?.message||'erreur');
     }
     return;
   }
