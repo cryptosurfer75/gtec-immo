@@ -227,8 +227,8 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
       <a data-vue="loi" onclick="aller('loi')">✍️ LOI</a>
     </nav>
     <div class="who">
-      <span id="google-statut" onclick="clicStatutGoogle()" style="cursor:pointer;font-size:.78rem;padding:4px 10px;border-radius:20px;border:1px solid var(--bord);color:var(--gris-fonce)" title="Connexion Google Contacts (import carte de visite)">🔗 …</span>
-      <a class="navlink" href="../index.html" target="_blank">🌐 Site internet</a>
+      <span id="google-statut" class="who-init" onclick="clicStatutGoogle()" style="cursor:pointer;background:var(--gris-bg);color:var(--gris-fonce);font-size:1.1rem" title="Connexion Google Contacts (import carte de visite)">🔗</span>
+      <a class="who-init" href="../index.html" target="_blank" style="background:var(--gris-bg);color:var(--gris-fonce);font-size:1.1rem;text-decoration:none" title="Site internet">🌐</a>
       <span class="who-init" id="who-init" title="Session active">FB</span>
       <button class="who-logout" onclick="seDeconnecter()" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
     </div>
@@ -412,17 +412,17 @@ async function chargerStatutGoogle(){
   try{
     const { data } = await sb.functions.invoke('google-oauth', { body:{ action:'status' } });
     if(data && data.connected){
-      el.textContent = '🔗 Google connecté'; el.style.borderColor = 'var(--vert)'; el.style.color = 'var(--vert)';
+      el.dataset.connected = '1'; el.style.background = 'var(--teal)'; el.style.color = '#fff';
       el.title = (data.email||'')+' — cliquer pour déconnecter';
     }else{
-      el.textContent = '🔗 Connecter Google'; el.style.borderColor = 'var(--bord)'; el.style.color = 'var(--gris-fonce)';
+      el.dataset.connected = '0'; el.style.background = 'var(--gris-bg)'; el.style.color = 'var(--gris-fonce)';
       el.title = 'Connexion Google Contacts (import carte de visite)';
     }
   }catch(e){}
 }
 async function clicStatutGoogle(){
   const el = document.getElementById('google-statut');
-  const connecte = el && el.textContent.includes('connecté');
+  const connecte = el && el.dataset.connected === '1';
   if(connecte){
     if(!confirm('Déconnecter Google Contacts ?')) return;
     await sb.functions.invoke('google-oauth', { body:{ action:'deauthorize' } });
@@ -1497,8 +1497,8 @@ function formClient(rec, liens){
       <input id="c-scan-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scannerCarteVisite(this)">
       <input id="c-scan-lib" type="file" accept="image/*" style="display:none" onchange="scannerCarteVisite(this)">
       <span id="c-scan-msg" style="font-size:.8rem;color:var(--gris-fonce)"></span>
-      <div id="c-scan-brut" class="full hidden" style="width:100%;font-size:.78rem;background:var(--gris);border:1px solid var(--bord);border-radius:8px;padding:8px;white-space:pre-wrap"></div>
-      <div id="c-scan-google" class="full hidden" style="width:100%;font-size:.85rem;background:var(--gris);border:1px solid var(--bord);border-radius:8px;padding:8px"></div>
+      <div id="c-scan-brut" class="full hidden" style="width:100%;font-size:.78rem;background:var(--gris-bg);border:1px solid var(--gris-clair);border-radius:8px;padding:8px;white-space:pre-wrap"></div>
+      <div id="c-scan-google" class="full hidden" style="width:100%;font-size:.85rem;background:var(--gris-bg);border:1px solid var(--gris-clair);border-radius:8px;padding:8px"></div>
     </div>
     ${fSel('c-type','Type de client',rec.type_client||'particulier',[['particulier','Particulier'],['societe','Société']])}
     ${fSel('c-role1','Rôle',clientRoles(rec)[0]||'',ROLE_OPTS)}
@@ -2194,6 +2194,6 @@ init();
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=2"></script>
 <script src="facture.js?v=2"></script>
-<script src="loi.js?v=2"></script>
+<script src="loi.js?v=4"></script>
 </body>
 </html>
