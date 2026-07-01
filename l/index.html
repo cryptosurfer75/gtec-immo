@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document — GTEC Immobilier</title>
+<link rel="icon" href="/favicon.png">
+<meta name="robots" content="noindex">
+<style>
+  html,body{margin:0;height:100%;background:#525659;font-family:'Segoe UI',Arial,sans-serif}
+  #msg{color:#fff;display:flex;flex-direction:column;gap:10px;height:100%;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.05rem}
+  #msg img{height:48px;opacity:.9}
+</style>
+</head>
+<body>
+  <div id="msg"><img src="/favicon.png" alt="GTEC">Chargement du document…</div>
+  <script>
+  /* Visionneuse LOI : récupère le document (déposé en pleine qualité dans le
+     stockage par le CRM) et l'affiche tel quel sur le domaine GTEC. */
+  (function(){
+    var SB = 'https://rqeyadmapekiwzyjtyhv.supabase.co';
+    var id = new URLSearchParams(location.search).get('id');
+    if(!id){ document.getElementById('msg').lastChild.textContent='Lien invalide.'; return; }
+    fetch(SB + '/storage/v1/object/public/offres/lois-public/' + encodeURIComponent(id) + '.html', {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+      .then(function(html){ document.open(); document.write(html); document.close(); })
+      .catch(function(){ document.getElementById('msg').lastChild.textContent='Document introuvable ou plus disponible.'; });
+  })();
+  </script>
+</body>
+</html>
