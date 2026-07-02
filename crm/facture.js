@@ -145,6 +145,16 @@
     // --- Indicateurs (façon logiciel de compta) ---
     const factures = LISTE.filter(f=>f.type==='facture');
     const encaisse = factures.reduce((s,f)=>s+Number(f.montant_paye||0),0);
+    // Répartition HT / TVA du montant réellement encaissé (au prorata du taux de chaque facture,
+    // car un règlement peut n'être que partiel) : c'est le HT qui compte comme vrai chiffre d'affaires
+    // pour le calcul des commissions, la TVA n'étant que collectée pour l'État.
+    const encaisseHT = r2(factures.reduce((s,f)=>{
+      const paye = Number(f.montant_paye||0); if(paye<=0) return s;
+      const ttc = Number(f.total_ttc||0);
+      const ratioHT = ttc>0 ? Number(f.total_ht||0)/ttc : 1;
+      return s + paye*ratioHT;
+    }, 0));
+    const encaisseTVA = r2(encaisse - encaisseHT);
     const ouvertes = factures.filter(f=>['emise','partiellement_payee'].includes(f.statut));
     const encours  = ouvertes.reduce((s,f)=>s+resteDu(f),0);
     const retard   = factures.filter(enRetard);
@@ -152,7 +162,8 @@
     const devisAtt = LISTE.filter(f=>f.type==='devis' && ['brouillon','envoye'].includes(f.statut)).length;
 
     const stats = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:16px 16px 4px">
-      ${carte('Encaissé', euro2(encaisse), 'factures payées (cumul)')}
+      ${carte('Encaissé HT', euro2(encaisseHT), 'chiffre d’affaires réel (base commission)')}
+      ${carte('dont TVA', euro2(encaisseTVA), 'collectée pour l’État, pas du CA')}
       ${carte('Encours', euro2(encours), ouvertes.length+' facture(s) ouverte(s)')}
       ${carte('En retard', euro2(retardM), retard.length+' impayé(s)', retard.length?'#b3261e':null)}
       ${carte('Devis en attente', devisAtt, 'à transformer')}
@@ -176,6 +187,7 @@
     const corps = stats + filtres + (rows.length
       ? `<div class="tscroll"><table><thead><tr>
            <th>Réf.</th><th>Type</th><th>Client</th><th>Objet</th><th>Émise le</th><th>Échéance</th>
+           <th style="text-align:right">Total HT</th><th style="text-align:right">TVA</th>
            <th style="text-align:right">Total TTC</th><th style="text-align:right">Reste dû</th><th>Statut</th><th>Actions</th>
          </tr></thead><tbody id="fa-tbody">${rows.map(ligne).join('')}</tbody></table></div>`
       : vide('Aucun document. Créez votre premier devis ou votre première facture.'));
@@ -208,7 +220,7 @@
     const tb = document.getElementById('fa-tbody'); if(!tb) return;
     const rows = filtrer();
     tb.innerHTML = rows.length ? rows.map(ligne).join('')
-      : `<tr><td colspan="10" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun document ne correspond.</td></tr>`;
+      : `<tr><td colspan="12" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun document ne correspond.</td></tr>`;
   }
 
   function ligne(f){
@@ -222,6 +234,8 @@
       <td>${esc(f.objet||'—')}</td>
       <td>${f.reference?fmtDate(f.date_emission):'—'}</td>
       <td>${f.type==='facture'?fmtDate(f.date_echeance):(f.validite_date?('val. '+fmtDate(f.validite_date)):'—')}</td>
+      <td style="text-align:right">${euro2(f.total_ht)}</td>
+      <td style="text-align:right;color:var(--gris-fonce)">${euro2(f.total_tva)}</td>
       <td style="text-align:right">${euro2(f.total_ttc)}</td>
       <td style="text-align:right;${resteDu(f)>0&&f.type==='facture'?'font-weight:700':''}">${rd}</td>
       <td>${statutBadge(f)}</td>
@@ -428,12 +442,18 @@
   async function encaisser(id){
     let f; try{ f = await charger(id); }catch(e){ alert('Chargement impossible.'); return; }
     const reste = resteDu(f);
+    // Ratio HT de la facture (peut varier d'une facture à l'autre selon les taux de TVA des lignes) :
+    // appliqué au montant réglé pour distinguer, dans ce qui est réellement encaissé, la part qui compte
+    // comme chiffre d'affaires (HT, base de commission) de la part TVA (juste collectée pour l'État).
+    const ratioHT = Number(f.total_ttc||0)>0 ? Number(f.total_ht||0)/Number(f.total_ttc||0) : 1;
     document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)GTEC_FACTURE._fermerEnc()"><div class="modal" style="max-width:480px">
       <div class="modal-h"><h3>💶 Encaissement — ${esc(f.reference||'')}</h3><button class="x" onclick="GTEC_FACTURE._fermerEnc()">×</button></div>
       <div class="modal-f">
-        <p style="margin:0 0 12px;color:var(--gris-fonce)">Total TTC : <b>${euro2(f.total_ttc)}</b> · Déjà réglé : ${euro2(f.montant_paye)} · <b>Reste dû : ${euro2(reste)}</b></p>
+        <p style="margin:0 0 2px;color:var(--gris-fonce)">Total TTC : <b>${euro2(f.total_ttc)}</b> · Déjà réglé : ${euro2(f.montant_paye)} · <b>Reste dû : ${euro2(reste)}</b></p>
+        <p style="margin:0 0 12px;font-size:.8rem;color:var(--gris-fonce)">Facture : HT ${euro2(f.total_ht)} · TVA ${euro2(f.total_tva)}</p>
         <div class="f"><label>Date</label><input id="enc-date" type="date" value="${today()}"></div>
-        <div class="f"><label>Montant (€)</label><input id="enc-montant" type="number" step="0.01" value="${reste>0?reste:''}"></div>
+        <div class="f"><label>Montant (€)</label><input id="enc-montant" type="number" step="0.01" value="${reste>0?reste:''}" data-ratio-ht="${ratioHT}" oninput="GTEC_FACTURE._majEncDetail(this)"></div>
+        <div id="enc-detail" style="font-size:.78rem;color:var(--gris-fonce);margin:-6px 0 6px"></div>
         <div class="f"><label>Moyen</label><select id="enc-moyen">${MOYENS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></div>
         <div class="f"><label>Référence (n° chèque, virement…)</label><input id="enc-ref"></div>
       </div>
@@ -441,6 +461,15 @@
         <span><button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._fermerEnc()">Annuler</button>
         <button type="button" class="btn btn-sm" onclick="GTEC_FACTURE._saveEnc('${id}')">Enregistrer</button></span></div>
     </div></div>`;
+    majEncDetail(document.getElementById('enc-montant'));
+  }
+  // Recalcule, sous le champ Montant, la part HT / TVA de ce règlement précis (utile pour le suivi de CA réel).
+  function majEncDetail(el){
+    const det = document.getElementById('enc-detail'); if(!det||!el) return;
+    const m = num(el.value), ratio = num(el.dataset.ratioHt);
+    if(m<=0){ det.textContent=''; return; }
+    const ht = r2(m*ratio), tva = r2(m-ht);
+    det.textContent = `→ dont HT ${euro2(ht)} · TVA ${euro2(tva)}`;
   }
   async function saveEnc(id){
     const msg=document.getElementById('enc-msg'); msg.className='form-msg'; msg.textContent='Enregistrement…';
@@ -788,6 +817,7 @@
       sel.innerHTML = optClients(data.id);
       const m=document.getElementById('fa-msg'); if(m){ m.className='fa-msg'; m.textContent='Nouveau client ajouté ✓'; }
     },
-    _saveEnc:saveEnc, _fermerEnc:()=>{ document.getElementById('modal-root2').innerHTML=''; }
+    _saveEnc:saveEnc, _fermerEnc:()=>{ document.getElementById('modal-root2').innerHTML=''; },
+    _majEncDetail:majEncDetail
   };
 })();

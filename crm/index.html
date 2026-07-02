@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>GTEC Immobilier — Espace pro (CRM)</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -52,6 +55,7 @@ button{font:inherit;cursor:pointer}
 .topnav{background:var(--bleu);color:#c5cfdb;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   padding:0 22px;position:sticky;top:0;z-index:40;box-shadow:0 2px 10px rgba(42,51,56,.18)}
 .topnav .brand{font-weight:800;font-size:1.05rem;color:#fff;white-space:nowrap;padding-right:14px}
+.crm-ver{font-size:.62rem;font-weight:600;opacity:.4;letter-spacing:.02em;margin-left:4px;vertical-align:middle}
 .topnav .brand b{color:var(--teal-light)}
 .topnav nav{display:flex;flex-wrap:wrap;flex:1}
 .topnav nav a{display:flex;align-items:center;gap:8px;height:62px;padding:0 19px;font-weight:500;color:#c5cfdb;
@@ -214,7 +218,7 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 <!-- ============ APPLICATION ============ -->
 <div id="app" class="hidden">
   <header class="topnav">
-    <div class="brand">GT<b>EC</b> Immobilier</div>
+    <div class="brand">GT<b>EC</b> Immobilier <span id="crm-ver" class="crm-ver" title="Version du CRM chargée — comparez ce numéro entre collègues pour vérifier que vous êtes bien synchronisés"></span></div>
     <nav>
       <a data-vue="dashboard" class="on" onclick="aller('dashboard')">📊 Stats</a>
       <a data-vue="offres" onclick="aller('offres')">🏢 Offres</a>
@@ -255,8 +259,16 @@ const SUPABASE_URL      = 'https://rqeyadmapekiwzyjtyhv.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_kSLakua0tOFW8_6tL7W_Tw_Keihe6xW';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+/* Numéro de version affiché discrètement à côté du logo (bandeau du haut) : à incrémenter à chaque modif
+   de crm/index.html, pour vérifier en un coup d'œil que tout le monde a bien la même version chargée. */
+const CRM_VERSION = 2;
+document.getElementById('crm-ver').textContent = 'v'+CRM_VERSION;
+
 const LABELS = {bureaux:'Bureaux', local_commercial:'Local commercial', entrepot_logistique:'Entrepôt / Logistique',
   activite:'Activité', fonds_de_commerce:'Fonds de commerce', terrain:'Terrain'};
+/* Titres standards proposés dans le menu déroulant "Titre (vitrine)" des offres */
+const TITRES_LOUER  = ['Bureaux à louer','Cellule d\'activités à louer','Bâtiment d\'activité à louer','Cellule commerciale à louer','Entrepôts à louer','Bâtiment logistique à louer'];
+const TITRES_VENDRE = ['Bureaux à vendre','Cellule d\'activités à vendre','Bâtiment d\'activité à vendre','Cellule commerciale à vendre','Entrepôts à vendre','Bâtiment logistique à vendre'];
 const euro = n => n==null ? '—' : new Intl.NumberFormat('fr-FR').format(Math.round(n))+' €';
 const ROLE_LABELS = {bailleur:'Bailleur', vendeur:'Vendeur', locataire:'Locataire', acquereur:'Acquéreur', prestataire:'Prestataire', developpeur:'Développeur', franchise:'Franchisé', autre:'Autre',
   /* anciens rôles combinés, gardés pour l'affichage des fiches non encore rouvertes */
@@ -985,41 +997,61 @@ async function chargerOffresListe(){
   const { data } = await sb.from('offres').select('id,reference,titre,type_bien').eq('archive',false).order('created_at',{ascending:false});
   OFFRES_LISTE = data||[];
 }
-function optClients(sel){
-  return [['','— Choisir un client —'], ...CLIENTS.map(c=>[c.id, nomClient(c)])]
-    .map(([v,t])=>`<option value="${v}" ${String(sel)===String(v)?'selected':''}>${esc(t)}</option>`).join('');
+const labelOffre = o => (o.reference?o.reference+' · ':'')+(o.titre||LABELS[o.type_bien]||'Bien');
+const labelClient = id => { const c=CLIENTS.find(x=>String(x.id)===String(id)); return c?nomClient(c):''; };
+const labelOffreParId = id => { const o=OFFRES_LISTE.find(x=>String(x.id)===String(id)); return o?labelOffre(o):''; };
+/* Champ "tape pour chercher" sur une liste déjà en mémoire (clients, biens…) — même principe visuel que
+   l'autocomplétion ville (brancherVilleAuto ci-dessous), mais sans appel réseau : nécessaire dès que la liste
+   dépasse une dizaine d'entrées (ex. 500 clients), où dérouler un <select> aussi long n'est plus praticable. */
+function fCombo(id,label,texteActuel,idActuel,o={}){
+  return `<div class="f full"><label>${label}</label>
+    <div style="display:flex;gap:8px">
+      <input id="${id}" autocomplete="off" placeholder="${o.placeholder||'Tapez pour chercher…'}" style="flex:1" value="${texteActuel?esc(texteActuel):''}" data-id="${idActuel||''}">
+      ${o.creerBtn?`<button type="button" class="btn btn-ghost btn-sm" onclick="${o.creerBtn}('${id}')">＋ Nouveau</button>`:''}
+    </div></div>`;
 }
-function optOffres(sel){
-  return [['','— Choisir un bien —'], ...OFFRES_LISTE.map(o=>[o.id,(o.reference?o.reference+' · ':'')+(o.titre||LABELS[o.type_bien]||'Bien')])]
-    .map(([v,t])=>`<option value="${v}" ${String(sel)===String(v)?'selected':''}>${esc(t)}</option>`).join('');
+/* Id choisi dans un champ fCombo (texte tapé sans sélection dans la liste => null) */
+function valCombo(id){ const el=document.getElementById(id); return el&&el.dataset.id ? el.dataset.id : null; }
+/* Bloque l'enregistrement si du texte a été tapé sans être choisi dans la liste (évite un lien silencieusement perdu) */
+function exigerCombo(id, message){
+  const el=document.getElementById(id); if(!el) return null;
+  if((el.value||'').trim() && !el.dataset.id) throw new Error(message);
+  return el.dataset.id||null;
 }
-/* Champ client à saisie libre + autocomplétion des clients existants.
-   Utilisé là où l'on veut taper un nom (même pas encore en base) plutôt que dérouler 300 clients. */
-function clientCombo(base, selId, lock){
-  const sel = CLIENTS.find(c=>String(c.id)===String(selId));
-  const opts = CLIENTS.map(c=>`<option value="${esc(nomClient(c))}"></option>`).join('');
-  return `<input id="${base}" list="${base}-list" autocomplete="off" placeholder="Tapez un nom de client…" value="${sel?esc(nomClient(sel)):''}" ${lock?'readonly':''}>`
-    + `<datalist id="${base}-list">${opts}</datalist>`;
+function brancherCombo(el, getItems, getLabel, getId){
+  if(!el) return;
+  el.setAttribute('autocomplete','off');
+  el.addEventListener('input', ()=>{
+    el.dataset.id='';
+    const q=normTxt(el.value.trim()); fermerAuto();
+    if(!q) return;
+    const matches=getItems().filter(it=>normTxt(getLabel(it)).includes(q)).slice(0,8);
+    if(!matches.length) return;
+    acBox=document.createElement('div'); acBox.className='ac-list';
+    acBox.innerHTML=matches.map((it,i)=>`<div data-i="${i}">${esc(getLabel(it))}</div>`).join('');
+    const cont=el.closest('.f')||el.parentElement; cont.style.position='relative';
+    acBox.style.top=(el.offsetTop+el.offsetHeight+2)+'px'; acBox.style.left=el.offsetLeft+'px';
+    acBox.style.width=Math.max(el.offsetWidth,240)+'px';
+    cont.appendChild(acBox);
+    acBox.querySelectorAll('div[data-i]').forEach(d=>d.addEventListener('mousedown', e=>{
+      e.preventDefault(); const it=matches[+d.dataset.i];
+      el.value=getLabel(it); el.dataset.id=String(getId(it)); fermerAuto();
+    }));
+  });
+  el.addEventListener('blur', ()=>setTimeout(fermerAuto,180));
 }
-/* Renvoie l'id du client tapé s'il existe déjà (nom identique), sinon null (aucune création auto). */
-function resolveClientCombo(base){
-  const el = document.getElementById(base); if(!el) return null;
-  const txt = (el.value||'').trim(); if(!txt) return null;
-  const low = txt.toLowerCase();
-  const hit = CLIENTS.find(c=>nomClient(c).toLowerCase()===low);
-  return hit ? hit.id : null;
-}
-/* Création explicite (bouton « + Client ») d'un client minimal à partir du nom tapé. */
+/* Création explicite (bouton « + Nouveau ») d'un client minimal à partir du nom tapé dans un champ fCombo */
 async function creerClientRapide(base){
   const el = document.getElementById(base); if(!el) return null;
   const txt = (el.value||'').trim();
   if(!txt){ alert('Tape d’abord le nom du client.'); return null; }
   const exist = (CLIENTS||[]).find(c=>normTxt(nomClient(c)).trim()===normTxt(txt).trim());
-  if(exist){ alert('« '+nomClient(exist)+' » existe déjà : la fiche existante a été sélectionnée (pas de doublon créé).'); return exist.id; }
+  if(exist){ el.value=nomClient(exist); el.dataset.id=exist.id; alert('« '+nomClient(exist)+' » existe déjà : la fiche existante a été sélectionnée (pas de doublon créé).'); return exist.id; }
   const { data, error } = await sb.from('clients').insert({ type_client:'particulier', nom:titleStr(txt) }).select('id').single();
   if(error){ alert('Erreur lors de la création du client : '+error.message); return null; }
   await chargerClients();
-  const dl = document.getElementById(base+'-list'); if(dl) dl.innerHTML = CLIENTS.map(c=>`<option value="${esc(nomClient(c))}"></option>`).join('');
+  const created = CLIENTS.find(c=>String(c.id)===String(data.id));
+  el.value = created?nomClient(created):txt; el.dataset.id=data.id;
   return data.id;
 }
 
@@ -1248,6 +1280,19 @@ function fArea(id,label,v){ return `<div class="f full"><label>${label}</label><
 function fSel(id,label,v,options,o={}){ const opts=options.map(([val2,txt])=>`<option value="${val2}" ${String(v)===String(val2)?'selected':''}>${esc(txt)}</option>`).join('');
   return `<div class="f ${o.full?'full':''}"><label>${label}</label><select id="${id}">${opts}</select></div>`; }
 function fCheck(id,label,v){ return `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}">${label}</label></div>`; }
+/* Menu déroulant "Titre (vitrine)" : titres standards à louer / à vendre, garde un ancien titre libre s'il ne fait pas partie de la liste */
+function fTitreOffre(v){
+  const cur = v||'';
+  const connu = TITRES_LOUER.includes(cur) || TITRES_VENDRE.includes(cur);
+  const opt = t => `<option value="${esc(t)}" ${cur===t?'selected':''}>${esc(t)}</option>`;
+  return `<div class="f full"><label>Titre (vitrine)</label>
+    <select id="o-titre">
+      <option value="">— Choisir —</option>
+      ${(!connu && cur) ? `<option value="${esc(cur)}" selected>${esc(cur)} (actuel)</option>` : ''}
+      <optgroup label="À louer">${TITRES_LOUER.map(opt).join('')}</optgroup>
+      <optgroup label="À vendre">${TITRES_VENDRE.map(opt).join('')}</optgroup>
+    </select></div>`;
+}
 function fSep(t){ return `<div class="form-sep">${t}</div>`; }
 /* affiche l'équivalent annuel (mensuel × 12) à côté d'un champ */
 function majAnnuel(srcId,dstId){ const el=document.getElementById(dstId); if(!el) return;
@@ -1268,6 +1313,8 @@ function draftCollect(key){
   if(document.getElementById('o-equip-summary')) extra.equip = EQUIP_SEL;
   if(document.getElementById('loc-list')) extra.locs = [...document.querySelectorAll('#loc-list .loc-row')]
     .map(r=>({ville:r.querySelector('.loc-ville').value, cp:r.querySelector('.loc-cp').value}));
+  extra.comboIds={};
+  document.querySelectorAll('#cform [data-id]').forEach(el=>{ if(el.dataset.id) extra.comboIds[el.id]=el.dataset.id; });
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify({key, data, extra})); }catch(e){}
 }
 function draftClear(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
@@ -1281,6 +1328,7 @@ function draftApply(key){
     const list=document.getElementById('loc-list'); list.innerHTML='';
     (d.extra.locs.length?d.extra.locs:[{}]).forEach(l=>ajouterLoc(l.ville,l.cp));
   }
+  if(d.extra && d.extra.comboIds){ Object.entries(d.extra.comboIds).forEach(([id,cid])=>{ const el=document.getElementById(id); if(el) el.dataset.id=cid; }); }
   if(document.getElementById('o-hono-type1')) majHonoraires();
 }
 function reouvrirDraft(){
@@ -1790,7 +1838,7 @@ function formOffre(rec){
     ${fSel('o-type','Type de bien',rec.type_bien||'bureaux',Object.entries(LABELS))}
     ${fSel('o-trans','Transaction',rec.transaction||'vente',[['vente','À vendre'],['location','À louer'],['les_deux','Les deux']])}
     ${fSel('o-statut','Statut',rec.statut||'disponible',[['disponible','Disponible'],['sous_compromis','Sous compromis'],['vendu_loue','Vendu / loué'],['retire','Retiré']])}
-    ${fText('o-titre','Titre (vitrine)',rec.titre,{full:true})}
+    ${fTitreOffre(rec.titre)}
     ${fSep('Localisation')}
     ${fText('o-adresse','Adresse complète (privée)',rec.adresse,{full:true})}
     ${fText('o-ville','Ville',rec.ville,{title:true})}
@@ -1841,7 +1889,7 @@ function formOffre(rec){
     </div>
     ${fSel('o-dispo','Disponibilité',rec.disponibilite||'',[['','—'],['Disponibilité immédiate','Disponibilité immédiate'],['Nous consulter','Nous consulter']],{full:true})}
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
-    <div class="f full"><label>Client propriétaire</label><select id="o-client">${optClients(rec.client_id)}</select></div>
+    ${fCombo('o-client','Client propriétaire',labelClient(rec.client_id),rec.client_id,{placeholder:'Tapez un nom de client…',creerBtn:'creerClientRapide'})}
     ${fCheck('o-pub','Publier sur la vitrine',rec.publie)}
     ${fSep('Photo de couverture (dossier PDF)')}
     <div class="full">
@@ -1905,7 +1953,8 @@ function formOffre(rec){
       honoraires_charge:val('o-hono-charge1'), honoraires_charge_2:val('o-hono-charge2'), depot_garantie:val('o-depot'),
       description:val('o-desc'), disponibilite:val('o-dispo'), plan_url:val('o-plan'),
       loyer_type:val('o-loyer-type'),
-      client_id:val('o-client'), publie:(val('o-pub')?true:null), equipements:EQUIP_SEL, cover_url });
+      client_id:exigerCombo('o-client','Sélectionnez le client dans la liste (ou cliquez sur « + Nouveau ») avant d’enregistrer.'),
+      publie:(val('o-pub')?true:null), equipements:EQUIP_SEL, cover_url });
     vueOffres();
   }, rec.id ? async()=>{ if(rec.cover_url) await supprimerCoverStorage(rec.cover_url); await sb.from('offre_photos').delete().eq('offre_id', rec.id); await sb.from('actions').delete().eq('cible_type','offre').eq('cible_id',rec.id); await del('offres', rec.id); vueOffres(); } : null, 'offre:'+(rec.id||'new'),
     rec.id ? {archived:!!rec.archive, toggle:async()=>{
@@ -1915,6 +1964,7 @@ function formOffre(rec){
       if(enArchivage){ try{ await sb.storage.from('offres').remove(['dossier-public/'+rec.id+'.html']); }catch(e){} }
       vueOffres();
     }} : null);
+  brancherCombo(document.getElementById('o-client'), ()=>CLIENTS, nomClient, c=>c.id);
   brancherVilleAuto(document.getElementById('o-ville'), ()=>document.getElementById('o-cp'));
   brancherAdresseAuto(document.getElementById('o-adresse'));
   majEquipSummary();
@@ -1941,7 +1991,7 @@ function formDemande(rec){
     <input type="checkbox" id="dt-${k}" ${(rec.types_bien||[]).includes(k)?'checked':''} style="width:auto;flex:none;margin:0"> <span>${l}</span></label>`).join('');
   const corps=`<div class="form-grid">
     ${fAgent('d-agent',rec.agent)}
-    <div class="f full"><label>Client</label><select id="d-client">${optClients(rec.client_id)}</select></div>
+    ${fCombo('d-client','Client',labelClient(rec.client_id),rec.client_id,{placeholder:'Tapez un nom de client…',creerBtn:'creerClientRapide'})}
     ${fSel('d-trans','Transaction',rec.transaction||'achat',[['achat','Achat'],['location','Location'],['les_deux','Les deux']])}
     ${fSel('d-statut','Statut',rec.statut||'active',[['active','Active'],['cloturee','Clôturée']])}
     <div class="f full"><label>Type(s) de bien recherché(s)</label><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:2px">${typesChecks}</div></div>
@@ -1978,6 +2028,7 @@ function formDemande(rec){
     rec.id ? async()=>{ await sb.from('demande_localites').delete().eq('demande_id', rec.id); await sb.from('actions').delete().eq('cible_type','demande').eq('cible_id',rec.id); await del('demandes', rec.id); vueDemandes(); } : null,
     'demande:'+(rec.id||'new'),
     rec.id ? {archived:!!rec.archive, toggle:async()=>{ await save('demandes', rec.id, {archive:!rec.archive}); vueDemandes(); }} : null);
+  brancherCombo(document.getElementById('d-client'), ()=>CLIENTS, nomClient, c=>c.id);
   const locsInit = (rec.demande_localites && rec.demande_localites.length)
     ? rec.demande_localites
     : [{ville:'', code_postal:''}];   // nouvelle demande : un champ ville vide (plus de métropole pré-cochée)
@@ -2026,7 +2077,9 @@ function viderMetro(){
   majMetroChips(); draftCollect(CURRENT_FORM_KEY);
 }
 async function saveDemande(rec){
-  const payload={ agent:radioVal('d-agent')||ME_AGENT, client_id:val('d-client'), transaction:val('d-trans'), statut:val('d-statut'),
+  const payload={ agent:radioVal('d-agent')||ME_AGENT,
+    client_id:exigerCombo('d-client','Sélectionnez le client dans la liste (ou cliquez sur « + Nouveau ») avant d’enregistrer.'),
+    transaction:val('d-trans'), statut:val('d-statut'),
     surface_min_m2:numVal('d-smin'), surface_max_m2:numVal('d-smax'), budget_max:numVal('d-budget'),
     tolerance_budget_pct:numVal('d-tolb')??15, tolerance_surface_pct:numVal('d-tols')??15, urgence:val('d-urgence'),
     types_bien: Object.keys(LABELS).filter(k=>document.getElementById('dt-'+k).checked),
@@ -2055,8 +2108,8 @@ async function editMandat(id){ await Promise.all([chargerClients(),chargerOffres
 function formMandat(rec){
   rec=rec||{};
   const corps=`<div class="form-grid">
-    <div class="f full"><label>Bien (offre)</label><select id="m-offre">${optOffres(rec.offre_id)}</select></div>
-    <div class="f full"><label>Client mandant</label><select id="m-client">${optClients(rec.client_id)}</select></div>
+    ${fCombo('m-offre','Bien (offre)',labelOffreParId(rec.offre_id),rec.offre_id,{placeholder:'Tapez une référence ou un titre…'})}
+    ${fCombo('m-client','Client mandant',labelClient(rec.client_id),rec.client_id,{placeholder:'Tapez un nom de client…',creerBtn:'creerClientRapide'})}
     ${fSel('m-type','Type de mandat',rec.type_mandat||'vente',[['vente','Vente'],['location','Location']])}
     ${fSel('m-excl','Exclusivité',rec.exclusivite||'simple',[['simple','Simple'],['exclusif','Exclusif']])}
     ${fText('m-debut','Date de début',rec.date_debut,{type:'date'})}
@@ -2066,11 +2119,16 @@ function formMandat(rec){
     ${fSel('m-statut','Statut',rec.statut||'actif',[['actif','Actif'],['expire','Expiré'],['abouti','Abouti']])}
   </div>`;
   ouvrirForm(rec.id?'Modifier le mandat':'Nouveau mandat', corps, async()=>{
-    await save('mandats', rec.id, { offre_id:val('m-offre'), client_id:val('m-client'), type_mandat:val('m-type'),
+    await save('mandats', rec.id, {
+      offre_id:exigerCombo('m-offre','Sélectionnez le bien dans la liste avant d’enregistrer.'),
+      client_id:exigerCombo('m-client','Sélectionnez le client dans la liste (ou cliquez sur « + Nouveau ») avant d’enregistrer.'),
+      type_mandat:val('m-type'),
       exclusivite:val('m-excl'), date_debut:val('m-debut'), date_fin:val('m-fin'), duree_mois:numVal('m-duree'),
       commission:val('m-comm'), statut:val('m-statut') });
     vueMandats();
   }, rec.id ? async()=>{ await del('mandats', rec.id); vueMandats(); } : null, 'mandat:'+(rec.id||'new'));
+  brancherCombo(document.getElementById('m-offre'), ()=>OFFRES_LISTE, labelOffre, o=>o.id);
+  brancherCombo(document.getElementById('m-client'), ()=>CLIENTS, nomClient, c=>c.id);
   draftApply('mandat:'+(rec.id||'new'));
 }
 
@@ -2083,7 +2141,7 @@ init();
 <script src="dossier.js?v=11"></script>
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=2"></script>
-<script src="facture.js?v=2"></script>
-<script src="loi.js?v=4"></script>
+<script src="facture.js?v=3"></script>
+<script src="loi.js?v=7"></script>
 </body>
 </html>
