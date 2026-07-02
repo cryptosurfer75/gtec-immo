@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>GTEC Immobilier — Générateur de mandats</title>
 <style>
   :root{
@@ -120,32 +123,40 @@
       <summary>Voir / modifier les informations de l'agence</summary>
       <label>Dénomination</label><input id="gtecNom" value="GTEC IMMOBILIER">
       <div class="row">
-        <div><label>Forme juridique</label><input id="gtecForme" placeholder="SAS"></div>
-        <div><label>Capital (€)</label><input id="gtecCapital" placeholder="ex : 5 000"></div>
+        <div><label>Forme juridique</label><input id="gtecForme" value="SAS"></div>
+        <div><label>Capital (€)</label><input id="gtecCapital" value="1 000"></div>
       </div>
-      <label>Siège social</label><input id="gtecSiege" placeholder="adresse complète">
+      <label>Siège social</label><input id="gtecSiege" value="2 rue Delambre, 80000 Amiens">
       <div class="row">
-        <div><label>RCS — ville</label><input id="gtecRcsVille" placeholder="Amiens"></div>
-        <div><label>RCS — n°</label><input id="gtecRcs" placeholder="n° SIREN"></div>
-      </div>
-      <div class="row">
-        <div><label>Carte pro CPI n°</label><input id="gtecCarte" placeholder="CPI ……"></div>
-        <div><label>Délivrée par</label><input id="gtecCci" placeholder="CCI d'Amiens"></div>
+        <div><label>RCS — ville</label><input id="gtecRcsVille" value="Amiens"></div>
+        <div><label>RCS — n°</label><input id="gtecRcs" value="100 619 535"></div>
       </div>
       <div class="row">
-        <div><label>N° TVA</label><input id="gtecTva" placeholder="FR…"></div>
-        <div><label>Garantie financière (organisme)</label><input id="gtecGarant" placeholder="GALIAN…"></div>
+        <div><label>Carte pro CPI n°</label><input id="gtecCarte" value="80012026000000003"></div>
+        <div><label>Délivrée par</label><input id="gtecCci" value="CCI Amiens-Picardie"></div>
       </div>
       <div class="row">
-        <div><label>Garantie — siège</label><input id="gtecGarantSiege" placeholder="adresse"></div>
-        <div><label>Garantie — n°</label><input id="gtecGarantNum" placeholder="GF…"></div>
+        <div><label>N° TVA</label><input id="gtecTva" value="FR49100619535"></div>
+        <div><label>Détention de fonds</label>
+          <select id="gtecRegime" onchange="toggleGtecRegime()">
+            <option value="non">Non détention de fonds (mention actuelle de la carte CPI)</option>
+            <option value="oui">Garantie financière souscrite</option>
+          </select>
+        </div>
+      </div>
+      <div id="grpGarantie" style="display:none">
+        <div class="row">
+          <div><label>Garantie financière (organisme)</label><input id="gtecGarant" placeholder="GALIAN…"></div>
+          <div><label>Garantie — n°</label><input id="gtecGarantNum" placeholder="GF…"></div>
+        </div>
+        <label>Garantie — siège</label><input id="gtecGarantSiege" placeholder="adresse">
       </div>
       <div class="row">
-        <div><label>Représentée par</label><input id="gtecRep" placeholder="Nom du dirigeant"></div>
+        <div><label>Représentée par</label><input id="gtecRep" value="Maxime LEGRAND"></div>
         <div><label>En qualité de</label><input id="gtecQualite" value="Président"></div>
       </div>
       <label>Médiateur de la consommation (Art. 15)</label><input id="mediateur" placeholder="Nom + coordonnées du médiateur">
-      <p class="hint">Ces champs sont mémorisés dans ce navigateur : à saisir une seule fois.</p>
+      <p class="hint">Ces champs sont mémorisés dans ce navigateur : à saisir une seule fois. Identité GTEC recoupée avec le registre officiel des entreprises (SIREN 100 619 535) le 02/07/2026 — vérifie « Délivrée par » et le régime de détention de fonds avant signature.</p>
     </details>
 
     <h2 class="section">Le Mandant (propriétaire)</h2>
@@ -280,7 +291,7 @@
 
 <script>
 // -------- mémorisation des infos GTEC --------
-const memFields=['gtecNom','gtecForme','gtecCapital','gtecSiege','gtecRcsVille','gtecRcs','gtecCarte','gtecCci','gtecTva','gtecGarant','gtecGarantSiege','gtecGarantNum','gtecRep','gtecQualite','mediateur','lieuSignature'];
+const memFields=['gtecNom','gtecForme','gtecCapital','gtecSiege','gtecRcsVille','gtecRcs','gtecCarte','gtecCci','gtecTva','gtecRegime','gtecGarant','gtecGarantSiege','gtecGarantNum','gtecRep','gtecQualite','mediateur','lieuSignature'];
 // localStorage peut être interdit en file:// (Safari, Chrome strict) → on protège : une erreur ici ne doit jamais casser le reste du script.
 function loadMem(){try{memFields.forEach(id=>{const v=localStorage.getItem('gtec_'+id);if(v!==null&&document.getElementById(id))document.getElementById(id).value=v;});}catch(e){}}
 function saveMem(){try{memFields.forEach(id=>{const el=document.getElementById(id);if(el)localStorage.setItem('gtec_'+id,el.value);});}catch(e){}}
@@ -289,6 +300,12 @@ loadMem();
 // À REMPLACER par celui auquel GTEC a réellement adhéré, le cas échéant — le champ est mémorisé une fois saisi.
 const DEFAULT_MEDIATEUR = "MEDIMMOCONSO — Médiateur de la consommation de l'immobilier — Saisine en ligne : www.medimmoconso.fr — contact@medimmoconso.fr";
 (function(){ const el=document.getElementById('mediateur'); if(el && !el.value.trim()) el.value = DEFAULT_MEDIATEUR; })();
+
+function toggleGtecRegime(){
+  const el=document.getElementById('gtecRegime');
+  document.getElementById('grpGarantie').style.display = (el && el.value==='oui') ? 'block' : 'none';
+}
+toggleGtecRegime();
 
 function toggleType(){
   const t=document.getElementById('typeMandat').value;
@@ -463,7 +480,11 @@ function generer(){
   const gtecCoord = [F('gtecNom','agence'), V('gtecSiege')?escapeHtml(V('gtecSiege')):'', V('gtecCarte')?'CPI '+escapeHtml(V('gtecCarte')):'', V('gtecTva')?'TVA '+escapeHtml(V('gtecTva')):''].filter(Boolean).join('<br>');
 
   // ---- partie MANDATAIRE ----
-  const mandataire = `<strong>${F('gtecNom','GTEC IMMOBILIER')}</strong>, ${F('gtecForme','forme')} au capital de ${F('gtecCapital','capital')} €, dont le siège social est situé ${F('gtecSiege','siège')}, immatriculée au RCS de ${F('gtecRcsVille','ville')} sous le n° ${F('gtecRcs','n° RCS')}, titulaire de la carte professionnelle CPI n° ${F('gtecCarte','n°')} portant la mention « Transactions sur immeubles et fonds de commerce », délivrée par ${F('gtecCci','CCI')}, n° de TVA ${F('gtecTva','n°')}, garantie financière souscrite auprès de ${F('gtecGarant','organisme')} (siège : ${F('gtecGarantSiege','adresse')}) sous le n° ${F('gtecGarantNum','n°')}, déclarant ne pouvoir ni recevoir ni détenir d'autres fonds, effets ou valeurs que ceux représentatifs de sa rémunération, représentée par ${F('gtecRep','nom')} en qualité de ${F('gtecQualite','qualité')}.`;
+  const gtecOui = V('gtecRegime')==='oui';
+  const gtecDetentionClause = gtecOui
+    ? `garantie financière souscrite auprès de ${F('gtecGarant','organisme')} (siège : ${F('gtecGarantSiege','adresse')}) sous le n° ${F('gtecGarantNum','n°')}`
+    : `déclarant ne pouvoir ni recevoir ni détenir aucun fonds, effet ou valeur pour le compte d'autrui`;
+  const mandataire = `<strong>${F('gtecNom','GTEC IMMOBILIER')}</strong>, ${F('gtecForme','forme')} au capital de ${F('gtecCapital','capital')} €, dont le siège social est situé ${F('gtecSiege','siège')}, immatriculée au RCS de ${F('gtecRcsVille','ville')} sous le n° ${F('gtecRcs','n° RCS')}, titulaire de la carte professionnelle CPI n° ${F('gtecCarte','n°')} portant la mention « Transactions sur immeubles et fonds de commerce${gtecOui?'':' – Non détention de fonds'} », délivrée par ${F('gtecCci','CCI')}, n° de TVA ${F('gtecTva','n°')}, ${gtecDetentionClause}, représentée par ${F('gtecRep','nom')} en qualité de ${F('gtecQualite','qualité')}.`;
 
   // ---- partie MANDANT ----
   const mandant = `${F('mandantNom','nom du mandant')}, ${F('mandantForme','forme')}${V('mandantCapital')?' au capital de '+escapeHtml(V('mandantCapital'))+' €':''}, dont le siège social est situé ${F('mandantSiege','siège')}${V('mandantRcs')?', immatriculée au RCS de '+F('mandantRcsVille','ville')+' sous le n° '+escapeHtml(V('mandantRcs')):''}, représenté par ${F('mandantRep','nom')} en qualité de ${F('mandantQualite','qualité')}, dûment habilité aux présentes.`;

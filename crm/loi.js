@@ -70,6 +70,38 @@
   const today = () => new Date().toISOString().slice(0,10);
   const euro2 = n => (n==null||n===''||isNaN(n)) ? '—' : new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' €';
   const fmtDate = d => { if(!d) return '—'; const [y,m,j]=String(d).slice(0,10).split('-'); return `${j}/${m}/${y}`; };
+  const r2 = n => Math.round((Number(n)+Number.EPSILON)*100)/100;
+  const numEl = id => { const el=document.getElementById(id); if(!el || el.value==='') return null; const n=Number(el.value); return isNaN(n)?null:n; };
+
+  /* Retrouve type/pourcentage/forfait à partir du texte honoraires d'une offre
+     (ex. « 10 % HT du montant du loyer annuel hors-taxes, hors charges » ou « Forfait : 5 000 € »). */
+  function parseHonoraires(txt){
+    if(!txt) return { type:'pourcentage', pourcentage:null, forfait:null };
+    const mPct = /^(\d+(?:[.,]\d+)?)\s*%/.exec(txt);
+    if(mPct) return { type:'pourcentage', pourcentage:parseFloat(mPct[1].replace(',','.')), forfait:null };
+    const mForf = /([\d\s]+(?:[.,]\d+)?)\s*€/.exec(txt);
+    if(mForf) return { type:'forfait', pourcentage:null, forfait:parseFloat(mForf[1].replace(/\s/g,'').replace(',','.')) };
+    return { type:'pourcentage', pourcentage:null, forfait:null };
+  }
+  /* Base de calcul des honoraires : loyer annuel HT HC (location) ou prix de vente (acquisition). */
+  function honoBase(){ return ED.type==='acquisition' ? numEl('loi-prix') : numEl('loi-loyer'); }
+  function honoCalc(){
+    const t = document.getElementById('loi-hono-type')?.value;
+    if(t==='forfait') return numEl('loi-hono-forfait');
+    const base = honoBase(), pct = numEl('loi-hono-pct');
+    return (base!=null && pct!=null) ? r2(base*pct/100) : null;
+  }
+  function majHonoType(){
+    const t = document.getElementById('loi-hono-type')?.value;
+    const pct = document.getElementById('loi-hono-pct-wrap'), forf = document.getElementById('loi-hono-forfait-wrap');
+    if(pct) pct.style.display = t==='forfait' ? 'none' : 'flex';
+    if(forf) forf.style.display = t==='forfait' ? 'flex' : 'none';
+  }
+  function majHonoCalc(){
+    const el = document.getElementById('loi-hono-calc'); if(!el) return;
+    const m = honoCalc();
+    el.textContent = m!=null ? 'Soit '+euro2(m)+' HT — '+nombreEnLettres(m).toUpperCase()+' EUROS' : '';
+  }
 
   /* Nombre → lettres (français), pour les mentions légales en toutes lettres. */
   function nombreEnLettres(n){
@@ -253,7 +285,7 @@
   function defaultContenu(type){
     const base = {
       identite_complement:'', mandat_num:'', mandat_date:'', mandat_recherche_num:'', mandat_recherche_date:'',
-      bien_nature:'', bien_adresse:'', bien_superficie:'', bien_destination:'',
+      bien_nature:'', bien_adresse:'', bien_cadastre:'', bien_superficie:'', bien_destination:'',
       occupation:'libre', occ_nom:'', occ_activite:'', occ_enseigne:'', occ_bail_date:'', occ_loyer:'', occ_charges:'',
       proprietaire_nom:'',
       financement_type:'pret', fin_montant_min:null, fin_montant_max:null, fin_taux_min:null, fin_taux_max:null, fin_apport:null,
@@ -280,7 +312,7 @@
     injecterCss();
     let l;
     if(id){ try{ l = await charger(id); }catch(e){ alert('Chargement impossible : '+(e.message||e)); return; } }
-    else l = { type:ED.type, statut:'brouillon', date_offre:today(), duree_validite_jours:15, lieu_signature:AGENCE.ville, contenu:defaultContenu(ED.type) };
+    else l = { type:ED.type, statut:'brouillon', date_offre:today(), duree_validite_jours:15, lieu_signature:'', contenu:defaultContenu(ED.type) };
     ED = { id:id||null, type:l.type };
     const c = { ...defaultContenu(l.type), ...(l.contenu||{}) };
     const voc = vocab(l.type);
@@ -337,6 +369,7 @@
             ${champ('Nature du bien', iTxt('loi-bien-nature', c.bien_nature))}
             ${champ('Superficie', iTxt('loi-bien-superficie', c.bien_superficie))}
             ${champ('Adresse du bien', iTxt('loi-bien-adresse', c.bien_adresse), true)}
+            ${champ('Référence(s) cadastrale(s)', iTxt('loi-bien-cadastre', c.bien_cadastre), true)}
             ${champ('Destination des locaux', iTxt('loi-bien-destination', c.bien_destination), true)}
             ${champ('Propriétaire du bien', iTxt('loi-proprietaire', c.proprietaire_nom))}
             ${champ('Occupation actuelle', iSel('loi-occupation', c.occupation, [['libre','Libre de toute occupation'],['occupee','Occupé']]))}
@@ -357,7 +390,7 @@
             ${champ('Apport (€, 0 = sans apport)', iNum('loi-fin-apport', c.fin_apport))}
 
             <div class="loi-sep">Conditions particulières</div>
-            ${champ('Une par ligne', iTa('loi-particulieres', c.conditions_particulieres, 3), true)}
+            ${champ('Vous pouvez tout saisir librement — une ligne = un point. Laissez vide si aucune (n’apparaîtra pas sur le document).', iTa('loi-particulieres', c.conditions_particulieres, 4), true)}
 
             <div class="loi-sep">Pouvoirs du mandataire</div>
             ${champ(voc.mandatMandant.charAt(0).toUpperCase()+voc.mandatMandant.slice(1)+' — n°', iTxt('loi-mandat-num', c.mandat_num))}
@@ -366,12 +399,12 @@
             ${champ(voc.mandatClient.charAt(0).toUpperCase()+voc.mandatClient.slice(1)+' — date', iDate('loi-mandat-rech-date', c.mandat_recherche_date))}
 
             <div class="loi-sep">Rémunération du mandataire</div>
-            ${champ('Honoraires', iTxt('loi-hono-texte', c.honoraires_texte), true)}
+            ${champ('Mode de calcul', `<select id="loi-hono-type"><option value="pourcentage" ${c.honoraires_type!=='forfait'?'selected':''}>Pourcentage du ${l.type==='acquisition'?'prix de vente':'loyer annuel'} HT</option><option value="forfait" ${c.honoraires_type==='forfait'?'selected':''}>Montant forfaitaire</option></select>`)}
             ${champ('À la charge de', iSel('loi-hono-charge', c.honoraires_charge, [['preneur_acquereur',voc.client],['bailleur_vendeur',voc.contrepartie]]))}
+            <div class="f" id="loi-hono-pct-wrap" style="display:${c.honoraires_type==='forfait'?'none':'flex'}"><label>Pourcentage (%)</label>${iNum('loi-hono-pct', c.honoraires_pourcentage)}</div>
+            <div class="f" id="loi-hono-forfait-wrap" style="display:${c.honoraires_type==='forfait'?'flex':'none'}"><label>Montant forfaitaire HT (€)</label>${iNum('loi-hono-forfait', c.honoraires_forfait)}</div>
+            <div class="f full" id="loi-hono-calc" style="font-weight:700;color:#2E6357"></div>
 
-            <div class="loi-sep">Signature</div>
-            ${champ('Lieu de signature', iTxt('loi-lieu-signature', l.lieu_signature||AGENCE.ville))}
-            ${champ('Date de signature (si déjà signée)', iDate('loi-date-signature', l.date_signature))}
           </div>
         </div>
         <div class="foot">
@@ -383,6 +416,13 @@
           </span>
         </div>
       </div></div>`;
+
+    ['loi-loyer','loi-prix','loi-hono-pct','loi-hono-forfait'].forEach(fid=>{
+      const el = document.getElementById(fid); if(el) el.addEventListener('input', majHonoCalc);
+    });
+    const htSel = document.getElementById('loi-hono-type');
+    if(htSel) htSel.addEventListener('change', ()=>{ majHonoType(); majHonoCalc(); });
+    majHonoType(); majHonoCalc();
   }
 
   function pickOffre(){
@@ -402,8 +442,12 @@
       set('loi-regime', o.regime_fiscal);
       set('loi-depot', o.depot_garantie);
     }
-    set('loi-hono-texte', o.honoraires);
+    const h = parseHonoraires(o.honoraires);
+    const htSel = document.getElementById('loi-hono-type'); if(htSel) htSel.value = h.type;
+    set('loi-hono-pct', h.pourcentage);
+    set('loi-hono-forfait', h.forfait);
     set('loi-hono-charge', o.honoraires_charge);
+    majHonoType(); majHonoCalc();
     const proprio = (window.CLIENTS||CLIENTS||[]).find(c=>String(c.id)===String(o.client_id));
     if(proprio) set('loi-proprietaire', nomClient(proprio));
     const m = MANDATS.find(x=>String(x.offre_id)===String(o.id) && x.type_mandat===(ED.type==='acquisition'?'vente':'location'));
@@ -431,7 +475,7 @@
 
       const contenu = {
         identite_complement: g('loi-identite'),
-        bien_nature: g('loi-bien-nature'), bien_adresse: g('loi-bien-adresse'),
+        bien_nature: g('loi-bien-nature'), bien_adresse: g('loi-bien-adresse'), bien_cadastre: g('loi-bien-cadastre'),
         bien_superficie: g('loi-bien-superficie'), bien_destination: g('loi-bien-destination'),
         proprietaire_nom: g('loi-proprietaire'),
         occupation: g('loi-occupation')||'libre', occ_nom: g('loi-occ-nom'), occ_activite: g('loi-occ-activite'),
@@ -443,7 +487,8 @@
         date_limite_pret: g('loi-date-pret'),
         mandat_num: g('loi-mandat-num'), mandat_date: g('loi-mandat-date'),
         mandat_recherche_num: g('loi-mandat-rech-num'), mandat_recherche_date: g('loi-mandat-rech-date'),
-        honoraires_texte: g('loi-hono-texte'), honoraires_charge: g('loi-hono-charge')||'preneur_acquereur'
+        honoraires_type: g('loi-hono-type')||'pourcentage', honoraires_pourcentage: gn('loi-hono-pct'),
+        honoraires_forfait: gn('loi-hono-forfait'), honoraires_charge: g('loi-hono-charge')||'preneur_acquereur'
       };
       if(ED.type==='acquisition'){
         Object.assign(contenu, {
@@ -469,8 +514,8 @@
         statut: g('loi-statut')||'brouillon',
         date_offre: g('loi-date-offre')||today(),
         duree_validite_jours: gn('loi-duree')||15,
-        lieu_signature: g('loi-lieu-signature')||AGENCE.ville,
-        date_signature: g('loi-date-signature')||null,
+        lieu_signature: null,
+        date_signature: null,
         contenu, agent: ME_AGENT||null
       };
 
@@ -573,7 +618,15 @@
     const dureeValidite = l.duree_validite_jours!=null ? l.duree_validite_jours : 15;
     const dateFinValidite = (() => { if(!l.date_offre) return null; const d=new Date(l.date_offre); d.setDate(d.getDate()+dureeValidite); return d.toISOString().slice(0,10); })();
 
-    const remuneration = `<p>Sous réserve que le ou les ${voc.contrepartie.toLowerCase()}s acceptent la présente offre, ${esc(ag.raison_sociale)} aura droit, après réalisation des conditions suspensives, à une rémunération de <b>${esc(c.honoraires_texte||'—')}</b>, à la charge ${c.honoraires_charge==='bailleur_vendeur'?'du '+voc.contrepartie.toLowerCase():'du '+voc.client.toLowerCase()}. Cette rémunération sera payable le jour de la signature de l’acte constatant l’accord des parties.</p>`;
+    const baseHono = l.type==='acquisition' ? c.prix_offre : c.loyer_annuel;
+    const baseLabel = l.type==='acquisition' ? 'prix de vente HT de base' : 'loyer annuel HT de base';
+    const montantHono = c.honoraires_type==='forfait'
+      ? c.honoraires_forfait
+      : (baseHono!=null && c.honoraires_pourcentage!=null ? Math.round(baseHono*c.honoraires_pourcentage/100*100)/100 : null);
+    const honoDetail = c.honoraires_type==='forfait'
+      ? `un montant forfaitaire de <b>${euro2(montantHono)}</b> HT (${nombreEnLettres(montantHono).toUpperCase()} EUROS)`
+      : `<b>${c.honoraires_pourcentage!=null?c.honoraires_pourcentage:'—'} %</b> HT (${c.honoraires_pourcentage!=null?nombreEnLettres(c.honoraires_pourcentage).toUpperCase():'—'} POUR CENT HT) du ${baseLabel}, soit <b>${euro2(montantHono)}</b> HT (${nombreEnLettres(montantHono).toUpperCase()} EUROS)`;
+    const remuneration = `<p>Sous réserve que le ou les ${voc.contrepartie.toLowerCase()}s acceptent la présente offre, ${esc(ag.raison_sociale)} aura droit, après réalisation des conditions suspensives, à une rémunération de ${honoDetail}, à la charge ${c.honoraires_charge==='bailleur_vendeur'?'du '+voc.contrepartie.toLowerCase():'du '+voc.client.toLowerCase()}. Cette rémunération sera payable le jour de la signature de l’acte constatant l’accord des parties.</p>`;
 
     const pouvoirs = `<ul class="loi-list">
         <li>D’un ${voc.mandatMandant} donné par le mandant, enregistré sous le numéro ${esc(c.mandat_num||'—')}, en date du ${fmtDate(c.mandat_date)}.</li>
@@ -595,48 +648,94 @@
 
     const styles = `
       :root{--navy:#1A2738;--teal:#3D8074}
-      *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659;font-size:12.5px}
-      .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);padding:16mm 16mm 22mm}
-      .head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid var(--navy);padding-bottom:12px}
-      .head img{height:16mm}
-      .head .titleblk{text-align:right}
-      .head h1{margin:0;font-size:20px;color:var(--navy);letter-spacing:.5px}
-      .head .ref{font-size:11px;color:#5a6b75;margin-top:4px}
-      .adr-block{display:flex;justify-content:space-between;gap:24px;margin-top:16px;font-size:11.5px;line-height:1.6}
-      .adr-block .who{color:var(--teal);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
-      h2{font-size:13.5px;color:var(--navy);border-bottom:1.5px solid #dbe2e4;padding-bottom:4px;margin:20px 0 8px}
-      h3{font-size:12px;color:var(--teal);margin:12px 0 5px}
-      p{margin:6px 0;line-height:1.55;text-align:justify}
-      .loi-list{margin:6px 0;padding-left:20px} .loi-list li{margin:4px 0;line-height:1.5}
-      .body-open{font-size:11.5px;line-height:1.6}
-      .foot-legal{position:absolute;left:16mm;right:16mm;bottom:9mm;font-size:7.5px;color:#8a8a8a;line-height:1.5;text-align:center}
-      .sign{display:flex;justify-content:space-between;gap:24px;margin-top:24px;page-break-inside:avoid}
-      .sign .col{width:48%;text-align:center}
-      .sign .fait{font-size:11px;color:#33414b;margin-bottom:10px}
-      .sign .mention{font-size:9.5px;color:#44535c;font-style:italic;margin-bottom:10px;line-height:1.4}
-      .sign .box{border:1.2px solid #b9c3c8;border-radius:6px;height:110px}
-      .sign .who{font-weight:700;color:var(--navy);margin-top:6px}
+      *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659;font-size:14px}
+      .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);overflow:hidden}
+      .title-bar{position:relative;background:var(--navy);color:#fff;text-align:center;padding:26px 24px 32px;overflow:hidden}
+      .title-bar .wave{position:absolute;left:0;bottom:0;width:100%;height:36px;z-index:0}
+      .title-bar-fg{position:relative;z-index:1}
+      .title-bar h1{margin:0;font-size:23px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase}
+      .title-bar .accent{display:block;width:64px;height:4px;background:#fff;opacity:.6;margin:12px auto 0;border-radius:2px}
+      .meta-row{text-align:center;font-size:12px;color:#5a6b75;padding:12px 20mm 0}
+      .meta-row b{color:var(--navy)}
+      .content{padding:0 20mm 30mm}
+      .head-row{position:relative;margin-top:22px;background:#F4F6F7;border:1.5px solid #e3e8ea;border-radius:12px;padding:20px 24px;overflow:hidden}
+      .head-row .wave{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0}
+      .head-row-fg{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+      .brand{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+      .brand .logo{height:20mm;width:auto;display:block}
+      .brand .tl{font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--teal);font-weight:600}
+      .coord{text-align:right;font-size:12.5px;line-height:1.75;color:#33414b}
+      .coord b{color:var(--navy);font-size:13.5px}
+      .client-block{margin-top:24px;font-size:13.5px;line-height:1.8;background:#f4f6f7;border-left:4px solid var(--teal);padding:16px 20px;border-radius:4px}
+      .client-block .who{color:var(--teal);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+      .body-open{font-size:13.5px;line-height:1.8;margin-top:22px}
+      h2{font-size:16.5px;color:var(--navy);border-bottom:2px solid var(--teal);padding-bottom:7px;margin:34px 0 14px;page-break-after:avoid}
+      h3{font-size:14px;color:var(--teal);margin:20px 0 9px;page-break-after:avoid}
+      p{margin:10px 0;line-height:1.8;text-align:justify;font-size:13.5px}
+      .loi-list{margin:10px 0;padding-left:24px} .loi-list li{margin:8px 0;line-height:1.7;font-size:13.5px}
+      .foot-bar{position:relative;background:var(--navy);color:#c5cfdb;padding:24px 20mm 16px;font-size:9px;line-height:1.7;text-align:center;margin-top:36px;overflow:hidden}
+      .foot-bar .wave{position:absolute;left:0;top:0;width:100%;height:30px;z-index:0}
+      .foot-bar-fg{position:relative;z-index:1}
+      .fait-line{margin-top:44px;font-size:14px;color:#33414b;text-align:center}
+      .fait-line .blank{display:inline-block;border-bottom:1px dotted #8a98a0;height:1.3em;vertical-align:text-bottom}
+      .fait-line .blank-ville{width:60mm}
+      .fait-line .blank-date{width:44mm}
+      .foot{display:flex;justify-content:space-between;gap:36px;margin-top:26px;padding:0 8mm;page-break-inside:avoid}
+      .sign{width:46%;text-align:center}
+      .sign .sg-note{font-size:12px;color:#33414b;font-weight:500;margin-bottom:14px;line-height:1.6;font-style:italic}
+      .sign .sign-space{height:230px}
+      .sign .line{border-top:1.5px solid #b9c3c8;width:85%;margin:0 auto 8px}
+      .sign .sg{font-weight:700;color:var(--navy);font-size:13.5px}
       @media print{ body{background:#fff} .noprint{display:none!important} .sheet{margin:0;box-shadow:none;width:auto;min-height:0} @page{size:A4;margin:0} }
-      @media screen and (max-width:760px){ body{background:#fff} .sheet{width:auto;margin:0;padding:16px;box-shadow:none} .adr-block{flex-direction:column;gap:10px} .sign{flex-direction:column} .sign .col{width:100%} }`;
+      @media screen and (max-width:760px){
+        body{background:#fff}
+        .sheet{width:auto;min-height:0;margin:0;box-shadow:none}
+        .content{padding:0 16px 60px}
+        .head-row-fg{flex-direction:column;gap:16px} .coord{text-align:left}
+        .foot{flex-direction:column;gap:22px;padding:0} .sign{width:100%}
+      }`;
 
     return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(voc.titreDoc+' '+ref)} — GTEC</title><style>${styles}</style></head>
       <body>${toolbar}<div class="sheet">
-        <div class="head">
-          <img src="${LOGO}" alt="${esc(ag.raison_sociale)}">
-          <div class="titleblk"><h1>${voc.titreDoc}</h1><div class="ref">N° ${esc(ref)} · ${fmtDate(l.date_offre)}${dateFinValidite?' · valable jusqu’au '+fmtDate(dateFinValidite):''}</div></div>
+        <div class="title-bar">
+          <svg class="wave" viewBox="0 0 800 60" preserveAspectRatio="none"><path d="M0,60 H800 V20 C650,45 550,5 400,30 C250,55 150,10 0,35 Z" fill="#3D8074" opacity=".55"/></svg>
+          <div class="title-bar-fg"><h1>${voc.titreDoc}</h1><span class="accent"></span></div>
+        </div>
+        <div class="meta-row">N° <b>${esc(ref)}</b> · émise le ${fmtDate(l.date_offre)}${dateFinValidite?` · valable jusqu’au <b>${fmtDate(dateFinValidite)}</b>`:''}</div>
+
+        <div class="content">
+        <div class="head-row">
+          <svg class="wave" viewBox="0 0 800 200" preserveAspectRatio="none">
+            <path d="M800,0 H480 C640,45 740,130 800,95 Z" fill="#1A2738" opacity=".07"/>
+            <path d="M0,200 H280 C140,155 40,85 0,115 Z" fill="#3D8074" opacity=".1"/>
+          </svg>
+          <div class="head-row-fg">
+          <div class="brand">
+            <img class="logo" src="${LOGO}" alt="${esc(ag.raison_sociale)}">
+            <div class="tl">Immobilier d’entreprise</div>
+          </div>
+          <div class="coord">
+            <b>${esc(ag.raison_sociale)}</b><br>
+            ${esc(ag.forme_juridique)} au capital de ${esc(ag.capital)}<br>
+            ${esc(ag.adresse)}<br>
+            RCS ${esc(ag.rcs)}<br>
+            Carte pro ${esc(ag.carte_pro)}
+          </div>
+          </div>
         </div>
 
-        <div class="adr-block">
-          <div><div class="who">${voc.clientMaj}</div>${identiteCli}</div>
-          <div style="text-align:right"><div class="who">À l’intention de</div>${esc(ag.raison_sociale)}<br>${esc(ag.forme_juridique)} au capital de ${esc(ag.capital)}<br>${esc(ag.adresse)}<br>RCS ${esc(ag.rcs)}<br>Carte pro ${esc(ag.carte_pro)}</div>
+        <div class="client-block">
+          <div class="who">${voc.clientMaj}</div>
+          ${identiteCli}
         </div>
 
-        <p class="body-open" style="margin-top:16px">Je soussigné(e) <b>${esc(cliNom)}</b>, ci-après désigné « le ${voc.client} », déclare avoir visité, par l’intermédiaire de ${esc(ag.raison_sociale)}, le bien ci-après désigné, que je me propose de prendre ${l.type==='acquisition'?'en vue d’achat':'à bail'}, aux conditions arrêtées ci-après.</p>
+        <p class="body-open">Je soussigné(e) <b>${esc(cliNom)}</b>, ci-après désigné « le ${voc.client} », déclare avoir visité, par l’intermédiaire de ${esc(ag.raison_sociale)}, le bien ci-après désigné, que je me propose de prendre ${l.type==='acquisition'?'en vue d’achat':'à bail'}, aux conditions arrêtées ci-après.</p>
 
         <h2>1. Désignation du bien</h2>
         <ul class="loi-list">
           <li>Nature du bien : ${esc(c.bien_nature||'—')}</li>
           <li>Adresse du bien : ${esc(c.bien_adresse||'—')}</li>
+          ${c.bien_cadastre?`<li>Références cadastrales : ${esc(c.bien_cadastre)}</li>`:''}
           <li>Superficie : ${esc(c.bien_superficie||'—')}</li>
           ${c.bien_destination?`<li>Destination des locaux : ${esc(c.bien_destination)}</li>`:''}
         </ul>
@@ -670,22 +769,27 @@
         <h2>5. RGPD</h2>
         <p style="font-size:10px;color:#55626b">${esc(ag.raison_sociale)} met en œuvre des traitements de données à caractère personnel pour assurer la gestion de sa relation contractuelle, le suivi de la transaction et la facturation, ainsi que le respect de ses obligations légales (lutte contre le blanchiment d’argent et le financement du terrorisme). Conformément à la loi n°78-17 du 6 janvier 1978 modifiée et au règlement (UE) 2016/679, ${esc(cliNom)||'l’offrant'} dispose d’un droit d’accès, de rectification, d’effacement, de limitation et de portabilité de ses données, ainsi que du droit de s’opposer au traitement, en s’adressant au responsable du traitement (${esc(ag.raison_sociale)}, ${esc(ag.adresse)}). Il dispose également de la faculté de réclamation auprès de la CNIL.</p>
 
-        <div class="sign">
-          <div class="col">
-            <div class="fait">Fait à ${esc(l.lieu_signature||ag.ville)}, le ${l.date_signature?fmtDate(l.date_signature):'____________'}</div>
-            <div class="mention">Signature précédée de la mention manuscrite :<br>« ${esc(mentionSignature('client'))} »</div>
-            <div class="box"></div>
-            <div class="who">LE ${voc.clientMaj}</div>
+        <div class="fait-line">Fait à <span class="blank blank-ville">&nbsp;</span>, le <span class="blank blank-date">&nbsp;</span> — en deux exemplaires</div>
+        <div class="foot">
+          <div class="sign">
+            <div class="sg-note">Signature précédée de la mention manuscrite :<br>« ${esc(mentionSignature('client'))} »</div>
+            <div class="sign-space"></div>
+            <div class="line"></div>
+            <div class="sg">LE ${voc.clientMaj}</div>
           </div>
-          <div class="col">
-            <div class="fait">En deux exemplaires</div>
-            <div class="mention">Signature précédée de la mention manuscrite :<br>« ${esc(mentionSignature('contrepartie'))} »</div>
-            <div class="box"></div>
-            <div class="who">LE ${voc.contrepartieMaj}</div>
+          <div class="sign">
+            <div class="sg-note">Signature précédée de la mention manuscrite :<br>« ${esc(mentionSignature('contrepartie'))} »</div>
+            <div class="sign-space"></div>
+            <div class="line"></div>
+            <div class="sg">LE ${voc.contrepartieMaj}</div>
           </div>
         </div>
+        </div>
 
-        <div class="foot-legal">${idLine}</div>
+        <div class="foot-bar">
+          <svg class="wave" viewBox="0 0 800 40" preserveAspectRatio="none"><path d="M0,0 H800 V25 C650,5 550,35 400,15 C250,-5 150,30 0,10 Z" fill="#3D8074" opacity=".5"/></svg>
+          <div class="foot-bar-fg">${idLine}</div>
+        </div>
       </div></body></html>`;
   }
 
@@ -698,7 +802,7 @@
       const g = gid => { const el=document.getElementById(gid); return el ? el.value.trim() : ''; };
       const gn = gid => { const el=document.getElementById(gid); if(!el || el.value==='') return null; const n=Number(el.value); return isNaN(n)?null:n; };
       const c = {
-        identite_complement:g('loi-identite'), bien_nature:g('loi-bien-nature'), bien_adresse:g('loi-bien-adresse'),
+        identite_complement:g('loi-identite'), bien_nature:g('loi-bien-nature'), bien_adresse:g('loi-bien-adresse'), bien_cadastre:g('loi-bien-cadastre'),
         bien_superficie:g('loi-bien-superficie'), bien_destination:g('loi-bien-destination'), proprietaire_nom:g('loi-proprietaire'),
         occupation:g('loi-occupation'), occ_nom:g('loi-occ-nom'), occ_activite:g('loi-occ-activite'),
         occ_bail_date:g('loi-occ-date'), occ_loyer:gn('loi-occ-loyer'), occ_charges:gn('loi-occ-charges'),
@@ -707,7 +811,8 @@
         conditions_particulieres:g('loi-particulieres'), date_limite_pret:g('loi-date-pret'),
         mandat_num:g('loi-mandat-num'), mandat_date:g('loi-mandat-date'),
         mandat_recherche_num:g('loi-mandat-rech-num'), mandat_recherche_date:g('loi-mandat-rech-date'),
-        honoraires_texte:g('loi-hono-texte'), honoraires_charge:g('loi-hono-charge'),
+        honoraires_type:g('loi-hono-type'), honoraires_pourcentage:gn('loi-hono-pct'),
+        honoraires_forfait:gn('loi-hono-forfait'), honoraires_charge:g('loi-hono-charge'),
         prix_offre:gn('loi-prix'), entree_jouissance_type:g('loi-entree-type'), loc_nom:g('loi-loc-nom'), loc_bail_date:g('loi-loc-date'),
         notaire_nom:g('loi-notaire-nom'), notaire_adresse:g('loi-notaire-adr'), delai_reiteration:g('loi-delai-reit'),
         date_limite_promesse:g('loi-date-promesse'), date_limite_acte:g('loi-date-acte'),
@@ -718,7 +823,7 @@
       };
       l = { type:ED.type, reference:(id? (LISTE.find(x=>x.id===id)||{}).reference : null),
         clients:cliFull, date_offre:g('loi-date-offre'), duree_validite_jours:gn('loi-duree'),
-        lieu_signature:g('loi-lieu-signature'), date_signature:g('loi-date-signature'), contenu:c };
+        lieu_signature:null, date_signature:null, contenu:c };
     } else {
       if(!id){ alert('Aucune proposition sélectionnée.'); return; }
       try{ l = await charger(id); }catch(e){ alert('Chargement impossible : '+(e.message||e)); return; }
