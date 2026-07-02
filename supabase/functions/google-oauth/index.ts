@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     if (action === "authorize") {
       const url = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
         client_id: CLIENT_ID, redirect_uri: REDIRECT_URI, response_type: "code",
-        scope: SCOPE, access_type: "offline", prompt: "consent",
+        scope: SCOPE, access_type: "offline", prompt: "select_account consent",
       });
       return json({ url });
     }
