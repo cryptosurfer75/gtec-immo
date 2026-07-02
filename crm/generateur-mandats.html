@@ -54,25 +54,31 @@
   .grpVente,.grpLoc{display:none}
 
   /* ----- Document généré ----- */
-  #doc{background:#fff;max-width:820px;margin:0 auto;padding:54px 60px;box-shadow:0 4px 24px rgba(0,0,0,.12);font-size:13px;line-height:1.55;color:#1b1b1b}
-  #doc .docHead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--marine);padding-bottom:14px;margin-bottom:6px}
-  #doc .docHead .brand{font-size:22px;font-weight:800;color:var(--marine)}
-  #doc .docHead .brand span{color:var(--vert)}
-  #doc .docHead .coord{font-size:10.5px;color:#555;text-align:right;line-height:1.4}
-  #doc h1{font-size:17px;text-align:center;color:var(--marine);margin:18px 0 2px;text-transform:uppercase;letter-spacing:.5px}
-  #doc .reg{text-align:center;font-size:11px;color:#555;font-style:italic;margin-bottom:18px}
-  #doc h3{font-size:13px;color:var(--vert);text-transform:uppercase;letter-spacing:.4px;margin:20px 0 6px;border-bottom:1px solid #e3e7ea;padding-bottom:3px}
+  #doc{position:relative;background:#fff;max-width:820px;margin:0 auto;padding:0;box-shadow:0 4px 24px rgba(0,0,0,.12);font-size:13px;line-height:1.55;color:#1b1b1b;font-family:'Inter','Segoe UI',Arial,sans-serif}
+  #doc .deco{position:absolute;left:0;top:0;width:100%;height:92px;pointer-events:none;z-index:0}
+  #doc .deco-b{top:auto;bottom:0}
+  #doc .docBody{position:relative;z-index:1;padding:118px 60px 70px}
+  #doc .docHead{display:flex;justify-content:space-between;align-items:flex-start;min-height:56px;padding-bottom:14px;margin-bottom:4px}
+  #doc .docHead .brand{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+  #doc .docHead .brand img{height:44px;display:block}
+  #doc .docHead .brand .tag{font-size:8.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--vert);font-weight:700;padding-left:1px}
+  #doc .docHead .coord{font-size:10.5px;color:#555;text-align:right;line-height:1.55;padding-top:8px}
+  #doc h1{font-size:19px;text-align:center;color:var(--marine);margin:22px 0 4px;text-transform:uppercase;letter-spacing:1px;font-weight:800}
+  #doc .reg{text-align:center;font-size:10.5px;color:#5a6b75;margin-bottom:20px}
+  #doc h3{font-size:12px;color:#fff;background:var(--marine);text-transform:uppercase;letter-spacing:.4px;margin:22px 0 8px;padding:7px 12px;border-radius:4px}
   #doc h4{font-size:12.5px;color:var(--marine);margin:14px 0 4px}
   #doc p{margin:7px 0;text-align:justify}
   #doc ul{margin:6px 0;padding-left:20px}
   #doc li{margin:4px 0;text-align:justify}
-  #doc .parties{margin:10px 0}
+  #doc .parties{margin:12px 0;padding:12px 14px;border:1px solid #e3e7ea;border-left:4px solid var(--vert);border-radius:6px;background:#fafbfc}
+  #doc .parties strong{color:var(--marine)}
   #doc .center{text-align:center}
   #doc .strong{font-weight:700}
-  #doc .penale{background:#f4f6f8;border-left:4px solid var(--marine);padding:10px 14px;font-weight:600;margin:10px 0}
-  #doc .price{font-size:15px;font-weight:800;color:var(--marine);text-align:center;margin:6px 0}
-  #doc .sign{display:flex;justify-content:space-between;margin-top:30px;gap:40px}
-  #doc .sign .box{flex:1;border-top:1px solid #999;padding-top:6px;font-size:11.5px}
+  #doc .penale{background:#f4f6f8;border-left:4px solid var(--marine);padding:10px 14px;font-weight:600;margin:10px 0;border-radius:0 6px 6px 0}
+  #doc .price{font-size:16px;font-weight:800;color:#fff;background:var(--vert);text-align:center;margin:10px auto;padding:9px 18px;border-radius:6px;width:fit-content}
+  #doc .sign{display:flex;justify-content:space-between;margin-top:34px;gap:40px}
+  #doc .sign .box{flex:1;border:1.5px dashed #c7cfd6;border-radius:8px;padding:12px 14px 46px;font-size:11.5px}
+  #doc .sign .box strong{color:var(--marine)}
   #doc .small{font-size:10.5px;color:#666}
   .placeholder{background:#fff7d6;border-radius:3px;padding:0 3px}
 
@@ -197,7 +203,14 @@
     </select>
     <div class="row">
       <div><label>Surface terrain (m²)</label><input id="bienTerrain" placeholder="ex : 17 554"></div>
-      <div><label>Surface bâtie (m²)</label><input id="bienBati" placeholder="ex : 2 855"></div>
+      <div>
+        <label>Surface bâtie (m²)</label>
+        <input id="bienBati" placeholder="ex : 2 855">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin-top:6px">
+          <input type="checkbox" id="bienBatiValide" checked onchange="generer()" style="width:auto"> Surface connue — l'indiquer dans le mandat
+        </label>
+        <p class="hint">Décoche si c'est juste un bureau/local dans un grand bâtiment dont tu ne connais pas la surface totale — elle n'apparaîtra pas dans le mandat.</p>
+      </div>
     </div>
     <label>Lots / description complémentaire</label><textarea id="bienLots" placeholder="ex : lots 8 et 14, R+1, 225 m² chacun"></textarea>
     <label>Usage des locaux</label><input id="bienUsage" placeholder="bureaux / activité / stockage">
@@ -293,7 +306,7 @@
 // -------- mémorisation des infos GTEC --------
 const memFields=['gtecNom','gtecForme','gtecCapital','gtecSiege','gtecRcsVille','gtecRcs','gtecCarte','gtecCci','gtecTva','gtecRegime','gtecGarant','gtecGarantSiege','gtecGarantNum','gtecRep','gtecQualite','mediateur','lieuSignature'];
 // localStorage peut être interdit en file:// (Safari, Chrome strict) → on protège : une erreur ici ne doit jamais casser le reste du script.
-function loadMem(){try{memFields.forEach(id=>{const v=localStorage.getItem('gtec_'+id);if(v!==null&&document.getElementById(id))document.getElementById(id).value=v;});}catch(e){}}
+function loadMem(){try{memFields.forEach(id=>{const v=localStorage.getItem('gtec_'+id);if(v&&document.getElementById(id))document.getElementById(id).value=v;});}catch(e){}}
 function saveMem(){try{memFields.forEach(id=>{const el=document.getElementById(id);if(el)localStorage.setItem('gtec_'+id,el.value);});}catch(e){}}
 loadMem();
 // Médiateur de la consommation par défaut (organisme national agréé, dédié à l'immobilier).
@@ -490,9 +503,11 @@ function generer(){
   const mandant = `${F('mandantNom','nom du mandant')}, ${F('mandantForme','forme')}${V('mandantCapital')?' au capital de '+escapeHtml(V('mandantCapital'))+' €':''}, dont le siège social est situé ${F('mandantSiege','siège')}${V('mandantRcs')?', immatriculée au RCS de '+F('mandantRcsVille','ville')+' sous le n° '+escapeHtml(V('mandantRcs')):''}, représenté par ${F('mandantRep','nom')} en qualité de ${F('mandantQualite','qualité')}, dûment habilité aux présentes.`;
 
   // ---- ARTICLE 1 désignation ----
+  const batiValide = document.getElementById('bienBatiValide') ? document.getElementById('bienBatiValide').checked : true;
+  const surfaceLigne = 'terrain '+F('bienTerrain','—')+' m² environ'+(batiValide ? ' — surface bâtie '+F('bienBati','—')+' m² environ' : '');
   let art1 = `<p>Le bien objet du présent mandat est situé : <strong>${F('bienAdresse','adresse')}</strong>.</p><ul>`+
     `<li>Nature du bien : ${F('bienNature','nature')}</li>`+
-    `<li>Surface : terrain ${F('bienTerrain','—')} m² environ — surface bâtie ${F('bienBati','—')} m² environ</li>`+
+    `<li>Surface : ${surfaceLigne}</li>`+
     (V('bienLots')?`<li>Lots / description : ${escapeHtml(V('bienLots'))}</li>`:'')+
     `<li>Usage : ${F('bienUsage','usage')}</li>`+
     `<li>Références cadastrales : ${F('bienCadastre','références')}</li></ul>`+
@@ -579,8 +594,14 @@ function generer(){
 
   // ---- assemblage ----
   const html=`
+  <svg class="deco" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M0,0 H470 C300,70 150,210 0,180 Z" fill="#1A2738"/><path d="M0,0 H360 C220,55 110,150 0,128 Z" fill="#3D8074" opacity=".9"/></svg>
+  <svg class="deco deco-b" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M800,300 H330 C500,230 650,90 800,120 Z" fill="#1A2738"/><path d="M800,300 H440 C580,245 690,150 800,172 Z" fill="#3D8074" opacity=".9"/></svg>
+  <div class="docBody">
   <div class="docHead">
-    <div class="brand">GTEC <span>IMMOBILIER</span></div>
+    <div class="brand">
+      <img src="https://gtec-immobilier.fr/logo-gtec-vert.png?v=2" alt="GTEC IMMOBILIER">
+      <span class="tag">Immobilier d'entreprise</span>
+    </div>
     <div class="coord">${gtecCoord}</div>
   </div>
   <h1>${titre}</h1>
@@ -661,6 +682,7 @@ function generer(){
     <div class="box"><strong>LE MANDATAIRE</strong><br><em>« Lu et approuvé — Mandat accepté »</em><br><br>Signature + cachet</div>
   </div>
   <p class="small" style="margin-top:16px">Paraphes en bas de chaque page.</p>
+  </div>
   `;
   document.getElementById('doc').innerHTML=html;
   document.querySelector('.preview').scrollTop=0;
