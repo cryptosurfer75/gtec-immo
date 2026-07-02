@@ -77,8 +77,10 @@
   #doc .penale{background:#f4f6f8;border-left:4px solid var(--marine);padding:10px 14px;font-weight:600;margin:10px 0;border-radius:0 6px 6px 0}
   #doc .price{font-size:16px;font-weight:800;color:#fff;background:var(--vert);text-align:center;margin:10px auto;padding:9px 18px;border-radius:6px;width:fit-content}
   #doc .sign{display:flex;justify-content:space-between;margin-top:34px;gap:40px}
-  #doc .sign .box{flex:1;border:1.5px dashed #c7cfd6;border-radius:8px;padding:12px 14px 46px;font-size:11.5px}
+  #doc .sign .box{flex:1;display:flex;flex-direction:column;min-height:150px;border:1.5px dashed #c7cfd6;border-radius:8px;padding:12px 14px 6px;font-size:11.5px}
   #doc .sign .box strong{color:var(--marine)}
+  #doc .sign .box .who{margin:0}
+  #doc .sign .box .sig-label{margin-top:auto;padding-bottom:6px;color:#8a96a3}
   #doc .small{font-size:10.5px;color:#666}
   .placeholder{background:#fff7d6;border-radius:3px;padding:0 3px}
 
@@ -677,8 +679,8 @@ function generer(){
   En autant d'originaux que de parties ayant un intérêt distinct.</p>
 
   <div class="sign">
-    <div class="box"><strong>LE MANDANT</strong><br><em>« Lu et approuvé — Bon pour mandat »</em><br><br>Signature + cachet</div>
-    <div class="box"><strong>LE MANDATAIRE</strong><br><em>« Lu et approuvé — Mandat accepté »</em><br><br>Signature + cachet</div>
+    <div class="box"><div class="who"><strong>LE MANDANT</strong><br><em>« Lu et approuvé — Bon pour mandat »</em></div><span class="sig-label">Signature + cachet</span></div>
+    <div class="box"><div class="who"><strong>LE MANDATAIRE</strong><br><em>« Lu et approuvé — Mandat accepté »</em></div><span class="sig-label">Signature + cachet</span></div>
   </div>
   <p class="small" style="margin-top:16px">Paraphes en bas de chaque page.</p>
   </div>
