@@ -509,6 +509,7 @@ function ligneOffre(o){
       <td><span title="${o.publie===true?'En ligne — cliquer pour retirer':o.publie===false?'Hors ligne — cliquer pour remettre en ligne':'Non défini — cliquer pour mettre en ligne'}"
         onclick="event.stopPropagation();toggleVitrine('${o.id}',${o.publie===true?'true':o.publie===false?'false':'null'})"
         style="cursor:pointer;display:inline-block;width:13px;height:13px;border-radius:50%;background:${o.publie===true?'var(--teal)':o.publie===false?'#d23f3f':'#fff'};border:1.5px solid ${o.publie===true?'var(--teal-dark)':o.publie===false?'#b3261e':'var(--gris-clair)'};box-shadow:0 0 0 3px ${o.publie===true?'rgba(61,128,116,.22)':o.publie===false?'rgba(210,63,63,.18)':'transparent'}"></span></td>
+      <td style="text-align:center">${window.GTEC_LEBONCOIN?GTEC_LEBONCOIN.badge(o):''}</td>
       <td style="text-align:center;${o.mandat?'':'background:rgba(210,63,63,.07)'}"><input type="checkbox" ${o.mandat?'checked':''}
         onclick="event.stopPropagation();toggleMandat('${o.id}',this.checked)"
         title="${o.mandat?'Mandat présent — cliquer pour décocher':'Mandat manquant — cocher quand le mandat est signé'}"
@@ -542,7 +543,7 @@ function filtrerOffres(q){
   const liste = t ? OFF_LISTE.filter(o=>offreRecherche(o).includes(t)) : OFF_LISTE;
   const tb = document.getElementById('offres-tbody');
   if(tb) tb.innerHTML = liste.length ? liste.map(ligneOffre).join('')
-    : `<tr><td colspan="13" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
+    : `<tr><td colspan="14" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ne correspond à « ${esc(q)} ».</td></tr>`;
   const cnt = document.getElementById('offres-count');
   if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
 }
@@ -554,6 +555,7 @@ async function vueOffres(){
   if(error) return erreur(error);
   OFFRES = data||[];
   OFF_CPT = await compteursActions('offre');
+  if(window.GTEC_LEBONCOIN) await GTEC_LEBONCOIN.chargerLignes();
   renderOffres();
 }
 function setOffType(v){ OFF_TYPE=v; renderOffres(); }
@@ -583,10 +585,10 @@ function renderOffres(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="offres-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${OFF_LISTE.length} résultat${OFF_LISTE.length>1?'s':''}</span>
        </div>
-       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>Mandat</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
+       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Bien</th><th>Catégorie</th><th>Ville</th><th>Surface</th><th>Prix / loyer</th><th>Statut</th><th>En ligne</th><th>leboncoin</th><th>Mandat</th><th>Propriétaire</th><th></th><th>Action</th></tr></thead>
        <tbody id="offres-tbody">${OFF_LISTE.length
           ? OFF_LISTE.map(ligneOffre).join('')
-          : `<tr><td colspan="13" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ${OFF_TYPE?'dans cette catégorie':(OFF_ARCH?'archivé':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
+          : `<tr><td colspan="14" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucun bien ${OFF_TYPE?'dans cette catégorie':(OFF_ARCH?'archivé':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
   C().innerHTML = panel(OFF_ARCH?'Biens archivés':'Tous les biens', `${OFF_LISTE.length} bien(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleOffre()">+ Ajouter un bien</button>
      <button class="btn btn-ghost btn-sm" onclick="OFF_ARCH=!OFF_ARCH;vueOffres()">${OFF_ARCH?'← Biens actifs':'Archivés ('+archivees.length+')'}</button>`);
@@ -1893,6 +1895,7 @@ function formOffre(rec){
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
     ${fCombo('o-client','Client propriétaire',labelClient(rec.client_id),rec.client_id,{placeholder:'Tapez un nom de client…',creerBtn:'creerClientRapide'})}
     ${fCheck('o-pub','Publier sur la vitrine',rec.publie)}
+    ${rec.id ? `<div class="full"><button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_LEBONCOIN.publier('${rec.id}')">📢 Publier / gérer sur leboncoin</button></div>` : ''}
     ${fSep('Photo de couverture (dossier PDF)')}
     <div class="full">
       <input id="o-cover-file" type="file" accept="image/*" onchange="apercuCover()">
@@ -2146,5 +2149,6 @@ init();
 <script src="facture.js?v=3"></script>
 <script src="loi.js?v=7"></script>
 <script src="enseignes.js?v=1"></script>
+<script src="leboncoin.js?v=1"></script>
 </body>
 </html>

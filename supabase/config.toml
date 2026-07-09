@@ -11,3 +11,11 @@ verify_jwt = true
 # Connexion Google Contacts (import carte de visite scannée) : appelée par le CRM (session).
 [functions.google-oauth]
 verify_jwt = true
+
+# Publication d'annonces sur leboncoin (Import API) : appelée par le CRM (session).
+[functions.leboncoin-sync]
+verify_jwt = true
+
+# Réception des statuts asynchrones envoyés par leboncoin (webhook public, pas de session CRM).
+[functions.leboncoin-webhook]
+verify_jwt = false
