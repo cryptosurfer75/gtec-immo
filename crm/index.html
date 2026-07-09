@@ -229,6 +229,7 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
       <a data-vue="avis" onclick="aller('avis')">💶 Avis de valeur</a>
       <a data-vue="factures" onclick="aller('factures')">🧾 Devis / Factures</a>
       <a data-vue="loi" onclick="aller('loi')">✍️ LOI</a>
+      <a data-vue="enseignes" onclick="aller('enseignes')">🤝 Enseignes</a>
     </nav>
     <div class="who">
       <span id="google-statut" class="who-init" onclick="clicStatutGoogle()" style="cursor:pointer;background:var(--gris-bg);color:var(--gris-fonce);font-size:1.1rem" title="Connexion Google Contacts (import carte de visite)">🔗</span>
@@ -261,7 +262,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* Numéro de version affiché discrètement à côté du logo (bandeau du haut) : à incrémenter à chaque modif
    de crm/index.html, pour vérifier en un coup d'œil que tout le monde a bien la même version chargée. */
-const CRM_VERSION = 2;
+const CRM_VERSION = 3;
 document.getElementById('crm-ver').textContent = 'v'+CRM_VERSION;
 
 const LABELS = {bureaux:'Bureaux', local_commercial:'Local commercial', entrepot_logistique:'Entrepôt / Logistique',
@@ -448,11 +449,11 @@ async function clicStatutGoogle(){
 }
 
 /* ===== NAVIGATION ===== */
-const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures', loi:'LOI'};
+const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures', loi:'LOI', enseignes:'Enseignes'};
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>GTEC_ENSEIGNES.vue()}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -1468,7 +1469,7 @@ function formClient(rec, liens){
 
 /* ----- ÉQUIPEMENTS (sélecteur 2 volets) ----- */
 /* Ordre des catégories = ordre d'affichage dans le dossier (EQUIP_LABELS de dossier.js) :
-   structure → toiture → isolation → sol → électricité → chauffage → climatisation → éclairage → parking */
+   structure → toiture → isolation → sol → électricité → chauffage → climatisation → éclairage → ascenseur → parking */
 const EQUIP_CAT = {
   structure:{ label:'Structure du bâtiment', options:['Métallique','Béton','Brique'] },
   toiture:{ label:'Toiture', options:['Bac acier','Tuiles','Toiture-terrasse','Photovoltaïque','Simple peau','Double peau','Fibrociment','Isolé'] },
@@ -1478,6 +1479,7 @@ const EQUIP_CAT = {
   chauffage:{ label:'Chauffage', options:['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes'] },
   climatisation:{ label:'Climatisation', options:['Réversible','Centralisée'] },
   eclairage:{ label:'Éclairage', options:['Led','Néon','Lumière naturelle','Faux plafond'] },
+  ascenseur:{ label:'Ascenseur', options:['Ascenseur','Monte-charge','Accès PMR'] },
   parking:{ label:'Parking', options:['Privatif','Couvert','Extérieur','Borne de recharge','Accès poids lourds'] },
 };
 let EQUIP_SEL = {}, EQUIP_OPEN = null;
@@ -2143,5 +2145,6 @@ init();
 <script src="teams.js?v=2"></script>
 <script src="facture.js?v=3"></script>
 <script src="loi.js?v=7"></script>
+<script src="enseignes.js?v=1"></script>
 </body>
 </html>

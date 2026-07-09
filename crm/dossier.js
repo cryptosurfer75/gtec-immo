@@ -48,8 +48,9 @@
   }
 
   // Libellé + ORDRE d'affichage des catégories d'équipement, cohérent avec la lecture
-  // du bâtiment (du gros œuvre vers les aménagements). Cet ordre fait foi partout
-  // dans le dossier (page Équipements). L'ordre des clés ci-dessous = l'ordre affiché.
+  // du bâtiment (du gros œuvre vers les aménagements, ascenseur puis parking en dernier).
+  // Cet ordre fait foi partout dans le dossier (page Équipements). L'ordre des clés
+  // ci-dessous = l'ordre affiché.
   const EQUIP_LABELS = {
     structure:'Structure du bâtiment',
     toiture:'Toiture',
@@ -59,6 +60,7 @@
     chauffage:'Chauffage',
     climatisation:'Climatisation',
     eclairage:'Éclairage',
+    ascenseur:'Ascenseur',
     parking:'Parking'
   };
   // Regroupe les équipements (objet {catégorie:[items]}) en lignes « Catégorie : valeurs »

@@ -56,8 +56,8 @@
   /* ----- Document généré ----- */
   #doc{position:relative;background:#fff;max-width:820px;margin:0 auto;padding:0;box-shadow:0 4px 24px rgba(0,0,0,.12);font-size:13px;line-height:1.55;color:#1b1b1b;font-family:'Inter','Segoe UI',Arial,sans-serif}
   #doc .deco{position:absolute;left:0;top:0;width:100%;height:92px;pointer-events:none;z-index:0}
-  #doc .deco-b{top:auto;bottom:0}
   #doc .docBody{position:relative;z-index:1;padding:118px 60px 70px}
+  #doc .closingWave{display:block;width:100%;height:92px;margin-top:28px;pointer-events:none}
   #doc .docHead{display:flex;justify-content:space-between;align-items:flex-start;min-height:56px;padding-bottom:14px;margin-bottom:4px}
   #doc .docHead .brand{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
   #doc .docHead .brand img{height:44px;display:block}
@@ -85,12 +85,14 @@
   .placeholder{background:#fff7d6;border-radius:3px;padding:0 3px}
 
   @media print{
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
     body{background:#fff}
     header.app,.panel,.preview .toolbar{display:none!important}
     .preview{padding:0;height:auto;overflow:visible;background:#fff}
     .wrap{display:block}
     #doc{box-shadow:none;max-width:none;margin:0;padding:0}
     #doc h3{break-after:avoid}
+    #doc .closing{break-inside:avoid}
     @page{margin:18mm 16mm}
   }
   .toolbar{background:#fff;border:1px solid var(--bord);border-radius:8px;padding:12px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
@@ -596,7 +598,6 @@ function generer(){
   // ---- assemblage ----
   const html=`
   <svg class="deco" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M0,0 H470 C300,70 150,210 0,180 Z" fill="#1A2738"/><path d="M0,0 H360 C220,55 110,150 0,128 Z" fill="#3D8074" opacity=".9"/></svg>
-  <svg class="deco deco-b" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M800,300 H330 C500,230 650,90 800,120 Z" fill="#1A2738"/><path d="M800,300 H440 C580,245 690,150 800,172 Z" fill="#3D8074" opacity=".9"/></svg>
   <div class="docBody">
   <div class="docHead">
     <div class="brand">
@@ -675,6 +676,7 @@ function generer(){
   <h3>Article 17 — Élection de domicile</h3>
   <p>Les parties font élection de domicile à leurs adresses respectives indiquées en tête du présent mandat.</p>
 
+  <div class="closing">
   <p style="margin-top:18px"><strong>Fait à ${F('lieuSignature','—')}, le ${frDate(V('dateSignature'))}</strong><br>
   En autant d'originaux que de parties ayant un intérêt distinct.</p>
 
@@ -683,6 +685,8 @@ function generer(){
     <div class="box"><div class="who"><strong>LE MANDATAIRE</strong><br><em>« Lu et approuvé — Mandat accepté »</em></div><span class="sig-label">Signature + cachet</span></div>
   </div>
   <p class="small" style="margin-top:16px">Paraphes en bas de chaque page.</p>
+  <svg class="closingWave" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M800,300 H330 C500,230 650,90 800,120 Z" fill="#1A2738"/><path d="M800,300 H440 C580,245 690,150 800,172 Z" fill="#3D8074" opacity=".9"/></svg>
+  </div>
   </div>
   `;
   document.getElementById('doc').innerHTML=html;
