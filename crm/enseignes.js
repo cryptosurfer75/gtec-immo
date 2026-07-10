@@ -333,6 +333,7 @@
             <input type="date" value="${p.prochaine_relance_date||''}" title="Planifier la prochaine relance"
               onchange="GTEC_ENSEIGNES._planifier('${p.id}',this.value)"
               style="border:1px solid var(--gris-clair);border-radius:6px;padding:4px 7px;font:inherit">
+            ${p.prochaine_relance_date?`<button type="button" class="btn btn-ghost btn-sm" title="Effacer la relance" onclick="GTEC_ENSEIGNES._planifier('${p.id}','')">✕</button>`:''}
           </span>
         </div>
       </div>`;
@@ -461,7 +462,10 @@
           <div class="f"><label>Téléphone</label><input id="en-tel" value="${esc(c.telephone||'')}" placeholder="06 …"></div>
           <div class="f"><label>E-mail</label><input id="en-email" type="email" value="${esc(c.email||'')}"></div>
           <div class="f full"><label>Profil LinkedIn</label><input id="en-linkedin" value="${esc(c.linkedin_url||'')}" placeholder="https://www.linkedin.com/in/…"></div>
-          <div class="f"><label>Prochaine relance</label><input id="en-relance" type="date" value="${c.prochaine_relance_date||''}"></div>
+          <div class="f"><label>Prochaine relance</label><span style="display:flex;gap:6px;align-items:center">
+            <input id="en-relance" type="date" value="${c.prochaine_relance_date||''}" style="flex:1">
+            <button type="button" class="btn btn-ghost btn-sm" title="Effacer la relance" onclick="document.getElementById('en-relance').value=''">✕</button>
+          </span></div>
           <div class="f full"><label>Notes</label><textarea id="en-notes" rows="3" placeholder="Contexte, ce qui a été dit, à qui s'adresser…">${esc(c.notes||'')}</textarea></div>
         </div>
 
