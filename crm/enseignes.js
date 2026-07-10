@@ -51,6 +51,13 @@
     appel: 'Appel téléphonique', email: 'E-mail', rdv: 'Rendez-vous', note: 'Note'
   };
   const CANAL_LABEL = { connexion:'Demande de connexion', message_direct:'Message direct (déjà relation)', email_direct:'Coordonnées directes (annuaire)' };
+  // Placeholder du champ « échange » adapté au type choisi : pour une réponse reçue,
+  // on veut le texte exact (copier-coller LinkedIn/e-mail), pas un résumé paraphrasé.
+  const PLACEHOLDER_ECHANGE = {
+    reponse_recue: "Collez ici le texte exact de la réponse reçue (copier-coller depuis LinkedIn ou l'e-mail)…",
+    email: "Texte de l'e-mail envoyé, ou résumé…"
+  };
+  const placeholderEchange = type => PLACEHOLDER_ECHANGE[type] || "Résumé de l'échange…";
 
   const today = () => new Date().toISOString().slice(0,10);
   const fmtDate = d => { if(!d) return '—'; const [y,m,j] = String(d).slice(0,10).split('-'); return `${j}/${m}/${y}`; };
@@ -305,11 +312,16 @@
   }
 
   function rowHistorique(e){
+    const estReponse = e.type_action === 'reponse_recue';
+    const contenu = e.contenu ? (estReponse
+      ? `<div style="font-size:.86rem;margin-top:5px;padding:9px 11px;background:rgba(46,125,50,.08);border-left:3px solid #2e7d32;border-radius:4px;font-style:italic;white-space:pre-wrap">💬 ${esc(e.contenu)}</div>`
+      : `<div style="font-size:.86rem;margin-top:2px;white-space:pre-wrap">${esc(e.contenu)}</div>`
+    ) : (estReponse ? `<div style="font-size:.8rem;color:#b3261e;margin-top:3px">⚠️ Aucun texte de réponse joint</div>` : '');
     return `<div style="padding:8px 0;border-bottom:1px solid var(--gris-bg)">
       <div style="font-size:.78rem;color:var(--gris-fonce);display:flex;justify-content:space-between">
         <b style="color:var(--bleu)">${esc(TYPE_ACTION_LABEL[e.type_action]||e.type_action)}</b><span>${fmtDate(e.date)}</span>
       </div>
-      ${e.contenu?`<div style="font-size:.86rem;margin-top:2px">${esc(e.contenu)}</div>`:''}
+      ${contenu}
     </div>`;
   }
 
@@ -357,10 +369,10 @@
         ${id ? `<div class="form-sep">Historique</div>
         <div id="en-hist">${ECHANGES.length ? ECHANGES.map(rowHistorique).join('') : '<div style="color:var(--gris-fonce);font-size:.86rem;padding:6px 0">Aucun échange enregistré pour l’instant.</div>'}</div>
         <div class="form-grid" style="margin-top:10px">
-          <div class="f"><label>Ajouter un échange</label><select id="en-nvtype">
+          <div class="f"><label>Ajouter un échange</label><select id="en-nvtype" onchange="GTEC_ENSEIGNES._majPlaceholderEchange(this.value)">
             ${Object.entries(TYPE_ACTION_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
           </select></div>
-          <div class="f full"><textarea id="en-nvcontenu" rows="2" placeholder="Résumé de l'échange…"></textarea></div>
+          <div class="f full"><textarea id="en-nvcontenu" rows="2" placeholder="${esc(placeholderEchange(''))}"></textarea></div>
         </div>
         <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_ENSEIGNES._ajouterEchange('${id}')">+ Ajouter à l'historique</button>`
         : `<div class="form-sep"></div><p style="font-size:.82rem;color:var(--gris-fonce)">L'historique des échanges se renseigne après le premier enregistrement.</p>`}
@@ -410,7 +422,10 @@
   async function ajouterEchange(contactId){
     const type_action = document.getElementById('en-nvtype').value;
     const contenu = document.getElementById('en-nvcontenu').value.trim();
-    if(!contenu){ alert('Décrivez brièvement l’échange avant de l’ajouter.'); return; }
+    if(!contenu){
+      alert(type_action==='reponse_recue' ? 'Collez le texte de la réponse reçue avant de l’ajouter.' : 'Décrivez brièvement l’échange avant de l’ajouter.');
+      return;
+    }
     const { error } = await sb.from('enseigne_echanges').insert({ contact_id:contactId, date:today(), type_action, contenu, auteur:window.ME_AGENT||null });
     if(error){ alert('Erreur : '+error.message); return; }
     await sb.from('enseigne_contacts').update({ derniere_action_date: today() }).eq('id', contactId);
@@ -439,6 +454,7 @@
     _fermer: fermer,
     _fermerFiche: fermerFiche,
     _save: sauvegarder,
-    _ajouterEchange: ajouterEchange
+    _ajouterEchange: ajouterEchange,
+    _majPlaceholderEchange(type){ const t = document.getElementById('en-nvcontenu'); if(t) t.placeholder = placeholderEchange(type); }
   };
 })();
