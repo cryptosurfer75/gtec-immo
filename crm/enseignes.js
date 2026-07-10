@@ -25,6 +25,8 @@
   let RECHERCHE = '';
   let ED = { id: null, enseigneVerrouillee: null };
   let FICHE_ENSEIGNE = null;  // clé (normalisée) de l'enseigne actuellement ouverte en fiche détaillée
+  let SUIVI_ENSEIGNE = null;  // clé de l'enseigne actuellement ouverte dans la modale Suivi (historique + planification)
+  let ECHANGE_COUNTS = {};    // contact_id -> nombre d'échanges, pour le badge du bouton Suivi
 
   const STATUT_LABEL = {
     a_contacter:      'À contacter',
@@ -125,6 +127,14 @@
     return dates[0] || null;
   }
   function groupeEnRetard(personnes){ return personnes.some(enRetard); }
+  function nbEchangesGroupe(personnes){ return personnes.reduce((s,p)=>s+(ECHANGE_COUNTS[p.id]||0),0); }
+  async function chargerCompteursEchanges(){
+    const ids = LISTE.map(c=>c.id);
+    ECHANGE_COUNTS = {};
+    if(!ids.length) return;
+    const { data } = await sb.from('enseigne_echanges').select('contact_id').in('contact_id', ids);
+    (data||[]).forEach(e=>{ ECHANGE_COUNTS[e.contact_id] = (ECHANGE_COUNTS[e.contact_id]||0)+1; });
+  }
 
   /* ==================================================================
      VUE LISTE (groupée par enseigne) + INDICATEURS
@@ -134,6 +144,7 @@
     const { data, error } = await sb.from('enseigne_contacts').select('*').order('created_at',{ascending:false});
     if(error) return erreur(error);
     LISTE = data||[];
+    await chargerCompteursEchanges();
 
     const groupesTous = grouperParEnseigne(LISTE);
     const enAttente = LISTE.filter(c=>['demande_envoyee','en_attente'].includes(c.statut)).length;
@@ -225,7 +236,7 @@
       <td style="text-align:center">${tempIcon(meilleureTemp(g.personnes))}</td>
       <td>${relanceTxt}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" title="Voir la fiche" onclick="GTEC_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">👁️</button>
+        <button class="btn btn-ghost btn-sm" title="Suivi : historique des échanges et relances à planifier" onclick="GTEC_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${nbEchangesGroupe(g.personnes)?` <b>${nbEchangesGroupe(g.personnes)}</b>`:''}</button>
       </td></tr>`;
   }
 
@@ -272,6 +283,94 @@
   function fermerFiche(){ fermer(); FICHE_ENSEIGNE=null; }
   function ajouterPersonne(enseigne){ editer(null, enseigne); }
   function nouvelleEnseigne(){ editer(null, null); }
+
+  /* ==================================================================
+     SUIVI (historique fusionné + relances à planifier) — pendant équivalent
+     du bouton 💬 « Suivi » utilisé sur Offres/Demandes, mais à l'échelle de
+     l'enseigne : regroupe l'historique de TOUTES ses personnes, et permet
+     de planifier/replanifier la prochaine relance de chacune via un simple
+     champ date (calendrier natif du navigateur).
+     ================================================================== */
+  async function ouvrirSuivi(cle){
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe) return;
+    SUIVI_ENSEIGNE = cle;
+    document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)GTEC_ENSEIGNES._fermerSuivi()"><div class="modal" style="max-width:640px">
+      <div class="modal-h"><h3>💬 Suivi — ${esc(groupe.enseigne)}</h3><button class="x" onclick="GTEC_ENSEIGNES._fermerSuivi()">×</button></div>
+      <div class="modal-b" id="suivi-b"><div class="loading">Chargement…</div></div>
+      <div class="modal-foot"><span></span><span style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_ENSEIGNES._fermerSuivi()">Fermer</button>
+        <button type="button" class="btn btn-sm" onclick="GTEC_ENSEIGNES._fermerSuivi();GTEC_ENSEIGNES.ficheEnseigne('${esc(cle)}')">✏️ Gérer les personnes</button>
+      </span></div>
+    </div></div>`;
+    await rafraichirSuivi(cle);
+  }
+  function fermerSuivi(){ const bg=document.querySelector('#modal-root .modal-bg'); if(bg) bg.remove(); SUIVI_ENSEIGNE=null; }
+
+  async function rafraichirSuivi(cle){
+    const b = document.getElementById('suivi-b'); if(!b) return;
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe){ b.innerHTML = vide('Enseigne introuvable.'); return; }
+    const personnes = groupe.personnes;
+    const ids = personnes.map(p=>p.id);
+    const { data } = ids.length
+      ? await sb.from('enseigne_echanges').select('*').in('contact_id', ids).order('date',{ascending:false}).order('created_at',{ascending:false})
+      : { data: [] };
+    const echanges = data||[];
+    const nomPersonne = id => (personnes.find(p=>String(p.id)===String(id))||{}).nom || '?';
+
+    // À venir : personnes avec une date de relance déjà planifiée en premier (les plus proches
+    // d'abord), puis celles sans date — pour repérer en un coup d'œil qui n'a encore rien de prévu.
+    const avecDate = personnes.filter(p=>p.prochaine_relance_date).sort((a,b)=>a.prochaine_relance_date.localeCompare(b.prochaine_relance_date));
+    const sansDate = personnes.filter(p=>!p.prochaine_relance_date);
+    const rowAVenir = p => {
+      const retard = enRetard(p);
+      return `<div class="act-row" style="${retard?'border-color:#b3261e':''}">
+        <div class="act-meta">
+          <b>${esc(p.nom)}</b>${statutBadge(p.statut)}
+          <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            ${retard?'<span style="color:#b3261e;font-weight:700">⏰ en retard</span>':''}
+            <input type="date" value="${p.prochaine_relance_date||''}" title="Planifier la prochaine relance"
+              onchange="GTEC_ENSEIGNES._planifier('${p.id}',this.value)"
+              style="border:1px solid var(--gris-clair);border-radius:6px;padding:4px 7px;font:inherit">
+          </span>
+        </div>
+      </div>`;
+    };
+    const aVenir = [...avecDate, ...sansDate].map(rowAVenir).join('') || vide('Aucune personne rattachée.');
+
+    const rowHist = e => {
+      const estReponse = e.type_action === 'reponse_recue';
+      const contenu = e.contenu ? (estReponse
+        ? `<div class="act-note" style="padding:8px 10px;background:rgba(46,125,50,.08);border-left:3px solid #2e7d32;border-radius:4px;font-style:italic">💬 ${esc(e.contenu)}</div>`
+        : `<div class="act-note">${esc(e.contenu)}</div>`) : '';
+      return `<div class="act-row">
+        <div class="act-meta"><b>${esc(nomPersonne(e.contact_id))}</b><span>${esc(TYPE_ACTION_LABEL[e.type_action]||e.type_action)}</span><span style="margin-left:auto">${fmtDate(e.date)}</span></div>
+        ${contenu}
+      </div>`;
+    };
+    const hist = echanges.length ? echanges.map(rowHist).join('') : vide('Aucun échange enregistré pour l’instant.');
+
+    b.innerHTML = `
+      <div class="form-sep" style="margin-top:0">📅 À venir</div>
+      <div class="act-list" style="margin-top:10px">${aVenir}</div>
+      <div class="form-sep">🕓 Historique</div>
+      <div class="act-list" style="margin-top:10px">${hist}</div>`;
+  }
+
+  /* Planifie (ou efface) la prochaine relance d'une personne depuis la modale Suivi,
+     sans avoir à rouvrir sa fiche complète. Même règle que la relance rapide existante :
+     poser une date bascule le statut sur « Relance prévue ». */
+  async function planifier(id, date){
+    const payload = { prochaine_relance_date: date || null };
+    if(date) payload.statut = 'relance_prevue';
+    const { error } = await sb.from('enseigne_contacts').update(payload).eq('id', id);
+    if(error){ alert('Erreur : '+error.message); return; }
+    const p = LISTE.find(x=>String(x.id)===String(id));
+    if(p){ p.prochaine_relance_date = date||null; if(date) p.statut = 'relance_prevue'; }
+    rafraichirTbody();
+    if(SUIVI_ENSEIGNE) await rafraichirSuivi(SUIVI_ENSEIGNE);
+  }
 
   /* Suggestions d'enseignes existantes, pour éviter de recréer "Boulanger" /
      "BOULANGER" / "boulanger" en plusieurs fiches distinctes par erreur de frappe. */
@@ -429,6 +528,8 @@
     const { error } = await sb.from('enseigne_echanges').insert({ contact_id:contactId, date:today(), type_action, contenu, auteur:window.ME_AGENT||null });
     if(error){ alert('Erreur : '+error.message); return; }
     await sb.from('enseigne_contacts').update({ derniere_action_date: today() }).eq('id', contactId);
+    ECHANGE_COUNTS[contactId] = (ECHANGE_COUNTS[contactId]||0)+1;
+    rafraichirTbody();
     await chargerEchanges(contactId);
     document.getElementById('en-hist').innerHTML = ECHANGES.map(rowHistorique).join('');
     document.getElementById('en-nvcontenu').value = '';
@@ -447,14 +548,16 @@
   }
 
   window.GTEC_ENSEIGNES = {
-    vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, editer, supprimer, relanceRapide,
+    vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, editer, supprimer, relanceRapide, ouvrirSuivi,
     _statut(v){ FILTRE_STATUT=v; rafraichirTbody(); },
     _search(v){ RECHERCHE=v; rafraichirTbody(); },
     _toggleRelances(){ SEULEMENT_RELANCES=!SEULEMENT_RELANCES; vueEnseignes(); },
     _fermer: fermer,
     _fermerFiche: fermerFiche,
+    _fermerSuivi: fermerSuivi,
     _save: sauvegarder,
     _ajouterEchange: ajouterEchange,
-    _majPlaceholderEchange(type){ const t = document.getElementById('en-nvcontenu'); if(t) t.placeholder = placeholderEchange(type); }
+    _majPlaceholderEchange(type){ const t = document.getElementById('en-nvcontenu'); if(t) t.placeholder = placeholderEchange(type); },
+    _planifier: planifier
   };
 })();
