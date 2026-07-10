@@ -20,11 +20,11 @@
     if($('team-css')) return;
     const s=document.createElement('style'); s.id='team-css';
     s.textContent=`
-      .team-note-wrap{display:flex;height:calc(100vh - 210px);min-height:500px}
+      .team-note-wrap{display:flex;height:calc(100vh - 210px);min-height:500px;overflow-x:auto}
       .team-col{display:flex;flex-direction:column;border-right:1px solid var(--gris-clair);overflow:auto;min-height:0}
       .team-sections{width:215px;background:var(--gris-bg);flex:none}
       .team-pages{width:235px;flex:none}
-      .team-editor{flex:1;border-right:none}
+      .team-editor{flex:1;border-right:none;min-width:280px}
       .team-sec,.team-page{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--gris-clair);font-size:.9rem}
       .team-sec .dot{width:6px;height:22px;border-radius:3px;background:var(--c);flex:none}
       .team-sec .lbl,.team-page .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--noir)}
