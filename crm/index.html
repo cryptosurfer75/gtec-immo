@@ -230,6 +230,7 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
       <a data-vue="factures" onclick="aller('factures')">🧾 Devis / Factures</a>
       <a data-vue="loi" onclick="aller('loi')">✍️ LOI</a>
       <a data-vue="enseignes" onclick="aller('enseignes')">🤝 Enseignes</a>
+      <a data-vue="entreprises" onclick="aller('entreprises')">🏭 Entreprises locales</a>
     </nav>
     <div class="who">
       <span id="google-statut" class="who-init" onclick="clicStatutGoogle()" style="cursor:pointer;background:var(--gris-bg);color:var(--gris-fonce);font-size:1.1rem" title="Connexion Google Contacts (import carte de visite)">🔗</span>
@@ -449,11 +450,11 @@ async function clicStatutGoogle(){
 }
 
 /* ===== NAVIGATION ===== */
-const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures', loi:'LOI', enseignes:'Enseignes'};
+const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de valeur', demandes:'Demandes', clients:'Clients', mandats:'Mandats', teams:'Teams', factures:'Devis / Factures', loi:'LOI', enseignes:'Enseignes', entreprises:'Entreprises locales'};
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>GTEC_ENSEIGNES.vue()}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>GTEC_ENSEIGNES.vue(), entreprises:()=>GTEC_ENTREPRISES.vue()}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -2149,6 +2150,7 @@ init();
 <script src="facture.js?v=3"></script>
 <script src="loi.js?v=7"></script>
 <script src="enseignes.js?v=4"></script>
+<script src="entreprises-locales.js?v=1"></script>
 <script src="leboncoin.js?v=1"></script>
 </body>
 </html>
