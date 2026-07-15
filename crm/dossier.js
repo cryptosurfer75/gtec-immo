@@ -339,16 +339,31 @@
     return page('Équipements', body, {actif:'Équipements', num:6});
   }
 
+  // Prix ou loyer d'un lot : affiche celui des deux qui est renseigné.
+  function prixLot(l){
+    if(l.prix_vente!=null && l.prix_vente!=='') return `${nbFr(l.prix_vente)} €`;
+    if(l.loyer_mensuel!=null && l.loyer_mensuel!=='') return `${nbFr(l.loyer_mensuel)} € HT/mois`;
+    return '—';
+  }
   function pageSurfaces(o){
     const dispo = o.disponibilite || 'Immédiate';
-    const body = `<table class="surf">
-      <thead><tr><th>ÉTAGE</th><th>SURFACE</th><th>TYPE DE BIEN</th><th>DISPONIBILITÉ</th></tr></thead>
-      <tbody><tr>
+    const lots = (Array.isArray(o.lots) ? o.lots : []).filter(l=>l && (l.etage||l.surface_m2||l.type_bien||l.prix_vente||l.loyer_mensuel));
+    const lignes = lots.length ? lots.map(l=>`<tr>
+        <td>${esc(l.etage||'—')}</td>
+        <td>${l.surface_m2?esc(l.surface_m2)+' m²':'—'}</td>
+        <td>${esc(cap(l.type_bien||o.type_bien||'')||'—')}</td>
+        <td>${esc(prixLot(l))}</td>
+        <td>${esc(dispo)}</td>
+      </tr>`).join('') : `<tr>
         <td>${esc(o.etage||'—')}</td>
         <td>${o.surface_m2?esc(o.surface_m2)+' m²':'—'}</td>
         <td>${esc(cap(o.type_bien||'')||'—')}</td>
+        <td>—</td>
         <td>${esc(dispo)}</td>
-      </tr></tbody></table>`;
+      </tr>`;
+    const body = `<table class="surf">
+      <thead><tr><th>ÉTAGE</th><th>SURFACE</th><th>TYPE DE BIEN</th><th>PRIX / LOYER</th><th>DISPONIBILITÉ</th></tr></thead>
+      <tbody>${lignes}</tbody></table>`;
     return page('Détail des surfaces', body, {actif:'Détail des surfaces', num:7});
   }
 

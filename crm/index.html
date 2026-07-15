@@ -1321,6 +1321,7 @@ function draftCollect(key){
   document.querySelectorAll('#cform [id]').forEach(el=>{ if(el.type==='file') return; data[el.id] = el.type==='checkbox' ? el.checked : el.value; });
   const extra={};
   if(document.getElementById('o-equip-summary')) extra.equip = EQUIP_SEL;
+  if(document.getElementById('o-lots-list')) extra.lots = lireLots();
   if(document.getElementById('loc-list')) extra.locs = [...document.querySelectorAll('#loc-list .loc-row')]
     .map(r=>({ville:r.querySelector('.loc-ville').value, cp:r.querySelector('.loc-cp').value}));
   extra.comboIds={};
@@ -1334,6 +1335,9 @@ function draftApply(key){
   Object.entries(d.data||{}).forEach(([id,v])=>{ const el=document.getElementById(id); if(!el||el.type==='file') return;
     if(el.type==='checkbox') el.checked=v; else el.value=v; });
   if(d.extra && d.extra.equip){ EQUIP_SEL = JSON.parse(JSON.stringify(d.extra.equip)); majEquipSummary(); }
+  if(d.extra && d.extra.lots && document.getElementById('o-lots-list')){
+    document.getElementById('o-lots-list').innerHTML=''; d.extra.lots.forEach(ajouterLot);
+  }
   if(d.extra && d.extra.locs && document.getElementById('loc-list')){
     const list=document.getElementById('loc-list'); list.innerHTML='';
     (d.extra.locs.length?d.extra.locs:[{}]).forEach(l=>ajouterLoc(l.ville,l.cp));
@@ -1867,6 +1871,10 @@ function formOffre(rec){
     ${fNum('o-annee','Année',rec.annee)}
     ${fSel('o-dpe','DPE',rec.dpe||'',[['','—'],['A','Classe A'],['B','Classe B'],['C','Classe C'],['D','Classe D'],['E','Classe E'],['F','Classe F'],['G','Classe G']])}
     ${fCheck('o-div','Divisible',rec.divisible)}
+    <div class="f full"><label>Lots du bâtiment (facultatif — un bien avec plusieurs étages/lots vendus ou loués séparément)</label>
+      <div id="o-lots-list"></div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="ajouterLot()">＋ Ajouter un lot</button>
+    </div>
     ${fCheck('o-pmr','Accessible PMR',rec.norme_pmr)}
     ${fCheck('o-erp','Normes ERP',rec.norme_erp)}
     ${fSep('Conditions financières')}
@@ -1974,7 +1982,7 @@ function formOffre(rec){
       description:val('o-desc'), disponibilite:val('o-dispo'), plan_url:val('o-plan'),
       loyer_type:val('o-loyer-type'),
       client_id:exigerCombo('o-client','Sélectionnez le client dans la liste (ou cliquez sur « + Nouveau ») avant d’enregistrer.'),
-      publie:(val('o-pub')?true:null), equipements:EQUIP_SEL, cover_url });
+      publie:(val('o-pub')?true:null), equipements:EQUIP_SEL, lots:lireLots(), cover_url });
     vueOffres();
   }, rec.id ? async()=>{ if(rec.cover_url) await supprimerCoverStorage(rec.cover_url); await sb.from('offre_photos').delete().eq('offre_id', rec.id); await sb.from('actions').delete().eq('cible_type','offre').eq('cible_id',rec.id); await del('offres', rec.id); vueOffres(); } : null, 'offre:'+(rec.id||'new'),
     rec.id ? {archived:!!rec.archive, toggle:async()=>{
@@ -1988,6 +1996,7 @@ function formOffre(rec){
   brancherVilleAuto(document.getElementById('o-ville'), ()=>document.getElementById('o-cp'));
   brancherAdresseAuto(document.getElementById('o-adresse'));
   majEquipSummary();
+  (Array.isArray(rec.lots)?rec.lots:[]).forEach(ajouterLot);
   if(rec.cover_url) showCoverPreview(rec.cover_url);
   if(rec.carte_plan_url) showCartePreview(1, rec.carte_plan_url);
   if(rec.carte_aerienne_url) showCartePreview(2, rec.carte_aerienne_url);
@@ -2056,6 +2065,32 @@ function formDemande(rec){
   draftApply('demande:'+(rec.id||'new'));
   majAnnuel('d-budget','d-budget-an');
   majMetroChips();
+}
+/* Ligne « lot » dans une offre (étage/surface/type/prix propres à ce lot, bâtiment divisé) */
+function ajouterLot(l){
+  l = l || {};
+  const etages = [['','—'],['Sous-sol','Sous-sol'],['Rez-de-chaussée','Rez-de-chaussée'],['R+1','R+1'],['R+2','R+2'],['R+3','R+3'],['R+4','R+4'],['R+5','R+5']];
+  const etOpts = etages.map(([v,t])=>`<option value="${esc(v)}" ${(l.etage||'')===v?'selected':''}>${esc(t)}</option>`).join('');
+  const typeOpts = [['','(comme le bien)'],...Object.entries(LABELS)].map(([v,t])=>`<option value="${esc(v)}" ${(l.type_bien||'')===v?'selected':''}>${esc(t)}</option>`).join('');
+  const div=document.createElement('div'); div.className='lot-row';
+  div.style.cssText='display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:10px;border:1px solid var(--gris-clair);border-radius:9px;margin-bottom:8px';
+  div.innerHTML=`
+    <div style="flex:1;min-width:130px"><label style="font-size:.72rem;font-weight:600">Étage</label><select class="lot-etage" style="width:100%">${etOpts}</select></div>
+    <div style="width:110px"><label style="font-size:.72rem;font-weight:600">Surface (m²)</label><input class="lot-surf" type="number" style="width:100%" value="${l.surface_m2==null?'':l.surface_m2}"></div>
+    <div style="flex:1;min-width:150px"><label style="font-size:.72rem;font-weight:600">Type de bien</label><select class="lot-type" style="width:100%">${typeOpts}</select></div>
+    <div style="width:130px"><label style="font-size:.72rem;font-weight:600">Prix de vente (€)</label><input class="lot-prix" type="number" style="width:100%" value="${l.prix_vente==null?'':l.prix_vente}"></div>
+    <div style="width:130px"><label style="font-size:.72rem;font-weight:600">Loyer mensuel (€)</label><input class="lot-loyer" type="number" style="width:100%" value="${l.loyer_mensuel==null?'':l.loyer_mensuel}"></div>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" title="Supprimer ce lot">✕</button>`;
+  document.getElementById('o-lots-list').appendChild(div);
+}
+function lireLots(){
+  return [...document.querySelectorAll('#o-lots-list .lot-row')].map(r=>({
+    etage: r.querySelector('.lot-etage').value || '',
+    surface_m2: r.querySelector('.lot-surf').value ? Number(r.querySelector('.lot-surf').value) : null,
+    type_bien: r.querySelector('.lot-type').value || '',
+    prix_vente: r.querySelector('.lot-prix').value ? Number(r.querySelector('.lot-prix').value) : null,
+    loyer_mensuel: r.querySelector('.lot-loyer').value ? Number(r.querySelector('.lot-loyer').value) : null,
+  })).filter(l=>l.etage||l.surface_m2||l.type_bien||l.prix_vente||l.loyer_mensuel);
 }
 function ajouterLoc(ville,cp){
   const div=document.createElement('div'); div.className='loc-row';
@@ -2158,7 +2193,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
-<script src="dossier.js?v=13"></script>
+<script src="dossier.js?v=14"></script>
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=3"></script>
 <script src="facture.js?v=3"></script>
