@@ -1306,6 +1306,10 @@ function majAnnuel(srcId,dstId){ const el=document.getElementById(dstId); if(!el
   if(srcId==='o-loyer' && t) mention = (t.value==='NET HC' ? ' net hors charges' : ' hors-taxes, hors charges');
   el.innerHTML = (isFinite(v)&&v>0) ? '= '+new Intl.NumberFormat('fr-FR').format(Math.round(v*12))+' € / an'+mention : ''; }
 
+/* active/désactive le champ montant des charges selon le choix du menu "Montant / À définir" */
+function majChargesDef(){ const sel=document.getElementById('o-charges-def'), champ=document.getElementById('o-charges'); if(!sel||!champ) return;
+  const def = sel.value==='1'; champ.disabled = def; if(def) champ.value=''; }
+
 /* ===== Brouillon automatique (anti-perte au rechargement) ===== */
 const DRAFT_KEY = 'gtec_crm_draft';
 let CURRENT_FORM_KEY = null;
@@ -1874,7 +1878,14 @@ function formOffre(rec){
         </select>
       </div>
       <div id="o-loyer-an" style="font-size:.8rem;font-weight:600;color:var(--teal-dark);margin-top:4px"></div></div>
-    ${fNum('o-charges','Charges (€ / mensuel)',rec.charges)}
+    <div class="f full"><label>Charges (€ / mensuel)</label>
+      <div style="display:flex;gap:10px">
+        <input id="o-charges" type="number" style="flex:1" value="${rec.charges==null?'':rec.charges}" ${rec.charges_a_definir?'disabled':''}>
+        <select id="o-charges-def" style="max-width:150px" onchange="majChargesDef()">
+          <option value="" ${!rec.charges_a_definir?'selected':''}>Montant</option>
+          <option value="1" ${rec.charges_a_definir?'selected':''}>À définir</option>
+        </select>
+      </div></div>
     ${fNum('o-tf','Taxe foncière (€ / mensuel)',rec.taxe_fonciere)}
     ${fNum('o-dab','Droit au bail (€)',rec.droit_au_bail)}
     ${honoLigne('1',ht1,hm1,rec.honoraires_charge)}
@@ -1955,6 +1966,7 @@ function formOffre(rec){
       parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'), annee:numVal('o-annee'),
       dpe:val('o-dpe'), etat:val('o-etat'), divisible:val('o-div'), norme_pmr:val('o-pmr'), norme_erp:val('o-erp'),
       prix_vente:numVal('o-prix'), loyer_annuel_m2:numVal('o-loyer'), charges:numVal('o-charges'),
+      charges_a_definir:val('o-charges-def')==='1',
       taxe_fonciere:numVal('o-tf'), droit_au_bail:numVal('o-dab'), honoraires, honoraires_2,
       honoraires_charge:val('o-hono-charge1'), honoraires_charge_2:val('o-hono-charge2'), depot_garantie:val('o-depot'),
       description:val('o-desc'), disponibilite:val('o-dispo'), plan_url:val('o-plan'),
@@ -2144,7 +2156,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
-<script src="dossier.js?v=11"></script>
+<script src="dossier.js?v=12"></script>
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=3"></script>
 <script src="facture.js?v=3"></script>

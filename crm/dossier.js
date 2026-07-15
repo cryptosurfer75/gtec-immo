@@ -208,11 +208,11 @@
     return `<span class="cover-ref">${esc(o.reference)}</span>`;
   }
 
-  function pageCouverture(o){
+  function pageCouverture(o, agentKey){
     const photo = o.cover_url || '';
     const surf = o.surface_m2 ? `${o.surface_m2} m²` : '';
     const niv = o.etage ? ` en ${esc(o.etage)}` : '';
-    const c = (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
+    const c = AGENTS[agentKey] || (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg cover">
       <div class="cover-top">
         <div class="cover-coord">
@@ -361,7 +361,7 @@
       ['Périodicité paiement', o.periodicite_paiement || 'Trimestriellement ou mensuellement'],
       ['Loyer mensuel', euroMois(o.loyer_annuel_m2) ? `${euroMois(o.loyer_annuel_m2)} € ${sfx}/mois` : '—'],
       ['Provision taxe foncière', euroMois(o.taxe_fonciere) ? `${euroMois(o.taxe_fonciere)} € HT/mois` : '—'],
-      ['Provisions pour charges', euroMois(o.charges) ? `${euroMois(o.charges)} € HT/mois` : '—'],
+      ['Provisions pour charges', o.charges_a_definir ? 'À définir' : (euroMois(o.charges) ? `${euroMois(o.charges)} € HT/mois` : '—')],
     ];
     if(o.honoraires) rows.push(['Honoraires preneur', o.honoraires]);
     const body = `<table class="cond">${rows.map(r=>`<tr><th>${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')}</table>`;
@@ -397,8 +397,8 @@
     return page('Plans', body, {actif:'Plans', num:9});
   }
 
-  function pageContact(o){
-    const c = (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
+  function pageContact(o, agentKey){
+    const c = AGENTS[agentKey] || (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg contact">
       <div class="contact-logo-block">
         <img class="contact-logo" src="${LOGO_CONTACT}" alt="GTEC">
@@ -582,11 +582,13 @@
   }
 
   // Construit le document HTML complet. shared=true → version « client » sans barre d'outils.
-  function construireDoc(o, photos, geo, shared){
+  // agentKey (FB/VDM) : consultant dont les coordonnées apparaissent (couverture + dernière page),
+  // choisi au moment de la génération — indépendant de l'agent rattaché au bien en base.
+  function construireDoc(o, photos, geo, shared, agentKey){
     const aDesPlans = Array.isArray(o.plans_urls) && o.plans_urls.filter(Boolean).length > 0;
     SECTIONS = aDesPlans ? SECTIONS_AVEC_PLANS.slice() : SECTIONS_AVEC_PLANS.filter(s=>s!=='Plans');
     const pages = [
-      pageCouverture(o),
+      pageCouverture(o, agentKey),
       pageSommaire(),
       pageLocalisation(o, o.carte_plan_url, 3, 'Plan de localisation', geo, 'plan'),
       pageLocalisation(o, o.carte_aerienne_url, 4, 'Vue aérienne', geo, 'aerienne'),
@@ -596,7 +598,7 @@
       pagePhotos(o, photos),
       aDesPlans ? pagePlans(o, photos) : '',
       pageConditions(o, aDesPlans ? 10 : 9),
-      pageContact(o),
+      pageContact(o, agentKey),
     ].join('');
     const titre = `Dossier — ${o.titre || typeLabel(o.type_bien)} ${o.ville||''}`.trim();
     const toolbar = shared
@@ -627,13 +629,36 @@
     return { html, titre };
   }
 
+  // Petite fenêtre : qui envoie ce dossier ? (ses coordonnées apparaissent sur la couverture
+  // et la dernière page, sans toucher à l'agent rattaché au bien en base)
+  function choisirConsultant(defautKey){
+    return new Promise(resolve=>{
+      const old = document.getElementById('dos-agent-bg'); if(old) old.remove();
+      const bg = document.createElement('div'); bg.id='dos-agent-bg';
+      bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
+      const btn = key => `<button data-k="${key}" style="display:block;width:100%;text-align:left;border:1px solid #c9d0d3;border-radius:9px;padding:12px 16px;margin-bottom:10px;font-size:14px;font-weight:600;cursor:pointer;background:${key===defautKey?'#eaf3f1':'#fff'};color:#1A2738">
+        ${esc(AGENTS[key].nom)}<div style="font-weight:400;font-size:12px;color:#6b7a80;margin-top:2px">${esc(AGENTS[key].tel)} — ${esc(AGENTS[key].mail)}</div></button>`;
+      bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(420px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
+        <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">Coordonnées du dossier</div>
+        <div style="padding:18px 20px">
+          <p style="margin:0 0 12px;color:#4A5A5E;font-size:13px">Qui envoie ce dossier au client ?</p>
+          ${Object.keys(AGENTS).map(btn).join('')}
+        </div></div>`;
+      bg.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click', ()=>{ bg.remove(); resolve(b.getAttribute('data-k')); }));
+      bg.addEventListener('click', e=>{ if(e.target===bg){ bg.remove(); resolve(null); } });
+      document.body.appendChild(bg);
+    });
+  }
+
   // Aperçu dans une nouvelle fenêtre (avec barre d'outils → impression / PDF)
   async function generer(offreId){
     if(!offreId){ alert('Aucun bien sélectionné.'); return; }
     let p;
     try{ p = await preparer(offreId); }
     catch(e){ alert('Impossible de charger le bien : '+(e.message||e)); return; }
-    const { html } = construireDoc(p.o, p.photos, p.geo, false);
+    const agentKey = await choisirConsultant(p.o.agent || (typeof ME_AGENT!=='undefined' && ME_AGENT) || 'FB');
+    if(!agentKey) return;
+    const { html } = construireDoc(p.o, p.photos, p.geo, false, agentKey);
     const w = window.open('', '_blank');
     if(!w){ alert('La fenêtre a été bloquée. Autorisez les pop-ups pour ce site.'); return; }
     w.document.open(); w.document.write(html); w.document.close();
@@ -646,7 +671,9 @@
     let p;
     try{ p = await preparer(offreId); }
     catch(e){ alert('Impossible de charger le bien : '+(e.message||e)); return; }
-    const { html } = construireDoc(p.o, p.photos, p.geo, true);
+    const agentKey = await choisirConsultant(p.o.agent || (typeof ME_AGENT!=='undefined' && ME_AGENT) || 'FB');
+    if(!agentKey) return;
+    const { html } = construireDoc(p.o, p.photos, p.geo, true, agentKey);
     const path = 'dossier-public/'+offreId+'.html';
     try{
       const blob = new Blob([html], { type:'text/html; charset=utf-8' });

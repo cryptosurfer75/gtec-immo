@@ -411,7 +411,7 @@ function ouvrirFiche(id){
           ${it('Niveaux', b.nb_niveaux!=null?b.nb_niveaux:'')}
           ${it('Année', b.annee)}
           ${it('DPE', b.dpe?('Classe '+b.dpe):'')}
-          ${it('Charges', b.charges!=null?euro(b.charges)+' / mois':'')}
+          ${it('Charges', b.charges_a_definir?'À définir':(b.charges!=null?euro(b.charges)+' / mois':''))}
           ${it('Dépôt de garantie', b.depot_garantie)}
           ${it('Honoraires', b.honoraires)}
         </div>
