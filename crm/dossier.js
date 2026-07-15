@@ -23,7 +23,8 @@
   // Signatures par agent (le bien porte une initiale FB / VDM)
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
-    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
+    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' },
+    ML:  { nom:'Maxime Legrand',       tel:'06 09 08 48 49', mail:'maxime.legrand@gtec-construction.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;   // anciens biens sans agent renseigné
   const SECTIONS_AVEC_PLANS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',

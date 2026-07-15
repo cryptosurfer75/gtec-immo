@@ -294,17 +294,18 @@ function refBadge(ref, type){
   const c=TYPE_COULEUR[type];
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:700">${esc(ref||'—')}</span>`;
 }
-/* ----- Agent rédacteur (FB / VDM) ----- */
-const AGENTS_OPTS = [['VDM','VDM'],['FB','FB']];
+/* ----- Agent rédacteur (FB / VDM / ML) ----- */
+const AGENTS_OPTS = [['VDM','VDM'],['FB','FB'],['ML','ML']];
+const AGENTS_CODES = AGENTS_OPTS.map(([c])=>c);
 let ME_AGENT = 'FB';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
 function agentBadge(a){
-  if(a!=='VDM' && a!=='FB') return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
-  const bg = a==='VDM' ? '#1A2738' : '#3D8074';   // marine pour VDM, vert d'eau pour FB
+  if(!AGENTS_CODES.includes(a)) return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
+  const bg = a==='VDM' ? '#1A2738' : a==='FB' ? '#3D8074' : '#6d28d9';   // marine VDM, vert d'eau FB, violet ML
   return `<span class="tag" title="Annonce gérée par ${a}" style="background:${bg};color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
 }
-/* Radio FB / VDM dans un formulaire (name = id) */
+/* Radio FB / VDM / ML dans un formulaire (name = id) */
 function fAgent(name, v){
-  v = (v==='VDM'||v==='FB') ? v : ME_AGENT;
+  v = AGENTS_CODES.includes(v) ? v : ME_AGENT;
   const opt = (code,label)=>`<label style="display:inline-flex;align-items:center;gap:7px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:normal"><input type="radio" name="${name}" value="${code}" ${v===code?'checked':''} style="width:auto;flex:none;margin:0"> ${label}</label>`;
   return `<div class="f full"><label>Annonce gérée par</label><div style="display:flex;gap:26px;align-items:center;padding-top:4px;flex-wrap:wrap">${AGENTS_OPTS.map(([c,l])=>opt(c,l)).join('')}</div></div>`;
 }
@@ -405,6 +406,7 @@ async function ouvrirApp(session){
   document.getElementById('app').classList.remove('hidden');
   const mail = (session.user.email||'').toLowerCase();
   ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere')) ? 'VDM'
+           : (mail.includes('maxime') || mail.includes('legrand')) ? 'ML'
            : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'FB';
   document.getElementById('who-init').textContent = ME_AGENT;
 
@@ -2156,7 +2158,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
-<script src="dossier.js?v=12"></script>
+<script src="dossier.js?v=13"></script>
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=3"></script>
 <script src="facture.js?v=3"></script>
