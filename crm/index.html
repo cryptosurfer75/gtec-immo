@@ -405,9 +405,9 @@ async function ouvrirApp(session){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   const mail = (session.user.email||'').toLowerCase();
-  ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere')) ? 'VDM'
+  ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere') || mail.includes('cryptosurfer75')) ? 'VDM'
            : (mail.includes('maxime') || mail.includes('legrand')) ? 'ML'
-           : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'FB';
+           : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'VDM';
   document.getElementById('who-init').textContent = ME_AGENT;
 
   // Retour de la connexion Google (?code=...) : on échange le code tout de suite (avant tout le
