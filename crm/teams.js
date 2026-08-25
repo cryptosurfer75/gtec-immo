@@ -1,5 +1,5 @@
 /* ============================================================================
-   GTEC IMMOBILIER — Espace TEAMS (notes partagées façon OneNote)
+   CABINET H3C — Espace TEAMS (notes partagées façon OneNote)
    ----------------------------------------------------------------------------
    Bloc-notes : sections (gauche) → pages (milieu) → éditeur de notes (droite),
    enregistrement automatique. Chaque page porte une DATE (cliquable) indiquant
@@ -12,7 +12,7 @@
   'use strict';
   const $   = id => document.getElementById(id);
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const PAL = ['#3D8074','#1A2738','#C2410C','#B91C1C','#7C3AED','#0E7490','#15803D','#A16207'];
+  const PAL = ['#006962','#00332E','#C2410C','#B91C1C','#7C3AED','#0E7490','#15803D','#A16207'];
   const T = { sections:[], pages:[], curSection:null, curPage:null, timer:null };
   const dateFr = d => d ? d.split('-').reverse().join('/') : '';
 
@@ -91,7 +91,7 @@
   function renderSections(){
     if(!$('team-sec-list')) return;
     $('team-sec-list').innerHTML = T.sections.length ? T.sections.map(s=>`
-      <div class="team-sec${s.id===T.curSection?' on':''}" style="--c:${s.couleur||'#3D8074'}" onclick="GTEC_TEAMS.selSection('${s.id}')">
+      <div class="team-sec${s.id===T.curSection?' on':''}" style="--c:${s.couleur||'#006962'}" onclick="GTEC_TEAMS.selSection('${s.id}')">
         <span class="dot"></span><span class="lbl">${esc(s.nom)}</span>
         <button class="mini" title="Renommer" onclick="event.stopPropagation();GTEC_TEAMS.renSection('${s.id}')">✎</button>
         <button class="mini" title="Supprimer" onclick="event.stopPropagation();GTEC_TEAMS.delSection('${s.id}')">×</button>

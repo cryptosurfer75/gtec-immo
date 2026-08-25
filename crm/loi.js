@@ -1,5 +1,5 @@
 /* ==========================================================================
-   GTEC IMMOBILIER — Module « LOI » (Lettre d'offre)
+   CABINET H3C — Module « LOI » (Lettre d'offre)
    Deux variantes : proposition de prise à bail (location) / proposition
    d'achat (acquisition). Expose window.GTEC_LOI. Réutilise les helpers
    globaux de index.html (sb, esc, nomClient, panel, vide, erreur, charge, C,
@@ -13,7 +13,7 @@
    *  IDENTITÉ DE L'AGENCE — mêmes mentions légales que facture.js.
    * ------------------------------------------------------------------ */
   const AGENCE = {
-    raison_sociale:  'GTEC Immobilier',
+    raison_sociale:  'Cabinet H3C',
     forme_juridique: 'SAS',
     capital:         '1 000 €',
     adresse:         '2 rue Delambre, 80000 Amiens',
@@ -27,7 +27,7 @@
     email:           '',
     site:            'gtec-immobilier.fr'
   };
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=2';
+  const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
 
   /* ------------------------------------------------------------------ *
    *  État
@@ -267,7 +267,7 @@
     s.textContent = `
       #loi-ed-bg{position:fixed;inset:0;background:rgba(26,39,56,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;font-family:'Inter','Segoe UI',Arial,sans-serif}
       #loi-ed{background:#fff;border-radius:14px;width:min(980px,100%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden}
-      #loi-ed .h{background:#1A2738;color:#fff;padding:15px 22px;display:flex;justify-content:space-between;align-items:center}
+      #loi-ed .h{background:#00332E;color:#fff;padding:15px 22px;display:flex;justify-content:space-between;align-items:center}
       #loi-ed .h h3{margin:0;font-size:1.05rem} #loi-ed .h .x{background:none;border:0;color:#fff;font-size:1.5rem;cursor:pointer;line-height:1}
       #loi-ed .b{padding:20px 22px;max-height:calc(100vh - 200px);overflow:auto}
       #loi-ed .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -275,7 +275,7 @@
       #loi-ed label{font-size:.82rem;font-weight:600;color:var(--gris-fonce,#4A5A5E)}
       #loi-ed input,#loi-ed select,#loi-ed textarea{padding:9px 11px;border:1.5px solid #C9D0D3;border-radius:8px;font:inherit;width:100%;box-sizing:border-box}
       #loi-ed textarea{resize:vertical;min-height:60px}
-      .loi-sep{font-weight:700;color:#1A2738;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #eceff1;grid-column:1/-1}
+      .loi-sep{font-weight:700;color:#00332E;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #eceff1;grid-column:1/-1}
       #loi-ed .foot{padding:14px 22px;background:#f4f6f7;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
       .loi-msg{font-size:.85rem;color:var(--gris-fonce,#4A5A5E)} .loi-msg.err{color:#b3261e}
       .loi-check{display:flex;align-items:center;gap:8px;grid-column:1/-1} .loi-check input{width:auto}`;
@@ -403,7 +403,7 @@
             ${champ('À la charge de', iSel('loi-hono-charge', c.honoraires_charge, [['preneur_acquereur',voc.client],['bailleur_vendeur',voc.contrepartie]]))}
             <div class="f" id="loi-hono-pct-wrap" style="display:${c.honoraires_type==='forfait'?'none':'flex'}"><label>Pourcentage (%)</label>${iNum('loi-hono-pct', c.honoraires_pourcentage)}</div>
             <div class="f" id="loi-hono-forfait-wrap" style="display:${c.honoraires_type==='forfait'?'flex':'none'}"><label>Montant forfaitaire HT (€)</label>${iNum('loi-hono-forfait', c.honoraires_forfait)}</div>
-            <div class="f full" id="loi-hono-calc" style="font-weight:700;color:#2E6357"></div>
+            <div class="f full" id="loi-hono-calc" style="font-weight:700;color:#004D47"></div>
 
           </div>
         </div>
@@ -551,8 +551,8 @@
     const ag = AGENCE;
     const ref = l.reference || '(brouillon)';
 
-    const toolbar = shared ? '' : `<div class="noprint" style="position:sticky;top:0;background:#1A2738;padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:9">
-      <button onclick="window.print()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#3D8074;color:#fff">📄 Enregistrer en PDF / Imprimer</button>
+    const toolbar = shared ? '' : `<div class="noprint" style="position:sticky;top:0;background:#00332E;padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:9">
+      <button onclick="window.print()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#006962;color:#fff">📄 Enregistrer en PDF / Imprimer</button>
       <button onclick="window.close()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button></div>`;
 
     const identiteCli = [cliNom, cli.type_client==='societe' && cli.siret ? 'SIRET '+cli.siret : null,
@@ -647,7 +647,7 @@
       : `Bon pour ${mode==='client'?'prise à bail':'location'} au loyer annuel HT de ${euro2(montantSignature)} (${nombreEnLettres(montantSignature).toUpperCase()} EUROS)`;
 
     const styles = `
-      :root{--navy:#1A2738;--teal:#3D8074}
+      :root{--navy:#00332E;--teal:#006962}
       *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659;font-size:14px}
       .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);overflow:hidden}
       .title-bar{position:relative;background:var(--navy);color:#fff;text-align:center;padding:26px 24px 32px;overflow:hidden}
@@ -695,10 +695,10 @@
         .foot{flex-direction:column;gap:22px;padding:0} .sign{width:100%}
       }`;
 
-    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(voc.titreDoc+' '+ref)} — GTEC</title><style>${styles}</style></head>
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(voc.titreDoc+' '+ref)} — Cabinet H3C</title><style>${styles}</style></head>
       <body>${toolbar}<div class="sheet">
         <div class="title-bar">
-          <svg class="wave" viewBox="0 0 800 60" preserveAspectRatio="none"><path d="M0,60 H800 V20 C650,45 550,5 400,30 C250,55 150,10 0,35 Z" fill="#3D8074" opacity=".55"/></svg>
+          <svg class="wave" viewBox="0 0 800 60" preserveAspectRatio="none"><path d="M0,60 H800 V20 C650,45 550,5 400,30 C250,55 150,10 0,35 Z" fill="#006962" opacity=".55"/></svg>
           <div class="title-bar-fg"><h1>${voc.titreDoc}</h1><span class="accent"></span></div>
         </div>
         <div class="meta-row">N° <b>${esc(ref)}</b> · émise le ${fmtDate(l.date_offre)}${dateFinValidite?` · valable jusqu’au <b>${fmtDate(dateFinValidite)}</b>`:''}</div>
@@ -706,8 +706,8 @@
         <div class="content">
         <div class="head-row">
           <svg class="wave" viewBox="0 0 800 200" preserveAspectRatio="none">
-            <path d="M800,0 H480 C640,45 740,130 800,95 Z" fill="#1A2738" opacity=".07"/>
-            <path d="M0,200 H280 C140,155 40,85 0,115 Z" fill="#3D8074" opacity=".1"/>
+            <path d="M800,0 H480 C640,45 740,130 800,95 Z" fill="#00332E" opacity=".07"/>
+            <path d="M0,200 H280 C140,155 40,85 0,115 Z" fill="#006962" opacity=".1"/>
           </svg>
           <div class="head-row-fg">
           <div class="brand">
@@ -787,7 +787,7 @@
         </div>
 
         <div class="foot-bar">
-          <svg class="wave" viewBox="0 0 800 40" preserveAspectRatio="none"><path d="M0,0 H800 V25 C650,5 550,35 400,15 C250,-5 150,30 0,10 Z" fill="#3D8074" opacity=".5"/></svg>
+          <svg class="wave" viewBox="0 0 800 40" preserveAspectRatio="none"><path d="M0,0 H800 V25 C650,5 550,35 400,15 C250,-5 150,30 0,10 Z" fill="#006962" opacity=".5"/></svg>
           <div class="foot-bar-fg">${idLine}</div>
         </div>
       </div></body></html>`;
@@ -858,7 +858,7 @@
     const bg=document.createElement('div'); bg.id='loi-lien-bg';
     bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
     bg.innerHTML=`<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
-      <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du document à envoyer au client</div>
+      <div style="background:#00332E;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du document à envoyer au client</div>
       <div style="padding:18px 20px"><p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Lien copié. Le client le verra en pleine page (et pourra l’enregistrer en PDF).</p>
         <input readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box"></div>
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">

@@ -25,7 +25,7 @@
   const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
-    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
+    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@h3c-immo.fr' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;
   const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif / photos','Localisation',
@@ -777,7 +777,7 @@
       #av-ed .row input{padding:6px 8px;font-size:13px}
       #av-ed .row .del{background:#fbe9e9;border:0;color:#b33;border-radius:6px;cursor:pointer;font-size:15px;height:30px}
       #av-ed .rowhead{font-size:11px;color:#8a9498;font-weight:600}
-      #av-ed .addbtn{background:#eef3f1;border:1px dashed #5FA08F;color:#2f6359;border-radius:8px;padding:7px;cursor:pointer;font-size:13px;font-weight:600;margin-top:6px}
+      #av-ed .addbtn{background:#eef3f1;border:1px dashed #4FA79D;color:#2f6359;border-radius:8px;padding:7px;cursor:pointer;font-size:13px;font-weight:600;margin-top:6px}
       #av-ed .calc{background:#eef3f1;border:1px solid #c9ddd6;border-radius:10px;padding:12px 14px;margin-top:6px;font-size:13.5px;color:#00332E;line-height:1.9}
       #av-ed .calc b{color:#2f6359} #av-ed .calc .big{font-size:17px;font-weight:700}
       #av-ed .foot{padding:14px 22px;border-top:1px solid #e3e8ea;display:flex;gap:10px;justify-content:flex-end;background:#fafbfb;flex-wrap:wrap}

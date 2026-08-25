@@ -1,5 +1,5 @@
 /* ============================================================================
-   GTEC IMMOBILIER — Publication des annonces sur leboncoin.fr (Import API)
+   CABINET H3C — Publication des annonces sur leboncoin.fr (Import API)
    ----------------------------------------------------------------------------
    v1 branchée sur l'environnement de TEST (QA / bac à sable) uniquement — voir
    ~/.claude/plans (chantier « Intégration leboncoin.fr ») et Teams > MOT DE PASSE.
@@ -21,10 +21,10 @@
   // dupliquée ici par nécessité — à garder synchronisée si un agent change de coordonnées).
   const AGENTS = {
     FB:  { mail:'florent.bourdiec@gtec-immo.com', tel:'0629983569' },
-    VDM: { mail:'val.dm@gtec-immo.com',           tel:'0611511691' }
+    VDM: { mail:'val.dm@h3c-immo.fr',              tel:'0611511691' }
   };
 
-  // Type de bien GTEC → code leboncoin (real_estate_type). Confiance "haute" = confirmée sur
+  // Type de bien H3C → code leboncoin (real_estate_type). Confiance "haute" = confirmée sur
   // un exemple officiel leboncoin ou une énumération sans ambiguïté ; "basse" = à vérifier en
   // testant sur le bac à sable (voir Phase 8 du plan) avant de considérer le mapping fiable.
   const TYPE_MAP = {
@@ -39,7 +39,7 @@
     non_publie:           { c:'#9aa3ab', bg:'transparent',            lib:'Non publié' },
     en_cours_publication: { c:'#e8912d', bg:'rgba(232,145,45,.20)',   lib:'Publication en cours…' },
     en_cours_maj:         { c:'#e8912d', bg:'rgba(232,145,45,.20)',   lib:'Mise à jour en cours…' },
-    publie:                { c:'var(--teal)', bg:'rgba(61,128,116,.22)', lib:'En ligne sur leboncoin' },
+    publie:                { c:'var(--teal)', bg:'rgba(0,105,98,.22)', lib:'En ligne sur leboncoin' },
     erreur:                { c:'#d23f3f', bg:'rgba(210,63,63,.20)',   lib:'Erreur' },
     en_cours_suppression:  { c:'#e8912d', bg:'rgba(232,145,45,.20)',  lib:'Retrait en cours…' },
     retire:                 { c:'#9aa3ab', bg:'rgba(154,163,171,.20)', lib:'Retiré de leboncoin' }
@@ -98,12 +98,12 @@
         real_estate: {
           real_estate_type: map.real_estate_type,
           ...(offre.surface_m2 ? { surfaces: { surface: offre.surface_m2 } } : {}),
-          // Nos loyers GTEC sont toujours "HT HC" ou "NET HC" (Hors Charges) : jamais charges comprises.
+          // Nos loyers H3C sont toujours "HT HC" ou "NET HC" (Hors Charges) : jamais charges comprises.
           ...(adType==='location' ? { price_details: { rent_has_charges_included: false } } : {})
         }
       },
-      ad_reply: { email: agent.mail, ...(telDigits?{phone_number:telDigits}:{}), displayed_contact: 'GTEC Immobilier' },
-      client: { contact: 'GTEC Immobilier', zip_code: offre.code_postal||'', city: offre.ville||'' },
+      ad_reply: { email: agent.mail, ...(telDigits?{phone_number:telDigits}:{}), displayed_contact: 'Cabinet H3C' },
+      client: { contact: 'Cabinet H3C', zip_code: offre.code_postal||'', city: offre.ville||'' },
       location: { zip_code: offre.code_postal||'', city: offre.ville||'', ...(offre.adresse?{address:offre.adresse}:{}) },
       media
     };

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   GTEC IMMOBILIER — Module « Devis / Factures »
+   CABINET H3C — Module « Devis / Factures »
    Expose window.GTEC_FACTURE. Réutilise les helpers globaux de index.html
    (sb, esc, euro, nomClient, panel, vide, erreur, optClients, optOffres,
    chargerClients, chargerOffresListe, ME_AGENT).
@@ -15,7 +15,7 @@
    *  affiche « [à compléter] ».
    * ------------------------------------------------------------------ */
   const AGENCE = {
-    raison_sociale:   'GTEC Immobilier',
+    raison_sociale:   'Cabinet H3C',
     forme_juridique:  'SAS',         // ex. SAS, SARL…
     capital:          '1 000 €',     // ex. 10 000 €
     adresse:          '2 rue Delambre, 80000 Amiens',   // siège complet
@@ -262,7 +262,7 @@
     s.textContent = `
       #fa-ed-bg{position:fixed;inset:0;background:rgba(26,39,56,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;font-family:'Inter','Segoe UI',Arial,sans-serif}
       #fa-ed{background:#fff;border-radius:14px;width:min(960px,100%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden}
-      #fa-ed .h{background:#1A2738;color:#fff;padding:15px 22px;display:flex;justify-content:space-between;align-items:center}
+      #fa-ed .h{background:#00332E;color:#fff;padding:15px 22px;display:flex;justify-content:space-between;align-items:center}
       #fa-ed .h h3{margin:0;font-size:1.05rem} #fa-ed .h .x{background:none;border:0;color:#fff;font-size:1.5rem;cursor:pointer;line-height:1}
       #fa-ed .b{padding:20px 22px;max-height:calc(100vh - 200px);overflow:auto}
       #fa-ed .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -276,9 +276,9 @@
       #fa-lignes td{padding:5px 6px;border-bottom:1px solid #f4f6f7;vertical-align:middle}
       #fa-lignes input,#fa-lignes select{padding:7px 8px}
       #fa-lignes .del{background:#fbe9e9;color:#b3261e;border:0;border-radius:7px;padding:7px 10px;cursor:pointer;font-weight:700}
-      .fa-sep{font-weight:700;color:#1A2738;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #eceff1}
+      .fa-sep{font-weight:700;color:#00332E;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #eceff1}
       .fa-totaux{margin-top:14px;display:flex;justify-content:flex-end}
-      .fa-totaux table{min-width:280px} .fa-totaux td{padding:4px 10px} .fa-totaux .ttc td{font-weight:800;font-size:1.05rem;color:#1A2738;border-top:2px solid #1A2738}
+      .fa-totaux table{min-width:280px} .fa-totaux td{padding:4px 10px} .fa-totaux .ttc td{font-weight:800;font-size:1.05rem;color:#00332E;border-top:2px solid #00332E}
       #fa-ed .foot{padding:14px 22px;background:#f4f6f7;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
       .fa-msg{font-size:.85rem;color:var(--gris-fonce,#4A5A5E)} .fa-msg.err{color:#b3261e}`;
     document.head.appendChild(s);
@@ -347,10 +347,10 @@
           <span style="display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._fermer()">Fermer</button>
             ${ED.gel?'' : `<button type="button" class="btn btn-sm" onclick="GTEC_FACTURE._save(false)">💾 Enregistrer le brouillon</button>`}
-            ${ED.gel?'' : `<button type="button" class="btn btn-sm" style="background:var(--teal-dark,#2E6357)" onclick="GTEC_FACTURE._save(true)">
+            ${ED.gel?'' : `<button type="button" class="btn btn-sm" style="background:var(--teal-dark,#004D47)" onclick="GTEC_FACTURE._save(true)">
                 ${f.type==='devis'?'✓ Marquer envoyé':'✓ Émettre la facture'}</button>`}
             <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE.generer('${id||''}','live')">📄 Aperçu</button>
-            ${(id && f.type==='devis') ? `<button type="button" class="btn btn-sm" style="background:#1A2738" onclick="GTEC_FACTURE.convertir('${id}')">➡️ Transformer en facture</button>` : ''}
+            ${(id && f.type==='devis') ? `<button type="button" class="btn btn-sm" style="background:#00332E" onclick="GTEC_FACTURE.convertir('${id}')">➡️ Transformer en facture</button>` : ''}
           </span>
         </div>
       </div></div>`;
@@ -538,10 +538,10 @@
     const ref = f.reference || (estDevis?'(brouillon)':'(non émise)');
     const cliNom = nomClient(c);
     const ag = AGENCE;
-    const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=2';
+    const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
 
-    const toolbar = shared ? '' : `<div class="noprint" style="position:sticky;top:0;background:#1A2738;padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:9">
-      <button onclick="window.print()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#3D8074;color:#fff">📄 Enregistrer en PDF / Imprimer</button>
+    const toolbar = shared ? '' : `<div class="noprint" style="position:sticky;top:0;background:#00332E;padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:9">
+      <button onclick="window.print()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#006962;color:#fff">📄 Enregistrer en PDF / Imprimer</button>
       <button onclick="window.close()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button></div>`;
 
     const brk = s => esc(s||'').replace(/\r?\n/g,'<br>');
@@ -599,7 +599,7 @@
     ].filter(Boolean).map(esc).join(' — ');
 
     const styles = `
-      :root{--navy:#1A2738;--teal:#3D8074;--row:#dbe8e5;--row-alt:#eaf2f0}
+      :root{--navy:#00332E;--teal:#006962;--row:#dbe8e5;--row-alt:#eaf2f0}
       *{box-sizing:border-box} body{margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#2A3338;background:#525659;font-size:12px}
       .sheet{position:relative;background:#fff;width:210mm;min-height:297mm;margin:16px auto;box-shadow:0 6px 30px rgba(0,0,0,.4);overflow:hidden;padding:0 14mm 30mm}
       .deco{position:absolute;left:0;top:0;width:100%;height:90px;pointer-events:none;z-index:0}
@@ -661,10 +661,10 @@
       }
       @media print{ body{background:#fff} .noprint{display:none!important} .sheet{margin:0;box-shadow:none;width:auto;min-height:0} @page{size:A4;margin:0} }`;
 
-    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(titreDoc+' '+ref)} — GTEC</title><style>${styles}</style></head>
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(titreDoc+' '+ref)} — Cabinet H3C</title><style>${styles}</style></head>
       <body>${toolbar}<div class="sheet">
-        <svg class="deco" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M0,0 H470 C300,70 150,210 0,180 Z" fill="#1A2738"/><path d="M0,0 H360 C220,55 110,150 0,128 Z" fill="#3D8074" opacity=".9"/></svg>
-        <svg class="deco deco-b" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M800,300 H330 C500,230 650,90 800,120 Z" fill="#1A2738"/><path d="M800,300 H440 C580,245 690,150 800,172 Z" fill="#3D8074" opacity=".9"/></svg>
+        <svg class="deco" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M0,0 H470 C300,70 150,210 0,180 Z" fill="#00332E"/><path d="M0,0 H360 C220,55 110,150 0,128 Z" fill="#006962" opacity=".9"/></svg>
+        <svg class="deco deco-b" viewBox="0 0 800 300" preserveAspectRatio="none"><path d="M800,300 H330 C500,230 650,90 800,120 Z" fill="#00332E"/><path d="M800,300 H440 C580,245 690,150 800,172 Z" fill="#006962" opacity=".9"/></svg>
 
         <div class="content">
           <div class="head">
@@ -781,7 +781,7 @@
     const bg=document.createElement('div'); bg.id='fa-lien-bg';
     bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
     bg.innerHTML=`<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
-      <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du document à envoyer au client</div>
+      <div style="background:#00332E;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du document à envoyer au client</div>
       <div style="padding:18px 20px"><p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Lien copié. Le client le verra en pleine page (et pourra l’enregistrer en PDF).</p>
         <input readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box"></div>
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">

@@ -1,12 +1,12 @@
 /* ==========================================================================
-   GTEC IMMOBILIER — Module « Enseignes » (prospection développeurs immobiliers)
+   CABINET H3C — Module « Enseignes » (prospection développeurs immobiliers)
    Expose window.GTEC_ENSEIGNES. Réutilise les helpers globaux de index.html
    (sb, esc, C, charge, panel, vide, erreur, ME_AGENT, modal-root/modal-root2,
    classes CSS .modal-bg/.modal/.modal-h/.modal-f/.modal-foot/.form-grid/.f).
    Patron calqué sur facture.js (liste + indicateurs + éditeur modale).
    Suivi des contacts « développeurs » (responsables expansion / développement
    immobilier / asset managers / franchisés / partenaires) démarchés pour le
-   compte de GTEC.
+   compte de Cabinet H3C.
 
    Une même enseigne peut avoir plusieurs personnes rattachées (responsable
    développement, responsable immobilier, franchisé, partenaire...). La table
@@ -79,7 +79,7 @@
       rdv_prevu:        ['rgba(46,125,50,.15)','#2e7d32'],
       sans_besoin:      ['#eceff1','#90a4ae'],
       sans_suite:       ['#eceff1','#90a4ae'],
-      client:           ['rgba(61,128,116,.18)','#2E6357']
+      client:           ['rgba(0,105,98,.18)','#004D47']
     };
     const [bg,c] = map[s] || ['#eceff1','#546e7a'];
     return `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;background:${bg};color:${c}">${STATUT_LABEL[s]||s}</span>`;
