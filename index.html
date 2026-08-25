@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTEC Immobilier — Immobilier d'entreprise</title>
+<title>Cabinet H3C — Immobilier d'entreprise</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon-180.png">
@@ -11,10 +11,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* Vert d'eau GTEC (accent + barre de menu) */
-  --teal-dark:#2E6357; --teal:#3D8074; --teal-light:#5FA08F;
-  /* Bleu marine GTEC (bandeau logo + pied de page) */
-  --bleu:#1A2738;
+  /* Vert sapin H3C (accent + barre de menu) */
+  --teal-dark:#004D47; --teal:#006962; --teal-light:#4FA79D;
+  /* Vert très foncé H3C (pied de page) */
+  --bleu:#00332E;
+  --or:#E3AC5C; --or-dark:#C68F3D;
   --gris-fonce:#4A5A5E; --gris-clair:#C9D0D3; --gris-bg:#F4F6F7;
   --noir:#2A3338; --blanc:#fff;
   --ombre:0 2px 14px rgba(42,51,56,.08);
@@ -25,8 +26,8 @@ a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 
-/* ---------- En-tête : bandeau logo (bleu) + barre menu (vert) ---------- */
-.topbar{background:var(--bleu);text-align:center;padding:16px 0}
+/* ---------- En-tête : bandeau logo (blanc) + barre menu (vert sapin) ---------- */
+.topbar{background:#fff;border-bottom:1px solid var(--gris-clair);text-align:center;padding:16px 0}
 .topbar img{height:62px;display:inline-block}
 header{position:sticky;top:0;z-index:50;background:var(--teal);box-shadow:0 2px 10px rgba(42,51,56,.15)}
 .menu{display:flex;justify-content:center;flex-wrap:wrap}
@@ -43,7 +44,7 @@ header{position:sticky;top:0;z-index:50;background:var(--teal);box-shadow:0 2px 
 .hero{position:relative;color:#fff;padding:122px 0 132px;overflow:hidden}
 /* béton : photo de bâtiment + voile émeraude profond */
 .hero::before{content:'';position:absolute;inset:0;z-index:0;
-  background:linear-gradient(112deg,rgba(11,38,33,.96) 0%,rgba(17,78,67,.88) 40%,rgba(30,140,120,.5) 100%),
+  background:linear-gradient(112deg,rgba(0,25,23,.96) 0%,rgba(0,77,71,.88) 40%,rgba(0,105,98,.5) 100%),
              url('hero.jpg') center/cover no-repeat}
 /* verre : trame d'un mur-rideau, fondue sur la droite */
 .hero::after{content:'';position:absolute;inset:0;z-index:0;opacity:.16;pointer-events:none;
@@ -168,13 +169,13 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 .fiche-contact{display:inline-block;margin-top:22px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));color:#fff;padding:12px 24px;border-radius:10px;font-weight:600}
 
 /* Page d'accès (code) */
-.gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1A2738,#0f2733);display:flex;align-items:center;justify-content:center;padding:20px}
+.gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#00332E,#001916);display:flex;align-items:center;justify-content:center;padding:20px}
 .gate-card{background:#fff;border-radius:18px;padding:40px 34px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.45)}
 .gate-card img{height:60px;margin-bottom:16px}
-.gate-card h1{font-size:1.4rem;color:#1A2738;margin-bottom:6px}
+.gate-card h1{font-size:1.4rem;color:#00332E;margin-bottom:6px}
 .gate-card p{color:#4A5A5E;font-size:.92rem;margin-bottom:22px}
 .gate-card input{width:100%;padding:13px;border:1.5px solid #C9D0D3;border-radius:10px;font:inherit;text-align:center;letter-spacing:.1em;margin-bottom:14px}
-.gate-card input:focus{outline:none;border-color:#3D8074;box-shadow:0 0 0 3px rgba(61,128,116,.18)}
+.gate-card input:focus{outline:none;border-color:#006962;box-shadow:0 0 0 3px rgba(0,105,98,.18)}
 .gate-card .btn{width:100%;justify-content:center}
 .gate-msg{color:#b3261e;font-size:.85rem;margin-top:12px;min-height:18px}
 
@@ -198,7 +199,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 <!-- ============ PAGE D'ACCÈS (code) ============ -->
 <div id="gate" class="gate">
   <form class="gate-card" onsubmit="verifierCode(event)">
-    <img src="logo-gtec.png?v=4" alt="GTEC">
+    <img src="logo-h3c.png?v=1" alt="Cabinet H3C">
     <h1>Accès réservé</h1>
     <p>Ce site n'est pas encore ouvert au public.</p>
     <input type="password" id="gate-code" placeholder="Code d'accès" autocomplete="off" autofocus>
@@ -210,7 +211,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 
 <!-- ============ EN-TÊTE ============ -->
 <div class="topbar">
-  <a href="#"><img src="logo-gtec.png?v=4" alt="GTEC Immobilier"></a>
+  <a href="#"><img src="logo-h3c.png?v=1" alt="Cabinet H3C"></a>
 </div>
 <header>
   <nav class="menu">
@@ -226,14 +227,14 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 <!-- ============ HERO + RECHERCHE ============ -->
 <div class="hero">
   <div class="wrap">
-    <span class="eyebrow">GTEC Immobilier · Immobilier d'entreprise</span>
+    <span class="eyebrow">Cabinet H3C · Immobilier d'entreprise</span>
     <h1>Les locaux qui font <span class="accent">grandir</span><br>votre activité</h1>
-    <p>Bureaux, locaux commerciaux, entrepôts, terrains — à la vente comme à la location. Une équipe locale, l'exigence GTEC.</p>
+    <p>Bureaux, locaux commerciaux, entrepôts, terrains — à la vente comme à la location. Une équipe locale, l'exigence H3C.</p>
 
     <div class="trust">
       <div class="t"><b>Immobilier d'entreprise</b><span>bureaux · locaux · entrepôts · terrains</span></div>
       <div class="t"><b>Vente &amp; location</b><span>à l'achat comme au bail</span></div>
-      <div class="t"><b>L'exigence GTEC</b><span>la rigueur du bâtisseur</span></div>
+      <div class="t"><b>L'exigence H3C</b><span>rigueur et transparence</span></div>
     </div>
 
     <div class="search">
@@ -294,13 +295,13 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 <!-- ============ 3 PILIERS ============ -->
 <section id="services">
   <div class="wrap reveal">
-    <span class="section-label">Pourquoi GTEC</span>
+    <span class="section-label">Pourquoi H3C</span>
     <h2 class="section-title">À votre <span class="accent">service</span></h2>
     <p class="section-sub">Une équipe locale, à l'écoute de votre projet.</p>
     <div class="piliers">
       <div class="pilier"><div class="ico">📍</div><h4>La proximité</h4><p>Une connaissance fine du marché local et de ses opportunités.</p></div>
       <div class="pilier"><div class="ico">🤝</div><h4>L'accompagnement</h4><p>De la recherche à la signature, un interlocuteur dédié.</p></div>
-      <div class="pilier"><div class="ico">🏗️</div><h4>L'expertise GTEC</h4><p>Construction et immobilier : nous parlons le langage de l'entreprise.</p></div>
+      <div class="pilier"><div class="ico">🏗️</div><h4>L'expertise H3C</h4><p>Immobilier d'entreprise : nous parlons le langage des professionnels.</p></div>
     </div>
   </div>
 </section>
@@ -309,8 +310,8 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 <footer id="contact">
   <div class="wrap cols">
     <div>
-      <h5>GTEC Immobilier</h5>
-      <p style="max-width:340px">L'immobilier d'entreprise dans la lignée de GTEC. Bureaux, locaux, entrepôts : nous accompagnons les professionnels.</p>
+      <h5>Cabinet H3C</h5>
+      <p style="max-width:340px">L'immobilier d'entreprise, exigeant et sur mesure. Bureaux, locaux, entrepôts : nous accompagnons les professionnels.</p>
     </div>
     <div>
       <h5>Contact</h5>
@@ -321,7 +322,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
       <p><a href="#biens">Nos offres</a><br><a href="qui-sommes-nous.html">Qui sommes-nous</a><br><a href="actualites.html">Actualités</a><br><a href="#services">À votre service</a><br><a href="crm/" title="Réservé aux collaborateurs">Espace pro</a></p>
     </div>
   </div>
-  <div class="wrap bas">© 2026 GTEC Immobilier — Tous droits réservés.</div>
+  <div class="wrap bas">© 2026 Cabinet H3C — Tous droits réservés.</div>
 </footer>
 
 <!-- fiche produit -->
@@ -331,7 +332,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ====================================================================
-   CONFIG — à remplir avec les infos du projet Supabase Gtec
+   CONFIG — à remplir avec les infos du projet Supabase Cabinet H3C
    (Settings → API). La clé "anon public" est faite pour être publique.
    ==================================================================== */
 const SUPABASE_URL      = 'https://rqeyadmapekiwzyjtyhv.supabase.co';

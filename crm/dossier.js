@@ -1,7 +1,7 @@
 /* ============================================================================
-   GTEC IMMOBILIER — Générateur de dossier de présentation
+   CABINET H3C — Générateur de dossier de présentation
    ----------------------------------------------------------------------------
-   Reproduit la trame PowerPoint GTEC (10 pages paysage) en HTML imprimable,
+   Reproduit la trame PowerPoint (10 pages paysage) en HTML imprimable,
    auto-remplie depuis les données d'un bien du CRM.
    Usage :  GTEC_DOSSIER.generer(offreId)
    Dépend de la variable globale `sb` (client Supabase déjà initialisé).
@@ -10,16 +10,16 @@
 (function(){
   'use strict';
 
-  // -- Identité GTEC -----------------------------------------------------------
+  // -- Identité Cabinet H3C -----------------------------------------------------
   // Clé Google Maps (Static Maps). Vide = on retombe sur les cartes libres.
   // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=2';
-  // Marque « bâtiment + GTEC » fond transparent (sans wordmark) — dernière page ;
+  const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
+  // Marque « bâtiment + H3C » fond transparent (sans wordmark) — dernière page ;
   // le sous-titre « IMMOBILIER D'ENTREPRISE » est rendu en texte juste en dessous.
-  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=2';
+  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
   // Bloc logo + signature « Immobilier d'entreprise » (taille homogène partout)
-  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
+  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="Cabinet H3C"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
   // Signatures par agent (le bien porte une initiale FB / VDM)
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
@@ -112,7 +112,7 @@
     const paras = [];
     // 1) Accroche + situation + surface (toujours annoncée comme approximative)
     const p1 = [];
-    let s1 = `GTEC Immobilier vous propose, ${tx}, ${ti.np}`;
+    let s1 = `Cabinet H3C vous propose, ${tx}, ${ti.np}`;
     if(loc) s1 += ` idéalement situé${ti.ac} à ${loc}`;
     p1.push(s1 + '.');
     if(o.surface_m2){
@@ -160,7 +160,7 @@
     // 4) Disponibilité + appel à l’action (sans conditions financières — voir dossier)
     const p4 = [];
     if(o.disponibilite){ const d=o.disponibilite.trim(); p4.push(/^disponibilit/i.test(d) ? d+'.' : `Disponibilité : ${d}.`); }
-    p4.push('Pour toute information complémentaire ou pour organiser une visite, l’équipe GTEC Immobilier se tient à votre entière disposition.');
+    p4.push('Pour toute information complémentaire ou pour organiser une visite, l’équipe Cabinet H3C se tient à votre entière disposition.');
     paras.push(p4.join(' '));
 
     return paras.filter(Boolean);
@@ -203,7 +203,7 @@
   }
 
   // -- Les pages du dossier ----------------------------------------------------
-  // Badge « GTEC-0007 » : pastille centrée dans le bandeau vert du bas, liseré + texte blancs
+  // Badge « REF-0007 » : pastille centrée dans le bandeau vert du bas, liseré + texte blancs
   function refBadge(o){
     if(!o || !o.reference) return '';
     return `<span class="cover-ref">${esc(o.reference)}</span>`;
@@ -250,7 +250,7 @@
     //   Google ne sert plus que le plan (roadmap), qui reste autorisé.
     if(variant==='aerienne') return null;
     const center = geo.lat+','+geo.lon;
-    const marker = 'color:0x3D8074%7C'+center;   // pin vert GTEC sur le bien
+    const marker = 'color:0x006962%7C'+center;   // pin vert H3C sur le bien
     return 'https://maps.googleapis.com/maps/api/staticmap?center='+center
       + '&zoom=15&size=640x400&scale=2&maptype=roadmap'
       + '&markers='+marker+'&language=fr&key='+GMAPS_KEY;
@@ -275,8 +275,8 @@
     const id = 'ah-'+num;
     return `<svg class="loc-arrow" viewBox="0 0 252 135" preserveAspectRatio="none">`
       + `<defs><marker id="${id}" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="5" refY="3.2" orient="auto">`
-      + `<path d="M0,0 L7,3.2 L0,6.4 Z" fill="#3D8074"/></marker></defs>`
-      + `<line x1="200" y1="60" x2="135" y2="66.5" stroke="#3D8074" stroke-width="1.5" marker-end="url(#${id})"/>`
+      + `<path d="M0,0 L7,3.2 L0,6.4 Z" fill="#006962"/></marker></defs>`
+      + `<line x1="200" y1="60" x2="135" y2="66.5" stroke="#006962" stroke-width="1.5" marker-end="url(#${id})"/>`
       + `</svg><span class="loc-tag">Locaux disponibles</span>`;
   }
 
@@ -417,7 +417,7 @@
     const c = AGENTS[agentKey] || (o && AGENTS[o.agent]) || CONTACT_DEFAUT;
     return `<section class="pg contact">
       <div class="contact-logo-block">
-        <img class="contact-logo" src="${LOGO_CONTACT}" alt="GTEC">
+        <img class="contact-logo" src="${LOGO_CONTACT}" alt="Cabinet H3C">
         <div class="contact-logo-sub">Immobilier d’entreprise</div>
       </div>
       <div class="contact-sep"></div>
@@ -427,10 +427,10 @@
     </section>`;
   }
 
-  // -- Feuille de style du dossier (paysage, identité GTEC) --------------------
+  // -- Feuille de style du dossier (paysage, identité Cabinet H3C) -------------
   function styles(){
     return `
-      :root{ --navy:#1A2738; --teal:#3D8074; --teal-d:#2f6359; --ink:#1f2a37; }
+      :root{ --navy:#00332E; --teal:#006962; --teal-d:#004D47; --ink:#1f2a37; }
       *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       html,body{ margin:0; padding:0; background:#444; font-family:'Inter','Segoe UI',Arial,sans-serif; color:var(--ink); }
       .toolbar{ position:sticky; top:0; z-index:10; background:var(--navy); color:#fff; padding:12px 20px;
@@ -566,7 +566,7 @@
           var opts={attribution:t.attribution,maxZoom:19};
           if(t.sub) opts.subdomains=t.sub;
           L.tileLayer(t.url,opts).addTo(map);
-          L.circleMarker([lat,lon],{radius:13,color:'#fff',weight:2,fillColor:'#3D8074',fillOpacity:.95}).addTo(map);
+          L.circleMarker([lat,lon],{radius:13,color:'#fff',weight:2,fillColor:'#006962',fillOpacity:.95}).addTo(map);
           setTimeout(function(){ map.invalidateSize(); },200);
         });
       }
@@ -652,10 +652,10 @@
       const old = document.getElementById('dos-agent-bg'); if(old) old.remove();
       const bg = document.createElement('div'); bg.id='dos-agent-bg';
       bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
-      const btn = key => `<button data-k="${key}" style="display:block;width:100%;text-align:left;border:1px solid #c9d0d3;border-radius:9px;padding:12px 16px;margin-bottom:10px;font-size:14px;font-weight:600;cursor:pointer;background:${key===defautKey?'#eaf3f1':'#fff'};color:#1A2738">
+      const btn = key => `<button data-k="${key}" style="display:block;width:100%;text-align:left;border:1px solid #c9d0d3;border-radius:9px;padding:12px 16px;margin-bottom:10px;font-size:14px;font-weight:600;cursor:pointer;background:${key===defautKey?'#eaf3f1':'#fff'};color:#00332E">
         ${esc(AGENTS[key].nom)}<div style="font-weight:400;font-size:12px;color:#6b7a80;margin-top:2px">${esc(AGENTS[key].tel)} — ${esc(AGENTS[key].mail)}</div></button>`;
       bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(420px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
-        <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">Coordonnées du dossier</div>
+        <div style="background:#00332E;color:#fff;padding:14px 20px;font-weight:700">Coordonnées du dossier</div>
         <div style="padding:18px 20px">
           <p style="margin:0 0 12px;color:#4A5A5E;font-size:13px">Qui envoie ce dossier au client ?</p>
           ${Object.keys(AGENTS).map(btn).join('')}
@@ -696,7 +696,7 @@
       const up = await sb.storage.from('offres').upload(path, blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
       if(up.error) throw up.error;
     }catch(e){ alert('Impossible de publier le dossier : '+(e.message||e)); return; }
-    // Le client ouvre la visionneuse sur le domaine GTEC (qui sert le vrai HTML) ;
+    // Le client ouvre la visionneuse sur le domaine du site (qui sert le vrai HTML) ;
     // elle récupère puis affiche le dossier déposé dans le stockage.
     const lien = 'https://gtec-immobilier.fr/d/?id=' + encodeURIComponent(offreId);
     afficherLien(lien, offreId);
@@ -721,7 +721,7 @@
     const bg = document.createElement('div'); bg.id='dos-lien-bg';
     bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
     bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
-      <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du dossier à envoyer au client</div>
+      <div style="background:#00332E;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien du dossier à envoyer au client</div>
       <div style="padding:18px 20px">
         <p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Le lien a été copié. Collez-le dans votre e-mail : le client verra le dossier en pleine qualité (et pourra le télécharger en PDF s'il le souhaite).</p>
         <input id="dos-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
@@ -729,7 +729,7 @@
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
         <button onclick="GTEC_DOSSIER.revoquerLien('${esc(offreId||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
         <span style="flex:1"></span>
-        <button onclick="var i=document.getElementById('dos-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#3D8074;color:#fff">📋 Copier</button>
+        <button onclick="var i=document.getElementById('dos-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#006962;color:#fff">📋 Copier</button>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
         <button onclick="document.getElementById('dos-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
       </div></div>`;

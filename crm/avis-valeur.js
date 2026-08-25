@@ -1,5 +1,5 @@
 /* ============================================================================
-   GTEC IMMOBILIER — AVIS DE VALEUR (document autonome)
+   CABINET H3C — AVIS DE VALEUR (document autonome)
    ----------------------------------------------------------------------------
    Un avis de valeur est un document établi pour un prospect qui souhaite faire
    estimer son bâtiment — il n'est PAS rattaché à un bien du portefeuille.
@@ -19,10 +19,10 @@
 (function(){
   'use strict';
 
-  // -- Identité GTEC -----------------------------------------------------------
+  // -- Identité Cabinet H3C -----------------------------------------------------
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-gtec-vert.png?v=2';
-  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-gtec-mark.png?v=2';
+  const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
+  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
   const AGENTS = {
     FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@gtec-immo.com' }
@@ -30,7 +30,7 @@
   const CONTACT_DEFAUT = AGENTS.FB;
   const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif / photos','Localisation',
                     'Détail des surfaces','Valeur comparative','Analyse SWOT','Valorisation & conclusion'];
-  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="GTEC"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
+  const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="Cabinet H3C"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
 
   // -- Petites aides -----------------------------------------------------------
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -79,7 +79,7 @@
     const center = geo.lat+','+geo.lon;
     return 'https://maps.googleapis.com/maps/api/staticmap?center='+center
       + '&zoom=14&size=640x400&scale=2&maptype=roadmap'
-      + '&markers=color:0x3D8074%7C'+center+'&language=fr&key='+GMAPS_KEY;
+      + '&markers=color:0x006962%7C'+center+'&language=fr&key='+GMAPS_KEY;
   }
   async function geocoder(a){
     const q = [a.adresse, a.code_postal, a.ville].filter(Boolean).join(' ').trim();
@@ -160,7 +160,7 @@
       let best=Infinity;
       PIC_CITIES.forEach((c,i)=>{ const [cx,cy]=picProj(c.lon,c.lat); const d=Math.hypot(cx-bx,cy-by); if(d<best){best=d;nearIdx=i;} });
     }
-    const dot = (cx,cy)=>'<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#1A2738" stroke-width="3"/>';
+    const dot = (cx,cy)=>'<circle cx="'+cx.toFixed(0)+'" cy="'+cy.toFixed(0)+'" r="9" fill="#fff" stroke="#00332E" stroke-width="3"/>';
     const refs = PIC_CITIES.map((c,i)=>{
       const [cx,cy] = picProj(c.lon, c.lat);
       const tx = c.side==='L' ? cx-17 : cx+17;
@@ -208,10 +208,10 @@
     // Puis « Nature des informations » sur toute la largeur en dessous.
     const body = `<div class="av-warn">
       ${bloc('Confidentialité du document',
-        `<p>Cette présentation a été réalisée par GTEC Immobilier dans le cadre d’une étude de valorisation immobilière. Les informations qu’elle contient sont strictement confidentielles et réservées à son destinataire.</p>
+        `<p>Cette présentation a été réalisée par Cabinet H3C dans le cadre d’une étude de valorisation immobilière. Les informations qu’elle contient sont strictement confidentielles et réservées à son destinataire.</p>
          <p>Toute diffusion, reproduction ou transmission à un tiers sans autorisation préalable est interdite.</p>`)}
       ${bloc('Limitation de responsabilité',
-        `<p>GTEC Immobilier ne pourra être tenu responsable d’une utilisation partielle des informations présentées dans ce document.</p>
+        `<p>Cabinet H3C ne pourra être tenu responsable d’une utilisation partielle des informations présentées dans ce document.</p>
          <p>Le propriétaire se réserve la possibilité de modifier, suspendre ou interrompre toute discussion relative à l’actif présenté.</p>`)}
       ${bloc('Nature des informations communiquées',
         `<p>Les données et estimations présentées sont fournies à titre indicatif et ne constituent ni une offre contractuelle, ni une expertise immobilière au sens réglementaire. Les éléments communiqués reposent sur les informations disponibles à la date de réalisation de l’étude et restent susceptibles d’évoluer selon :</p>
@@ -223,7 +223,7 @@
 
   function pageGroupe(){
     const body = `<div class="av-groupe">
-      <p>GTEC Immobilier est un acteur spécialisé en immobilier d’entreprise et commercial, dédié à l’accompagnement des entreprises, investisseurs et propriétaires dans leurs projets de transaction, vente et location.</p>
+      <p>Cabinet H3C est un acteur spécialisé en immobilier d’entreprise et commercial, dédié à l’accompagnement des entreprises, investisseurs et propriétaires dans leurs projets de transaction, vente et location.</p>
       <p>La société s’appuie sur une équipe forte de plus de 10 ans d’expérience sur le marché des Hauts-de-France. Cette expertise permet d’offrir une parfaite connaissance des secteurs, des valeurs de marché et des opportunités locales afin de proposer un accompagnement sur mesure à chaque étape de votre projet.</p>
       <p>Notre ambition est simple : mettre notre savoir faire, notre proximité et notre réactivité au service de vos décisions immobilières.</p>
       <div class="av-groupe-tags"><span>Transaction</span><span>Vente</span><span>Location</span><span>Conseil & valorisation</span></div>
@@ -236,7 +236,7 @@
     return `<section class="pg">
       <header class="pg-h"><h1>Sommaire</h1>${logoBlock('pg-logo')}</header>
       <div class="pg-body"><ol class="av-sommaire">${items}</ol></div>
-      <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
+      <footer class="pg-f"><div class="av-conf">Cabinet H3C • Étude confidentielle</div><div class="pg-num"></div></footer>
     </section>`;
   }
 
@@ -275,7 +275,7 @@
     return `<section class="pg">
       <header class="pg-h"><h1>Photo de l’actif</h1>${logoBlock('pg-logo')}</header>
       <div class="pg-body"><div class="av-vues av-vues-${ph.length}">${imgs}</div></div>
-      <footer class="pg-f"><div class="av-conf">GTEC Immobilier • Étude confidentielle</div><div class="pg-num"></div></footer>
+      <footer class="pg-f"><div class="av-conf">Cabinet H3C • Étude confidentielle</div><div class="pg-num"></div></footer>
     </section>`;
   }
 
@@ -420,7 +420,7 @@
   function pageContact(a){
     const c = AGENTS[a.agent] || CONTACT_DEFAUT;
     return `<section class="pg av-contact">
-      <div class="av-ct-logo"><img src="${LOGO_CONTACT}" alt="GTEC"><div class="av-ct-sub">Immobilier d’entreprise</div></div>
+      <div class="av-ct-logo"><img src="${LOGO_CONTACT}" alt="Cabinet H3C"><div class="av-ct-sub">Immobilier d’entreprise</div></div>
       <div class="av-ct-sep"></div>
       <div class="av-ct-nom">${esc(c.nom)}</div>
       <div class="av-ct-tel">${esc(c.tel)}</div>
@@ -431,7 +431,7 @@
   // -- Styles du document ------------------------------------------------------
   function styles(){
     return `
-      :root{ --navy:#1A2738; --teal:#3D8074; --teal-d:#2f6359; --teal-l:#5FA08F; --ink:#1f2a37; }
+      :root{ --navy:#00332E; --teal:#006962; --teal-d:#004D47; --teal-l:#4FA79D; --ink:#1f2a37; }
       *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       html,body{ margin:0; padding:0; background:#444; font-family:'Inter','Segoe UI',Arial,sans-serif; color:var(--ink); }
       .toolbar{ position:sticky; top:0; z-index:10; background:var(--navy); color:#fff; padding:12px 20px; display:flex; gap:12px; align-items:center; justify-content:space-between; }
@@ -627,7 +627,7 @@
           var map=L.map(el,{zoomControl:false,attributionControl:true,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false}).setView([lat,lon],t.zoom);
           var opts={attribution:t.attribution,maxZoom:19}; if(t.sub) opts.subdomains=t.sub;
           L.tileLayer(t.url,opts).addTo(map);
-          L.circleMarker([lat,lon],{radius:13,color:'#fff',weight:2,fillColor:'#3D8074',fillOpacity:.95}).addTo(map);
+          L.circleMarker([lat,lon],{radius:13,color:'#fff',weight:2,fillColor:'#006962',fillOpacity:.95}).addTo(map);
           setTimeout(function(){ map.invalidateSize(); },200);
         });
       }
@@ -720,7 +720,7 @@
     const bg = document.createElement('div'); bg.id='av-lien-bg';
     bg.style.cssText='position:fixed;inset:0;background:rgba(26,39,56,.5);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,Arial,sans-serif';
     bg.innerHTML = `<div style="background:#fff;border-radius:14px;width:min(560px,92%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden">
-      <div style="background:#1A2738;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien de l’avis à envoyer au client</div>
+      <div style="background:#00332E;color:#fff;padding:14px 20px;font-weight:700">🔗 Lien de l’avis à envoyer au client</div>
       <div style="padding:18px 20px">
         <p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Le lien a été copié. Collez-le dans votre e-mail : le client verra l’avis en pleine qualité, sans téléchargement lourd (et pourra l’enregistrer en PDF s'il le souhaite).</p>
         <input id="av-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
@@ -728,7 +728,7 @@
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
         <button onclick="GTEC_AVIS.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
         <span style="flex:1"></span>
-        <button onclick="var i=document.getElementById('av-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#3D8074;color:#fff">📋 Copier</button>
+        <button onclick="var i=document.getElementById('av-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#006962;color:#fff">📋 Copier</button>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
         <button onclick="document.getElementById('av-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
       </div></div>`;
@@ -744,17 +744,17 @@
   function modalCss(){
     return `#av-ed-bg{position:fixed;inset:0;background:rgba(26,39,56,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;font-family:'Inter','Segoe UI',Arial,sans-serif}
       #av-ed{background:#fff;border-radius:14px;width:min(900px,100%);box-shadow:0 18px 60px rgba(0,0,0,.4);overflow:hidden}
-      #av-ed .h{background:#1A2738;color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
+      #av-ed .h{background:#00332E;color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
       #av-ed .h h3{margin:0;font-size:17px} #av-ed .h .x{background:none;border:0;color:#fff;font-size:24px;cursor:pointer;line-height:1}
       #av-ed .b{padding:18px 22px;max-height:66vh;overflow:auto}
-      #av-ed .sep{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#3D8074;border-bottom:1px solid #e3e8ea;padding-bottom:5px;margin:18px 0 12px}
+      #av-ed .sep{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#006962;border-bottom:1px solid #e3e8ea;padding-bottom:5px;margin:18px 0 12px}
       #av-ed .sep:first-child{margin-top:0}
       #av-ed .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
       #av-ed .f{display:flex;flex-direction:column;gap:4px} #av-ed .f.full{grid-column:1/-1}
       #av-ed .msel{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
       #av-ed .msel-chip{border:1px solid #c7d0d3;border-radius:16px;padding:4px 11px;font-size:12.5px;cursor:pointer;background:#fff;color:#333;user-select:none}
-      #av-ed .msel-chip:hover{border-color:#3D8074}
-      #av-ed .msel-chip.on{background:#3D8074;color:#fff;border-color:#3D8074}
+      #av-ed .msel-chip:hover{border-color:#006962}
+      #av-ed .msel-chip.on{background:#006962;color:#fff;border-color:#006962}
       #av-ed label{font-size:12.5px;color:#4A5A5E;font-weight:600}
       #av-ed input,#av-ed textarea,#av-ed select{border:1px solid #c9d0d3;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;width:100%}
       #av-ed textarea{min-height:60px;resize:vertical}
@@ -773,16 +773,16 @@
       #av-ed .cad-btn:hover{background:#dfeae6}
       #av-ed .swot-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
       #av-ed .swot-form textarea{min-height:70px}
-      #av-ed .lots-tot{margin-top:10px;text-align:right;font-size:14px;color:#4A5A5E} #av-ed .lots-tot b{font-size:18px;color:#1A2738;margin-left:6px}
+      #av-ed .lots-tot{margin-top:10px;text-align:right;font-size:14px;color:#4A5A5E} #av-ed .lots-tot b{font-size:18px;color:#00332E;margin-left:6px}
       #av-ed .row input{padding:6px 8px;font-size:13px}
       #av-ed .row .del{background:#fbe9e9;border:0;color:#b33;border-radius:6px;cursor:pointer;font-size:15px;height:30px}
       #av-ed .rowhead{font-size:11px;color:#8a9498;font-weight:600}
       #av-ed .addbtn{background:#eef3f1;border:1px dashed #5FA08F;color:#2f6359;border-radius:8px;padding:7px;cursor:pointer;font-size:13px;font-weight:600;margin-top:6px}
-      #av-ed .calc{background:#eef3f1;border:1px solid #c9ddd6;border-radius:10px;padding:12px 14px;margin-top:6px;font-size:13.5px;color:#1A2738;line-height:1.9}
+      #av-ed .calc{background:#eef3f1;border:1px solid #c9ddd6;border-radius:10px;padding:12px 14px;margin-top:6px;font-size:13.5px;color:#00332E;line-height:1.9}
       #av-ed .calc b{color:#2f6359} #av-ed .calc .big{font-size:17px;font-weight:700}
       #av-ed .foot{padding:14px 22px;border-top:1px solid #e3e8ea;display:flex;gap:10px;justify-content:flex-end;background:#fafbfb;flex-wrap:wrap}
       #av-ed .foot button{border:0;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
-      #av-ed .save{background:#3D8074;color:#fff} #av-ed .gen{background:#1A2738;color:#fff} #av-ed .cancel{background:#e3e8ea;color:#333}
+      #av-ed .save{background:#006962;color:#fff} #av-ed .gen{background:#00332E;color:#fff} #av-ed .cancel{background:#e3e8ea;color:#333}
       #av-ed .hint{font-size:11.5px;color:#8a9498;margin-top:3px}
       #av-ed .photo img{max-height:90px;border-radius:6px;margin-top:6px}`;
   }
@@ -800,7 +800,7 @@
       <div class="msel">${chips}</div></div>`;
   };
   const CK = (id,label,v) => `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}" style="font-weight:500">${esc(label)}</label></div>`;
-  const SELA = (v) => `<div class="f full"><label>Négociateur GTEC</label><select id="av-agent">`+
+  const SELA = (v) => `<div class="f full"><label>Négociateur H3C</label><select id="av-agent">`+
     [['FB','Florent BOURDIEC'],['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'FB')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
   // Cadre « Occupant(s) » : 1 à 3 enseignes / sociétés occupant le bien, juste sous le consultant.
   function occRow(o){ o=o||{};
@@ -973,19 +973,19 @@
       const st=document.createElement('style'); st.id='dvf-ov-style'; st.textContent=`
         #dvf-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10010;display:flex;align-items:center;justify-content:center}
         #dvf-ov .box{background:#fff;border-radius:12px;width:min(900px,95vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;font-family:inherit}
-        #dvf-ov .dvf-h{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#1A2738;color:#fff;font-size:16px}
+        #dvf-ov .dvf-h{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#00332E;color:#fff;font-size:16px}
         #dvf-ov .dvf-h button{background:none;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
         #dvf-ov .dvf-sub{padding:10px 18px;font-size:13px;color:#555;background:#f4f6f7;border-bottom:1px solid #e3e8ea}
         #dvf-ov .dvf-list{overflow:auto;padding:4px 10px}
         #dvf-ov .dvf-row{display:grid;grid-template-columns:24px 76px 1fr 78px 104px 92px 56px;align-items:center;gap:8px;padding:7px 8px;border-bottom:1px solid #eef0f2;font-size:13px;cursor:pointer}
         #dvf-ov .dvf-row:hover{background:#f7faf9}
-        #dvf-ov .dvf-row .a{font-weight:600;color:#1A2738}
+        #dvf-ov .dvf-row .a{font-weight:600;color:#00332E}
         #dvf-ov .dvf-row .m{font-weight:700;color:#2f6359;text-align:right}
         #dvf-ov .dvf-row .p,#dvf-ov .dvf-row .b{text-align:right;color:#444}
         #dvf-ov .dvf-row .x{text-align:right;color:#9aa0a6}
         #dvf-ov .dvf-f{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid #e3e8ea}
         #dvf-ov .dvf-f button{border:0;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer}
-        #dvf-ov .dvf-f .ok{background:#3D8074;color:#fff} #dvf-ov .dvf-f .cancel{background:#e3e8ea;color:#333}`;
+        #dvf-ov .dvf-f .ok{background:#006962;color:#fff} #dvf-ov .dvf-f .cancel{background:#e3e8ea;color:#333}`;
       document.head.appendChild(st);
     }
     const ov=document.createElement('div'); ov.id='dvf-ov';
@@ -1164,7 +1164,7 @@
 
         <div class="sep">Transactions comparables</div>
         <p class="hint" style="margin:-4px 0 8px">Recherche automatique des ventes DVF des 5 dernières années autour de l’adresse du bien, puis sélection à cocher.</p>
-        <button type="button" class="addbtn" style="background:#1A2738;color:#fff;border-color:#1A2738" onclick="GTEC_AVIS._dvfPick()">🔍 Importer des ventes comparables (DVF)</button>
+        <button type="button" class="addbtn" style="background:#00332E;color:#fff;border-color:#00332E" onclick="GTEC_AVIS._dvfPick()">🔍 Importer des ventes comparables (DVF)</button>
         <div class="rowhead row comp"><span>Date</span><span>Typologie</span><span>Adresse</span><span>Terrain m²</span><span>Bâti m²</span><span>Valeur vénale €</span><span></span></div>
         <div class="rows" id="av-comp-rows">${comp.map(compRow).join('')}</div>
         <button type="button" class="addbtn" onclick="GTEC_AVIS._addComp()">＋ Ajouter une transaction comparable</button>
