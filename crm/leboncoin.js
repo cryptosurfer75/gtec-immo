@@ -5,9 +5,9 @@
    ~/.claude/plans (chantier « Intégration leboncoin.fr ») et Teams > MOT DE PASSE.
    Une offre en transaction "les_deux" peut avoir une annonce vente ET une annonce
    location en même temps (table offre_leboncoin, une ligne par (offre_id, ad_type)).
-   Usage :  GTEC_LEBONCOIN.chargerLignes()  (une fois, dans vueOffres())
-            GTEC_LEBONCOIN.badge(offre)     (dans ligneOffre())
-            GTEC_LEBONCOIN.publier(offreId) (ouvre la modale de publication)
+   Usage :  H3C_LEBONCOIN.chargerLignes()  (une fois, dans vueOffres())
+            H3C_LEBONCOIN.badge(offre)     (dans ligneOffre())
+            H3C_LEBONCOIN.publier(offreId) (ouvre la modale de publication)
    Dépend de la variable globale `sb` et, pour le rafraîchissement de la liste
    après publication, de la fonction globale `filtrerOffres` (déjà utilisée par
    toggleVitrine/toggleMandat dans index.html).
@@ -20,8 +20,7 @@
   // Copie minimale de la liste AGENTS de crm/dossier.js (non exportée par ce module,
   // dupliquée ici par nécessité — à garder synchronisée si un agent change de coordonnées).
   const AGENTS = {
-    FB:  { mail:'florent.bourdiec@gtec-immo.com', tel:'0629983569' },
-    VDM: { mail:'val.dm@h3c-immo.fr',              tel:'0611511691' }
+    VDM: { mail:'v.demartelaere@cabinet-h3c.com', tel:'0611511691' }
   };
 
   // Type de bien H3C → code leboncoin (real_estate_type). Confiance "haute" = confirmée sur
@@ -65,7 +64,7 @@
   function badge(offre){
     const lignes = CACHE[offre.id] || [];
     const contenu = lignes.length ? lignes.map(pastille).join('') : `<span title="Pas encore publié sur leboncoin" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#fff;border:1.5px solid var(--gris-clair)"></span>`;
-    return `<span style="cursor:pointer" onclick="event.stopPropagation();GTEC_LEBONCOIN.publier('${offre.id}')">${contenu}</span>`;
+    return `<span style="cursor:pointer" onclick="event.stopPropagation();H3C_LEBONCOIN.publier('${offre.id}')">${contenu}</span>`;
   }
 
   function typesPossibles(offre){
@@ -80,7 +79,7 @@
     const map = TYPE_MAP[offre.type_bien] || {};
     const estTerrain = offre.type_bien === 'terrain';
     const prix = adType==='vente' ? offre.prix_vente : offre.loyer_annuel_m2;   // déjà le total MENSUEL pour une location
-    const agent = AGENTS[offre.agent] || AGENTS.FB;
+    const agent = AGENTS[offre.agent] || AGENTS.VDM;
     const telDigits = (agent.tel||'').replace(/\D/g,'');
 
     const source = (photos && photos.length) ? photos.slice()
@@ -146,8 +145,8 @@
       </div>
       ${ligne && ligne.derniere_erreur ? `<div style="font-size:.8rem;color:#d23f3f;margin-top:6px">${esc(ligne.derniere_erreur)}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <button type="button" class="btn btn-sm" ${manque.length?'disabled title="Champs manquants : '+esc(manque.join(', '))+'"':''} onclick="GTEC_LEBONCOIN._publierType('${adType}')">${ligne?'🔄 Mettre à jour':'📢 Publier'}</button>
-        ${ligne && ligne.statut!=='retire' ? `<button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_LEBONCOIN._retirerType('${adType}')">🗑 Retirer</button>` : ''}
+        <button type="button" class="btn btn-sm" ${manque.length?'disabled title="Champs manquants : '+esc(manque.join(', '))+'"':''} onclick="H3C_LEBONCOIN._publierType('${adType}')">${ligne?'🔄 Mettre à jour':'📢 Publier'}</button>
+        ${ligne && ligne.statut!=='retire' ? `<button type="button" class="btn btn-ghost btn-sm" onclick="H3C_LEBONCOIN._retirerType('${adType}')">🗑 Retirer</button>` : ''}
       </div>
     </div>`;
   }
@@ -155,8 +154,8 @@
   function rendre(){
     if(!PUB_OFFRE) return;
     const manque = validation(PUB_OFFRE, PUB_PHOTOS);
-    document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" style="z-index:200" onclick="if(event.target===this)GTEC_LEBONCOIN._fermer()"><div class="modal">
-      <div class="modal-h"><h3>📢 Publier sur leboncoin — ${esc(PUB_OFFRE.reference||'')}</h3><button class="x" onclick="GTEC_LEBONCOIN._fermer()">×</button></div>
+    document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" style="z-index:200" onclick="if(event.target===this)H3C_LEBONCOIN._fermer()"><div class="modal">
+      <div class="modal-h"><h3>📢 Publier sur leboncoin — ${esc(PUB_OFFRE.reference||'')}</h3><button class="x" onclick="H3C_LEBONCOIN._fermer()">×</button></div>
       <div class="modal-f">
         <div style="background:rgba(232,145,45,.15);color:#8a5a00;border-radius:8px;padding:8px 12px;font-size:.82rem;font-weight:700;margin-bottom:12px">
           ⚠️ Environnement de TEST (bac à sable) — cette annonce n'est pas visible sur le vrai leboncoin.fr.
@@ -172,7 +171,7 @@
         <div class="form-grid">${typesPossibles(PUB_OFFRE).map(ligneCard).join('')}</div>
         <div style="font-size:.8rem;color:var(--gris-fonce);margin-top:10px">${esc(PUB_MSG)}</div>
       </div>
-      <div class="modal-foot"><span></span><button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_LEBONCOIN._fermer()">Fermer</button></div>
+      <div class="modal-foot"><span></span><button type="button" class="btn btn-ghost btn-sm" onclick="H3C_LEBONCOIN._fermer()">Fermer</button></div>
     </div></div>`;
   }
 
@@ -205,5 +204,5 @@
 
   function fermer(){ document.getElementById('modal-root2').innerHTML=''; PUB_OFFRE=null; PUB_PHOTOS=[]; PUB_MSG=''; }
 
-  window.GTEC_LEBONCOIN = { chargerLignes, badge, publier, _publierType:publierType, _retirerType:retirerType, _fermer:fermer };
+  window.H3C_LEBONCOIN = { chargerLignes, badge, publier, _publierType:publierType, _retirerType:retirerType, _fermer:fermer };
 })();

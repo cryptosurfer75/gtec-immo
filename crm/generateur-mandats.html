@@ -131,7 +131,7 @@
     <h2 class="section">Le Mandataire (H3C) — pré-rempli</h2>
     <details class="gtec">
       <summary>Voir / modifier les informations de l'agence</summary>
-      <label>Dénomination</label><input id="gtecNom" value="Cabinet H3C">
+      <label>Dénomination</label><input id="gtecNom" value="H3C Immo Partenaires">
       <div class="row">
         <div><label>Forme juridique</label><input id="gtecForme" value="SAS"></div>
         <div><label>Capital (€)</label><input id="gtecCapital" value="1 000"></div>
@@ -139,14 +139,14 @@
       <label>Siège social</label><input id="gtecSiege" value="2 rue Delambre, 80000 Amiens">
       <div class="row">
         <div><label>RCS — ville</label><input id="gtecRcsVille" value="Amiens"></div>
-        <div><label>RCS — n°</label><input id="gtecRcs" value="100 619 535"></div>
+        <div><label>RCS — n°</label><input id="gtecRcs" value="993 163 310"></div>
       </div>
       <div class="row">
-        <div><label>Carte pro CPI n°</label><input id="gtecCarte" value="80012026000000003"></div>
+        <div><label>Carte pro CPI n°</label><input id="gtecCarte" value="80012025000000009"></div>
         <div><label>Délivrée par</label><input id="gtecCci" value="CCI Amiens-Picardie"></div>
       </div>
       <div class="row">
-        <div><label>N° TVA</label><input id="gtecTva" value="FR49100619535"></div>
+        <div><label>N° TVA</label><input id="gtecTva" value="FR15993163310"></div>
         <div><label>Détention de fonds</label>
           <select id="gtecRegime" onchange="toggleGtecRegime()">
             <option value="non">Non détention de fonds (mention actuelle de la carte CPI)</option>
@@ -162,11 +162,11 @@
         <label>Garantie — siège</label><input id="gtecGarantSiege" placeholder="adresse">
       </div>
       <div class="row">
-        <div><label>Représentée par</label><input id="gtecRep" value="Maxime LEGRAND"></div>
+        <div><label>Représentée par</label><input id="gtecRep" value="Valéry DE MARTELAERE"></div>
         <div><label>En qualité de</label><input id="gtecQualite" value="Président"></div>
       </div>
       <label>Médiateur de la consommation (Art. 15)</label><input id="mediateur" placeholder="Nom + coordonnées du médiateur">
-      <p class="hint">Ces champs sont mémorisés dans ce navigateur : à saisir une seule fois. Identité H3C recoupée avec le registre officiel des entreprises (SIREN 100 619 535) le 02/07/2026 — vérifie « Délivrée par » et le régime de détention de fonds avant signature.</p>
+      <p class="hint">Ces champs sont mémorisés dans ce navigateur : à saisir une seule fois. Identité H3C Immo Partenaires (SIREN 993 163 310) — vérifie « Délivrée par » et le régime de détention de fonds avant signature.</p>
     </details>
 
     <h2 class="section">Le Mandant (propriétaire)</h2>
@@ -458,16 +458,16 @@ async function chercherAdresses(q, el){
 
 // -------- Cadastre : ouvre l'explorateur officiel centré sur le bien pour vérifier et relever la parcelle --------
 // (window.open déclenché dans le clic = considéré comme une action utilisateur → pas bloqué par le navigateur)
-// Nom de fenêtre fixe « cadastreGTEC » → réutilise le même onglet à chaque nouvelle adresse (pas d'empilement d'onglets).
+// Nom de fenêtre fixe « cadastreH3C » → réutilise le même onglet à chaque nouvelle adresse (pas d'empilement d'onglets).
 let BIEN_GEO = null; // coordonnées du bien (renseignées via la liste d'adresses, sinon géocodées à la volée)
 function ouvrirCadastre(lat,lon){
-  try{ window.open('https://cadastre.data.gouv.fr/map?style=ortho#18/'+lat+'/'+lon, 'cadastreGTEC'); }catch(e){}
+  try{ window.open('https://cadastre.data.gouv.fr/map?style=ortho#18/'+lat+'/'+lon, 'cadastreH3C'); }catch(e){}
 }
 // Bouton « Cadastre » : fonctionne MÊME quand l'adresse a été pré-remplie depuis le CRM (donc pas choisie dans la liste).
 // On ouvre l'onglet tout de suite (le clic = geste utilisateur → pas bloqué), puis on le recentre une fois l'adresse géocodée.
 async function ouvrirCadastreBouton(){
   const adr=(document.getElementById('bienAdresse').value||'').trim();
-  const w=window.open('about:blank','cadastreGTEC');
+  const w=window.open('about:blank','cadastreH3C');
   let geo=BIEN_GEO;
   if(!geo && adr){
     try{

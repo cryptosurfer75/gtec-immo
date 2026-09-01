@@ -1,6 +1,6 @@
 /* ==========================================================================
    CABINET H3C — Module « Enseignes » (prospection développeurs immobiliers)
-   Expose window.GTEC_ENSEIGNES. Réutilise les helpers globaux de index.html
+   Expose window.H3C_ENSEIGNES. Réutilise les helpers globaux de index.html
    (sb, esc, C, charge, panel, vide, erreur, ME_AGENT, modal-root/modal-root2,
    classes CSS .modal-bg/.modal/.modal-h/.modal-f/.modal-foot/.form-grid/.f).
    Patron calqué sur facture.js (liste + indicateurs + éditeur modale).
@@ -161,13 +161,13 @@
     </div>`;
 
     const filtres = `<div style="padding:12px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-sm ${SEULEMENT_RELANCES?'':'btn-ghost'}" style="padding:8px 14px" onclick="GTEC_ENSEIGNES._toggleRelances()">⏰ À relancer</button>
-      <select onchange="GTEC_ENSEIGNES._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+      <button class="btn btn-sm ${SEULEMENT_RELANCES?'':'btn-ghost'}" style="padding:8px 14px" onclick="H3C_ENSEIGNES._toggleRelances()">⏰ À relancer</button>
+      <select onchange="H3C_ENSEIGNES._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
         <option value="">Tous les statuts</option>
         ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_STATUT===k?'selected':''}>${v}</option>`).join('')}
       </select>
       <input id="en-search" type="search" autocomplete="off" placeholder="🔎 Enseigne, contact, poste…" value="${esc(RECHERCHE)}"
-        oninput="GTEC_ENSEIGNES._search(this.value)"
+        oninput="H3C_ENSEIGNES._search(this.value)"
         style="flex:1;min-width:200px;max-width:380px;padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
     </div>`;
 
@@ -180,7 +180,7 @@
       : vide('Aucun contact enregistré. Ajoutez la première enseigne démarchée.'));
 
     C().innerHTML = panel('Enseignes', `${groupesTous.length} enseigne(s) · ${LISTE.length} personne(s)`, corps,
-      `<button class="btn btn-sm" onclick="GTEC_ENSEIGNES.nouvelleEnseigne()">+ Nouvelle enseigne</button>`);
+      `<button class="btn btn-sm" onclick="H3C_ENSEIGNES.nouvelleEnseigne()">+ Nouvelle enseigne</button>`);
 
     datalistEnseignes();
   }
@@ -228,7 +228,7 @@
       ? `<span style="${retard?'color:#b3261e;font-weight:700':''}">${retard?'⏰ ':''}${fmtDate(prochaine)}</span>`
       : '<span style="color:#90a4ae">—</span>';
     const noms = g.personnes.map(p=>esc(p.nom)).join(', ');
-    return `<tr style="cursor:pointer" onclick="GTEC_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
+    return `<tr style="cursor:pointer" onclick="H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
       <td><b>${esc(g.enseigne)}</b></td>
       <td><span title="${noms}">${g.personnes.length} personne${g.personnes.length>1?'s':''}</span>
         <div style="font-size:.78rem;color:var(--gris-fonce)">${noms.length>60?noms.slice(0,60)+'…':noms}</div></td>
@@ -236,7 +236,7 @@
       <td style="text-align:center">${tempIcon(meilleureTemp(g.personnes))}</td>
       <td>${relanceTxt}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" title="Suivi : historique des échanges et relances à planifier" onclick="GTEC_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${nbEchangesGroupe(g.personnes)?` <b>${nbEchangesGroupe(g.personnes)}</b>`:''}</button>
+        <button class="btn btn-ghost btn-sm" title="Suivi : historique des échanges et relances à planifier" onclick="H3C_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${nbEchangesGroupe(g.personnes)?` <b>${nbEchangesGroupe(g.personnes)}</b>`:''}</button>
       </td></tr>`;
   }
 
@@ -252,14 +252,14 @@
       if(ra!==rb) return ra-rb;
       return new Date(b.created_at)-new Date(a.created_at);
     });
-    document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)GTEC_ENSEIGNES._fermerFiche()"><div class="modal" style="max-width:760px">
-      <div class="modal-h"><h3>🏢 ${esc(groupe.enseigne)}</h3><button class="x" onclick="GTEC_ENSEIGNES._fermerFiche()">×</button></div>
+    document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)H3C_ENSEIGNES._fermerFiche()"><div class="modal" style="max-width:760px">
+      <div class="modal-h"><h3>🏢 ${esc(groupe.enseigne)}</h3><button class="x" onclick="H3C_ENSEIGNES._fermerFiche()">×</button></div>
       <div class="modal-f">
         <p style="font-size:.85rem;color:var(--gris-fonce);margin-top:-6px">${personnes.length} personne${personnes.length>1?'s':''} rattachée${personnes.length>1?'s':''} à cette enseigne (développement, immobilier, franchisé, partenaire…).</p>
         <div id="en-fiche-personnes">${personnes.map(rowPersonne).join('')}</div>
-        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="GTEC_ENSEIGNES.ajouterPersonne('${esc(groupe.enseigne)}')">＋ Ajouter une personne à cette enseigne</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="H3C_ENSEIGNES.ajouterPersonne('${esc(groupe.enseigne)}')">＋ Ajouter une personne à cette enseigne</button>
       </div>
-      <div class="modal-foot"><span></span><button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_ENSEIGNES._fermerFiche()">Fermer</button></div>
+      <div class="modal-foot"><span></span><button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._fermerFiche()">Fermer</button></div>
     </div></div>`;
   }
   function rowPersonne(c){
@@ -269,15 +269,15 @@
       c.linkedin_url ? `<a href="${esc(c.linkedin_url)}" target="_blank" onclick="event.stopPropagation()" title="Profil LinkedIn">🔗</a>` : ''
     ].filter(Boolean).join(' ') || '<span style="color:#90a4ae">—</span>';
     const retard = enRetard(c);
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gris-bg);cursor:pointer" onclick="GTEC_ENSEIGNES.editer('${c.id}')">
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gris-bg);cursor:pointer" onclick="H3C_ENSEIGNES.editer('${c.id}')">
       <div style="flex:1;min-width:0">
         <b>${esc(c.nom)}</b>${c.poste?` <span style="font-size:.82rem;color:var(--gris-fonce)">— ${esc(c.poste)}</span>`:''}
         ${retard?' <span style="color:#b3261e;font-size:.8rem">⏰ relance due</span>':''}
         <div style="margin-top:3px">${statutBadge(c.statut)} ${tempIcon(c.temperature)} <span style="margin-left:6px">${coord}</span></div>
       </div>
       <div onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" title="Modifier" onclick="GTEC_ENSEIGNES.editer('${c.id}')">✏️</button>
-        <button class="btn btn-ghost btn-sm" title="Supprimer" style="color:#b3261e" onclick="GTEC_ENSEIGNES.supprimer('${c.id}')">🗑</button>
+        <button class="btn btn-ghost btn-sm" title="Modifier" onclick="H3C_ENSEIGNES.editer('${c.id}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" title="Supprimer" style="color:#b3261e" onclick="H3C_ENSEIGNES.supprimer('${c.id}')">🗑</button>
       </div></div>`;
   }
   function fermerFiche(){ fermer(); FICHE_ENSEIGNE=null; }
@@ -295,12 +295,12 @@
     const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
     if(!groupe) return;
     SUIVI_ENSEIGNE = cle;
-    document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)GTEC_ENSEIGNES._fermerSuivi()"><div class="modal" style="max-width:640px">
-      <div class="modal-h"><h3>💬 Suivi — ${esc(groupe.enseigne)}</h3><button class="x" onclick="GTEC_ENSEIGNES._fermerSuivi()">×</button></div>
+    document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)H3C_ENSEIGNES._fermerSuivi()"><div class="modal" style="max-width:640px">
+      <div class="modal-h"><h3>💬 Suivi — ${esc(groupe.enseigne)}</h3><button class="x" onclick="H3C_ENSEIGNES._fermerSuivi()">×</button></div>
       <div class="modal-b" id="suivi-b"><div class="loading">Chargement…</div></div>
       <div class="modal-foot"><span></span><span style="display:flex;gap:8px;flex-wrap:wrap">
-        <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_ENSEIGNES._fermerSuivi()">Fermer</button>
-        <button type="button" class="btn btn-sm" onclick="GTEC_ENSEIGNES._fermerSuivi();GTEC_ENSEIGNES.ficheEnseigne('${esc(cle)}')">✏️ Gérer les personnes</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._fermerSuivi()">Fermer</button>
+        <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._fermerSuivi();H3C_ENSEIGNES.ficheEnseigne('${esc(cle)}')">✏️ Gérer les personnes</button>
       </span></div>
     </div></div>`;
     await rafraichirSuivi(cle);
@@ -331,9 +331,9 @@
           <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
             ${retard?'<span style="color:#b3261e;font-weight:700">⏰ en retard</span>':''}
             <input type="date" value="${p.prochaine_relance_date||''}" title="Planifier la prochaine relance"
-              onchange="GTEC_ENSEIGNES._planifier('${p.id}',this.value)"
+              onchange="H3C_ENSEIGNES._planifier('${p.id}',this.value)"
               style="border:1px solid var(--gris-clair);border-radius:6px;padding:4px 7px;font:inherit">
-            ${p.prochaine_relance_date?`<button type="button" class="btn btn-ghost btn-sm" title="Effacer la relance" onclick="GTEC_ENSEIGNES._planifier('${p.id}','')">✕</button>`:''}
+            ${p.prochaine_relance_date?`<button type="button" class="btn btn-ghost btn-sm" title="Effacer la relance" onclick="H3C_ENSEIGNES._planifier('${p.id}','')">✕</button>`:''}
           </span>
         </div>
       </div>`;
@@ -439,9 +439,9 @@
       ? `<div class="f"><label>Enseigne</label><input id="en-enseigne" value="${esc(c.enseigne||'')}" readonly style="background:var(--gris-bg)"></div>`
       : `<div class="f"><label>Enseigne *</label><input id="en-enseigne" list="en-datalist-enseignes" value="${esc(c.enseigne||'')}" placeholder="Ex : Decathlon, Lidl, Franprix…"></div>`;
 
-    document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" style="z-index:200" onclick="if(event.target===this)GTEC_ENSEIGNES._fermer()"><div class="modal">
+    document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" style="z-index:200" onclick="if(event.target===this)H3C_ENSEIGNES._fermer()"><div class="modal">
       <div class="modal-h"><h3>🤝 ${id?esc(c.enseigne)+' — '+esc(c.nom):(ED.enseigneVerrouillee?'Nouvelle personne — '+esc(ED.enseigneVerrouillee):'Nouvelle enseigne')}</h3>
-        <button class="x" onclick="GTEC_ENSEIGNES._fermer()">×</button></div>
+        <button class="x" onclick="H3C_ENSEIGNES._fermer()">×</button></div>
       <div class="modal-f">
         <div class="form-grid">
           ${enseigneChamp}
@@ -472,20 +472,20 @@
         ${id ? `<div class="form-sep">Historique</div>
         <div id="en-hist">${ECHANGES.length ? ECHANGES.map(rowHistorique).join('') : '<div style="color:var(--gris-fonce);font-size:.86rem;padding:6px 0">Aucun échange enregistré pour l’instant.</div>'}</div>
         <div class="form-grid" style="margin-top:10px">
-          <div class="f"><label>Ajouter un échange</label><select id="en-nvtype" onchange="GTEC_ENSEIGNES._majPlaceholderEchange(this.value)">
+          <div class="f"><label>Ajouter un échange</label><select id="en-nvtype" onchange="H3C_ENSEIGNES._majPlaceholderEchange(this.value)">
             ${Object.entries(TYPE_ACTION_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
           </select></div>
           <div class="f full"><textarea id="en-nvcontenu" rows="2" placeholder="${esc(placeholderEchange(''))}"></textarea></div>
         </div>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_ENSEIGNES._ajouterEchange('${id}')">+ Ajouter à l'historique</button>`
+        <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._ajouterEchange('${id}')">+ Ajouter à l'historique</button>`
         : `<div class="form-sep"></div><p style="font-size:.82rem;color:var(--gris-fonce)">L'historique des échanges se renseigne après le premier enregistrement.</p>`}
       </div>
       <div class="modal-foot">
         <span class="form-msg" id="en-msg"></span>
         <span style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_ENSEIGNES._fermer()">Fermer</button>
-          ${id?`<button type="button" class="btn btn-danger btn-sm" onclick="GTEC_ENSEIGNES.supprimer('${id}')">🗑 Supprimer</button>`:''}
-          <button type="button" class="btn btn-sm" onclick="GTEC_ENSEIGNES._save()">💾 Enregistrer</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._fermer()">Fermer</button>
+          ${id?`<button type="button" class="btn btn-danger btn-sm" onclick="H3C_ENSEIGNES.supprimer('${id}')">🗑 Supprimer</button>`:''}
+          <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._save()">💾 Enregistrer</button>
         </span>
       </div>
     </div></div>`;
@@ -551,7 +551,7 @@
     else fermerFiche();
   }
 
-  window.GTEC_ENSEIGNES = {
+  window.H3C_ENSEIGNES = {
     vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, editer, supprimer, relanceRapide, ouvrirSuivi,
     _statut(v){ FILTRE_STATUT=v; rafraichirTbody(); },
     _search(v){ RECHERCHE=v; rafraichirTbody(); },

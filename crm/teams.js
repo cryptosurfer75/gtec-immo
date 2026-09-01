@@ -5,7 +5,7 @@
    enregistrement automatique. Chaque page porte une DATE (cliquable) indiquant
    la date de la prise de notes. Partagé entre les collaborateurs.
    Tables : team_sections, team_pages (colonne date_note).
-   Dépend de la variable globale `sb`. Expose window.vueTeams + window.GTEC_TEAMS.
+   Dépend de la variable globale `sb`. Expose window.vueTeams + window.H3C_TEAMS.
    Fichier autonome : ne touche à rien d'autre dans le CRM.
    ========================================================================== */
 (function(){
@@ -75,11 +75,11 @@
         <div class="team-note-wrap">
           <div class="team-col team-sections">
             <div id="team-sec-list" style="flex:1"></div>
-            <button class="team-add" onclick="GTEC_TEAMS.addSection()">＋ Section</button>
+            <button class="team-add" onclick="H3C_TEAMS.addSection()">＋ Section</button>
           </div>
           <div class="team-col team-pages">
             <div id="team-page-list" style="flex:1"></div>
-            <button class="team-add" onclick="GTEC_TEAMS.addPage()">＋ Page</button>
+            <button class="team-add" onclick="H3C_TEAMS.addPage()">＋ Page</button>
           </div>
           <div class="team-col team-editor"><div id="team-editor-wrap"></div></div>
         </div>
@@ -91,10 +91,10 @@
   function renderSections(){
     if(!$('team-sec-list')) return;
     $('team-sec-list').innerHTML = T.sections.length ? T.sections.map(s=>`
-      <div class="team-sec${s.id===T.curSection?' on':''}" style="--c:${s.couleur||'#006962'}" onclick="GTEC_TEAMS.selSection('${s.id}')">
+      <div class="team-sec${s.id===T.curSection?' on':''}" style="--c:${s.couleur||'#006962'}" onclick="H3C_TEAMS.selSection('${s.id}')">
         <span class="dot"></span><span class="lbl">${esc(s.nom)}</span>
-        <button class="mini" title="Renommer" onclick="event.stopPropagation();GTEC_TEAMS.renSection('${s.id}')">✎</button>
-        <button class="mini" title="Supprimer" onclick="event.stopPropagation();GTEC_TEAMS.delSection('${s.id}')">×</button>
+        <button class="mini" title="Renommer" onclick="event.stopPropagation();H3C_TEAMS.renSection('${s.id}')">✎</button>
+        <button class="mini" title="Supprimer" onclick="event.stopPropagation();H3C_TEAMS.delSection('${s.id}')">×</button>
       </div>`).join('') : '<div class="team-empty">Aucune section.<br>Créez-en une ci-dessous.</div>';
   }
   async function addSection(){
@@ -129,10 +129,10 @@
     if(!$('team-page-list')) return;
     if(!T.curSection){ $('team-page-list').innerHTML='<div class="team-empty">Sélectionnez une section.</div>'; return; }
     $('team-page-list').innerHTML = T.pages.length ? T.pages.map(p=>`
-      <div class="team-page${p.id===T.curPage?' on':''}" onclick="GTEC_TEAMS.selPage('${p.id}')">
+      <div class="team-page${p.id===T.curPage?' on':''}" onclick="H3C_TEAMS.selPage('${p.id}')">
         <span class="lbl">${esc(p.titre||'Sans titre')}${p.date_note?`<small>${esc(dateFr(p.date_note))}</small>`:''}</span>
-        <button class="mini" title="Renommer" onclick="event.stopPropagation();GTEC_TEAMS.renPage('${p.id}')">✎</button>
-        <button class="mini" title="Supprimer" onclick="event.stopPropagation();GTEC_TEAMS.delPage('${p.id}')">×</button>
+        <button class="mini" title="Renommer" onclick="event.stopPropagation();H3C_TEAMS.renPage('${p.id}')">✎</button>
+        <button class="mini" title="Supprimer" onclick="event.stopPropagation();H3C_TEAMS.delPage('${p.id}')">×</button>
       </div>`).join('') : '<div class="team-empty">Aucune page.<br>Créez-en une ci-dessous.</div>';
   }
   async function addPage(){
@@ -171,17 +171,17 @@
     w.innerHTML = `
       <div class="team-page-title">
         <span class="ttl">${esc(page&&page.titre||'Sans titre')}</span>
-        <label class="team-date">📅 Date : <input type="date" value="${dval}" onchange="GTEC_TEAMS.setDate(this.value)"></label>
+        <label class="team-date">📅 Date : <input type="date" value="${dval}" onchange="H3C_TEAMS.setDate(this.value)"></label>
       </div>
       <div class="team-tb">
-        <button title="Gras" onclick="GTEC_TEAMS.fmt('bold')"><b>G</b></button>
-        <button title="Italique" onclick="GTEC_TEAMS.fmt('italic')"><i>I</i></button>
-        <button title="Souligné" onclick="GTEC_TEAMS.fmt('underline')"><u>S</u></button>
-        <button title="Liste à puces" onclick="GTEC_TEAMS.fmt('insertUnorderedList')">• Liste</button>
-        <button title="Titre" onclick="GTEC_TEAMS.fmt('formatBlock','H3')">Titre</button>
+        <button title="Gras" onclick="H3C_TEAMS.fmt('bold')"><b>G</b></button>
+        <button title="Italique" onclick="H3C_TEAMS.fmt('italic')"><i>I</i></button>
+        <button title="Souligné" onclick="H3C_TEAMS.fmt('underline')"><u>S</u></button>
+        <button title="Liste à puces" onclick="H3C_TEAMS.fmt('insertUnorderedList')">• Liste</button>
+        <button title="Titre" onclick="H3C_TEAMS.fmt('formatBlock','H3')">Titre</button>
         <span id="team-save-state" class="team-save">enregistré</span>
       </div>
-      <div id="team-editor" class="team-ed" contenteditable="true" oninput="GTEC_TEAMS.onInput()">${page&&page.contenu?page.contenu:''}</div>`;
+      <div id="team-editor" class="team-ed" contenteditable="true" oninput="H3C_TEAMS.onInput()">${page&&page.contenu?page.contenu:''}</div>`;
   }
   function fmt(cmd,val){ document.execCommand(cmd,false,val||null); const e=$('team-editor'); if(e) e.focus(); onInput(); }
   function onInput(){ const st=$('team-save-state'); if(st) st.textContent='enregistrement…'; clearTimeout(T.timer); T.timer=setTimeout(saveNote,800); }
@@ -200,6 +200,6 @@
   }
 
   window.vueTeams = vue;
-  window.GTEC_TEAMS = { vue, addSection, renSection, delSection, selSection,
+  window.H3C_TEAMS = { vue, addSection, renSection, delSection, selSection,
     addPage, selPage, renPage, delPage, fmt, onInput, setDate };
 })();

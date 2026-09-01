@@ -207,7 +207,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
     <div class="gate-msg" id="gate-msg"></div>
   </form>
 </div>
-<script>if(localStorage.getItem('gtec_access')==='1'){var g=document.getElementById('gate');if(g)g.remove();}</script>
+<script>if(localStorage.getItem('h3c_access')==='1'){var g=document.getElementById('gate');if(g)g.remove();}</script>
 
 <!-- ============ EN-TÊTE ============ -->
 <div class="topbar">
@@ -353,7 +353,7 @@ const ACCESS_CODE = '#Nathanx08xox!!';
 function verifierCode(e){
   e.preventDefault();
   if(document.getElementById('gate-code').value.trim() === ACCESS_CODE){
-    localStorage.setItem('gtec_access','1');
+    localStorage.setItem('h3c_access','1');
     const g=document.getElementById('gate'); if(g) g.remove();
   } else {
     document.getElementById('gate-msg').textContent = 'Code incorrect.';

@@ -4,10 +4,10 @@
    Un avis de valeur est un document établi pour un prospect qui souhaite faire
    estimer son bâtiment — il n'est PAS rattaché à un bien du portefeuille.
    Les données vivent dans leur propre table `avis_valeur`.
-     GTEC_AVIS.nouveau()       → formulaire vierge (nouvel avis)
-     GTEC_AVIS.editer(id)      → rouvre un avis existant
-     GTEC_AVIS.generer(id)     → ouvre l'aperçu (document 12 pages, PDF)
-     GTEC_AVIS.resume(a)       → { valeur, m2 } pour l'affichage de la liste
+     H3C_AVIS.nouveau()       → formulaire vierge (nouvel avis)
+     H3C_AVIS.editer(id)      → rouvre un avis existant
+     H3C_AVIS.generer(id)     → ouvre l'aperçu (document 12 pages, PDF)
+     H3C_AVIS.resume(a)       → { valeur, m2 } pour l'affichage de la liste
    Calculs automatiques :
      Valeur locative annuelle = Σ (surface × loyer/m²/an)
      Net vendeur (HDHH)       = Valeur locative / taux de rendement
@@ -24,8 +24,7 @@
   const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
   const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
   const AGENTS = {
-    FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
-    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@h3c-immo.fr' }
+    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'v.demartelaere@cabinet-h3c.com' }
   };
   const CONTACT_DEFAUT = AGENTS.FB;
   const SECTIONS = ['Présentation du groupe','Cadre légal','Présentation de l’actif / photos','Localisation',
@@ -726,7 +725,7 @@
         <input id="av-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
       </div>
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
-        <button onclick="GTEC_AVIS.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
+        <button onclick="H3C_AVIS.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
         <span style="flex:1"></span>
         <button onclick="var i=document.getElementById('av-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#006962;color:#fff">📋 Copier</button>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
@@ -794,29 +793,29 @@
   // Multi-sélection par étiquettes (plusieurs valeurs possibles, stockées séparées par des virgules).
   const MSEL = (id,label,v,opts) => {
     const sel = String(v||'').split(',').map(s=>s.trim()).filter(Boolean);
-    const chips = opts.map(o=>`<span class="msel-chip${sel.includes(o)?' on':''}" data-v="${esc(o)}" onclick="GTEC_AVIS._mselToggle(this,'${id}')">${esc(o)}</span>`).join('');
+    const chips = opts.map(o=>`<span class="msel-chip${sel.includes(o)?' on':''}" data-v="${esc(o)}" onclick="H3C_AVIS._mselToggle(this,'${id}')">${esc(o)}</span>`).join('');
     return `<div class="f full"><label>${esc(label)}</label>
       <input type="hidden" id="${id}" value="${esc(sel.join(', '))}">
       <div class="msel">${chips}</div></div>`;
   };
   const CK = (id,label,v) => `<div class="f check full"><input id="${id}" type="checkbox" ${v?'checked':''}><label for="${id}" style="font-weight:500">${esc(label)}</label></div>`;
   const SELA = (v) => `<div class="f full"><label>Négociateur H3C</label><select id="av-agent">`+
-    [['FB','Florent BOURDIEC'],['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'FB')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
+    [['VDM','Valéry de Martelaere']].map(([k,n])=>`<option value="${k}" ${(v||'VDM')===k?'selected':''}>${esc(n)}</option>`).join('')+`</select></div>`;
   // Cadre « Occupant(s) » : 1 à 3 enseignes / sociétés occupant le bien, juste sous le consultant.
   function occRow(o){ o=o||{};
     return `<div class="row occ">
       <input data-k="nom" value="${esc(o.nom||'')}" placeholder="Enseigne ou société de l'occupant">
-      <button type="button" class="del" onclick="GTEC_AVIS._delOcc(this)">×</button></div>`;
+      <button type="button" class="del" onclick="H3C_AVIS._delOcc(this)">×</button></div>`;
   }
   const occBox = (list) => `<div class="f full occ-box">
       <label>Occupant(s) — enseigne / société</label>
       <div class="rows" id="av-occ-rows">${list.map(occRow).join('')}</div>
-      <button type="button" class="addbtn" id="av-occ-add" onclick="GTEC_AVIS._addOcc()">＋ Ajouter un occupant</button>
+      <button type="button" class="addbtn" id="av-occ-add" onclick="H3C_AVIS._addOcc()">＋ Ajouter un occupant</button>
     </div>`;
   // Menu déroulant des clients existants : rattache un client à l'avis et pré-remplit le propriétaire.
   // Réutilise les helpers globaux du CRM (chargerClients/optClients/nomClient).
   const SELC = (v) => `<div class="f full"><label>Client rattaché (remplit le propriétaire automatiquement)</label>`+
-    `<select id="av-client" onchange="GTEC_AVIS._pickClient()">`+
+    `<select id="av-client" onchange="H3C_AVIS._pickClient()">`+
     ((typeof optClients==='function') ? optClients(v) : `<option value="">— Aucun client —</option>`)+
     `</select></div>`;
 
@@ -825,17 +824,17 @@
       <input data-k="batiment" value="${esc(l.batiment||'')}" placeholder="ex : Bât 1">
       <input data-k="niveau" value="${esc(l.niveau||'')}" placeholder="ex : Rdc, R+1">
       <input data-k="designation" value="${esc(l.designation||'')}" placeholder="ex : Commerce, Bureaux…">
-      <input data-k="surface" type="number" value="${l.surface==null?'':esc(l.surface)}" placeholder="m²" oninput="GTEC_AVIS._calc()">
-      <button type="button" class="del" onclick="GTEC_AVIS._delLot(this)">×</button></div>`;
+      <input data-k="surface" type="number" value="${l.surface==null?'':esc(l.surface)}" placeholder="m²" oninput="H3C_AVIS._calc()">
+      <button type="button" class="del" onclick="H3C_AVIS._delLot(this)">×</button></div>`;
   }
   function loyerRow(l){ l=l||{};
     return `<div class="row loyer">
       <input data-k="designation" value="${esc(l.designation||'')}" placeholder="ex : Bureaux">
-      <input data-k="surface" type="number" value="${l.surface==null?'':esc(l.surface)}" placeholder="m²" oninput="GTEC_AVIS._calc()">
-      <input data-k="loyer_m2" type="number" value="${l.loyer_m2==null?'':esc(l.loyer_m2)}" placeholder="€/m²/an" oninput="GTEC_AVIS._calc()">
+      <input data-k="surface" type="number" value="${l.surface==null?'':esc(l.surface)}" placeholder="m²" oninput="H3C_AVIS._calc()">
+      <input data-k="loyer_m2" type="number" value="${l.loyer_m2==null?'':esc(l.loyer_m2)}" placeholder="€/m²/an" oninput="H3C_AVIS._calc()">
       <input data-k="min" type="number" value="${l.min==null?'':esc(l.min)}" placeholder="marché min">
       <input data-k="max" type="number" value="${l.max==null?'':esc(l.max)}" placeholder="marché max">
-      <button type="button" class="del" onclick="GTEC_AVIS._delLoyer(this)">×</button></div>`;
+      <button type="button" class="del" onclick="H3C_AVIS._delLoyer(this)">×</button></div>`;
   }
   function compRow(c){ c=c||{};
     return `<div class="row comp">
@@ -845,7 +844,7 @@
       <input data-k="terrain" type="number" value="${c.terrain==null?'':esc(c.terrain)}" placeholder="terrain m²">
       <input data-k="bati" type="number" value="${c.bati==null?'':esc(c.bati)}" placeholder="bâti m²">
       <input data-k="vv" type="number" value="${c.vv==null?'':esc(c.vv)}" placeholder="valeur vénale €">
-      <button type="button" class="del" onclick="GTEC_AVIS._delComp(this)">×</button></div>`;
+      <button type="button" class="del" onclick="H3C_AVIS._delComp(this)">×</button></div>`;
   }
   function collect(sel){
     return [...document.querySelectorAll(sel+' .row')].map(r=>{
@@ -904,7 +903,7 @@
 
   async function _dvfPick(){
     const geo=await _geocode(); if(!geo) return;
-    _dvfOverlay('<div class="dvf-h"><b>Ventes comparables — DVF</b><button type="button" onclick="GTEC_AVIS._dvfClose()">×</button></div><div style="padding:34px;text-align:center;color:#555">Recherche des ventes autour de<br><b>'+esc(geo.label)+'</b>…</div>');
+    _dvfOverlay('<div class="dvf-h"><b>Ventes comparables — DVF</b><button type="button" onclick="H3C_AVIS._dvfClose()">×</button></div><div style="padding:34px;text-align:center;color:#555">Recherche des ventes autour de<br><b>'+esc(geo.label)+'</b>…</div>');
     try{
       const { data, error } = await sb.functions.invoke('dvf-comparables', { body:{ insee:geo.insee, lat:geo.lat, lon:geo.lon, dist:2000, years:5 } });
       if(error) throw error;
@@ -924,11 +923,11 @@
       <span class="p">${c.vv?eur(c.vv):''}</span>
       <span class="m">${c.prix_m2?nb(c.prix_m2)+' €/m²':''}</span>
       <span class="x">${c.dist!=null?c.dist+' m':''}</span></label>`).join('');
-    const head=`<div class="dvf-h"><b>Ventes comparables — DVF</b><button type="button" onclick="GTEC_AVIS._dvfClose()">×</button></div>
+    const head=`<div class="dvf-h"><b>Ventes comparables — DVF</b><button type="button" onclick="H3C_AVIS._dvfClose()">×</button></div>
       <div class="dvf-sub">${items.length} vente(s) trouvée(s) autour de ${esc(geo.label)} — rayon 2 km, années ${(data.annees||[]).join(', ')||'—'}. Les 5 plus proches sont pré-cochées.</div>`;
     const list = rows ? `<div class="dvf-list">${rows}</div>` : '<p style="padding:24px;text-align:center;color:#777">Aucune vente commerciale/industrielle trouvée à proximité.</p>';
-    const foot=`<div class="dvf-f"><button type="button" class="cancel" onclick="GTEC_AVIS._dvfClose()">Annuler</button>
-      <button type="button" class="ok" onclick="GTEC_AVIS._dvfInsert()">Insérer la sélection</button></div>`;
+    const foot=`<div class="dvf-f"><button type="button" class="cancel" onclick="H3C_AVIS._dvfClose()">Annuler</button>
+      <button type="button" class="ok" onclick="H3C_AVIS._dvfInsert()">Insérer la sélection</button></div>`;
     _dvfSet(head+list+foot);
   }
 
@@ -1086,8 +1085,8 @@
     const defAgent = (id ? a.agent : (window.ME_AGENT||'FB')) || 'FB';
     const titreModal = id ? `Avis de valeur ${a.reference?'— '+esc(a.reference):''}` : 'Nouvel avis de valeur';
 
-    const html = `<div id="av-ed-bg" onclick="if(event.target===this)GTEC_AVIS._fermer()"><div id="av-ed">
-      <div class="h"><h3>${titreModal}</h3><button class="x" onclick="GTEC_AVIS._fermer()">×</button></div>
+    const html = `<div id="av-ed-bg" onclick="if(event.target===this)H3C_AVIS._fermer()"><div id="av-ed">
+      <div class="h"><h3>${titreModal}</h3><button class="x" onclick="H3C_AVIS._fermer()">×</button></div>
       <div class="b">
         <div class="sep">Identité du bâtiment</div>
         <div class="grid">
@@ -1106,32 +1105,32 @@
           ${MSEL('av-chauffage','Chauffage', a.chauffage, ['Électrique','Gaz','Solaire','Pompe à chaleur','Fioul','Collectif','Aérothermes','Climatisation réversible','Climatisation centralisée'])}
         </div>
         <div class="f full" style="margin-top:12px"><label>Photo du bâtiment (couverture)</label>
-          <input type="file" accept="image/*" onchange="GTEC_AVIS._photo(this)">
+          <input type="file" accept="image/*" onchange="H3C_AVIS._photo(this)">
           <div class="photo" id="av-photo-prev">${a.cover_url?`<img src="${esc(a.cover_url)}" alt="">`:''}</div></div>
         <div class="f full" style="margin-top:12px"><label>Photo de présentation de l’actif <span style="font-weight:400;color:#6b7280">(facultatif — sinon la photo de couverture est reprise)</span></label>
-          <input type="file" accept="image/*" onchange="GTEC_AVIS._presPhoto(this)">
+          <input type="file" accept="image/*" onchange="H3C_AVIS._presPhoto(this)">
           <div class="photo" id="av-pres-prev">${a.photo_presentation_url?`<img src="${esc(a.photo_presentation_url)}" alt="">`:''}</div></div>
 
         <div class="sep">Vues intérieures <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#6b7280">(facultatif — page « Vues de l’actif », n’apparaît que si au moins une photo)</span></div>
         <div class="grid">
           <div class="f"><label>Photo intérieure 1</label>
-            <input type="file" accept="image/*" onchange="GTEC_AVIS._int1Photo(this)">
+            <input type="file" accept="image/*" onchange="H3C_AVIS._int1Photo(this)">
             <div class="photo" id="av-int1-prev">${a.photo_int1_url?`<img src="${esc(a.photo_int1_url)}" alt="">`:''}</div></div>
           <div class="f"><label>Photo intérieure 2</label>
-            <input type="file" accept="image/*" onchange="GTEC_AVIS._int2Photo(this)">
+            <input type="file" accept="image/*" onchange="H3C_AVIS._int2Photo(this)">
             <div class="photo" id="av-int2-prev">${a.photo_int2_url?`<img src="${esc(a.photo_int2_url)}" alt="">`:''}</div></div>
           <div class="f"><label>Photo intérieure 3</label>
-            <input type="file" accept="image/*" onchange="GTEC_AVIS._int3Photo(this)">
+            <input type="file" accept="image/*" onchange="H3C_AVIS._int3Photo(this)">
             <div class="photo" id="av-int3-prev">${a.photo_int3_url?`<img src="${esc(a.photo_int3_url)}" alt="">`:''}</div></div>
           <div class="f"><label>Photo intérieure 4</label>
-            <input type="file" accept="image/*" onchange="GTEC_AVIS._int4Photo(this)">
+            <input type="file" accept="image/*" onchange="H3C_AVIS._int4Photo(this)">
             <div class="photo" id="av-int4-prev">${a.photo_int4_url?`<img src="${esc(a.photo_int4_url)}" alt="">`:''}</div></div>
         </div>
 
         <div class="sep">Détail des lots & surfaces</div>
         <div class="rowhead row lot"><span>Bâtiment</span><span>Niveau</span><span>Désignation (usage / occupant)</span><span>Surface m²</span><span></span></div>
         <div class="rows" id="av-lots-rows">${lots.map(lotRow).join('')}</div>
-        <button type="button" class="addbtn" onclick="GTEC_AVIS._addLot()">＋ Ajouter un lot</button>
+        <button type="button" class="addbtn" onclick="H3C_AVIS._addLot()">＋ Ajouter un lot</button>
         <div class="lots-tot">Surface totale (somme automatique) :<b id="av-lots-tot">—</b></div>
 
         <div class="sep">Foncier & cadastre</div>
@@ -1139,36 +1138,36 @@
           <div class="f"><label>Parcelle cadastrale</label>
             <div class="cad-row">
               <input id="av-cadastre" type="text" value="${a.parcelle_cadastrale==null?'':esc(a.parcelle_cadastrale)}" placeholder="ex : AB-123">
-              <button type="button" class="cad-btn" onclick="GTEC_AVIS._cadastre()" title="Ouvrir le cadastre (vue aérienne) sur l'adresse du bien">🗺️ Cadastre</button>
+              <button type="button" class="cad-btn" onclick="H3C_AVIS._cadastre()" title="Ouvrir le cadastre (vue aérienne) sur l'adresse du bien">🗺️ Cadastre</button>
             </div>
           </div>
           ${I('av-foncier','Surface du foncier (m²)', a.surface_foncier, {type:'number'})}
           ${CK('av-copro','Foncier en copropriété', a.copropriete)}
         </div>
         <div class="f full" style="margin-top:10px"><label>Extrait cadastral (capture du plan, parcelle surlignée)</label>
-          <input type="file" accept="image/*" onchange="GTEC_AVIS._cadPhoto(this)">
+          <input type="file" accept="image/*" onchange="H3C_AVIS._cadPhoto(this)">
           <div class="photo" id="av-cad-prev">${a.cadastre_url?`<img src="${esc(a.cadastre_url)}" alt="">`:''}</div>
           <p class="hint">Clique « 🗺️ Cadastre » ci-dessus, fais une capture de la parcelle, puis importe-la ici. Elle apparaîtra sur la page « Localisation » du document.</p></div>
 
         <div class="sep">Valeur locative de marché</div>
         <div class="rowhead row loyer"><span>Composante</span><span>Surface m²</span><span>Loyer €/m²/an</span><span>Marché min</span><span>Marché max</span><span></span></div>
         <div class="rows" id="av-loyer-rows">${loyer.map(loyerRow).join('')}</div>
-        <button type="button" class="addbtn" onclick="GTEC_AVIS._addLoyer()">＋ Ajouter une composante (bureaux, stockage, vente…)</button>
+        <button type="button" class="addbtn" onclick="H3C_AVIS._addLoyer()">＋ Ajouter une composante (bureaux, stockage, vente…)</button>
         <div class="grid" style="margin-top:12px">
-          ${I('av-taux','Taux de rendement (%) — décimales possibles (ex : 7,2)', a.taux_rendement==null?'':String(a.taux_rendement).replace('.',','), {attr:'inputmode="decimal" oninput="GTEC_AVIS._calc()"'})}
-          ${I('av-frais','Frais de mutation (%)', a.frais_mutation_pct==null?'':String(a.frais_mutation_pct).replace('.',','), {attr:'inputmode="decimal" oninput="GTEC_AVIS._calc()"'})}
-          ${I('av-valest','Valeur retenue (€, vide = net vendeur calculé)', a.valeur_estimee, {type:'number', attr:'oninput="GTEC_AVIS._calc()"', full:true})}
+          ${I('av-taux','Taux de rendement (%) — décimales possibles (ex : 7,2)', a.taux_rendement==null?'':String(a.taux_rendement).replace('.',','), {attr:'inputmode="decimal" oninput="H3C_AVIS._calc()"'})}
+          ${I('av-frais','Frais de mutation (%)', a.frais_mutation_pct==null?'':String(a.frais_mutation_pct).replace('.',','), {attr:'inputmode="decimal" oninput="H3C_AVIS._calc()"'})}
+          ${I('av-valest','Valeur retenue (€, vide = net vendeur calculé)', a.valeur_estimee, {type:'number', attr:'oninput="H3C_AVIS._calc()"', full:true})}
         </div>
         <div class="calc" id="av-calc"></div>
         ${TA('av-commarche','Commentaire sur la valorisation (apparaît sous le tableau)', a.commentaire_marche)}
 
         <div class="sep">Transactions comparables</div>
         <p class="hint" style="margin:-4px 0 8px">Recherche automatique des ventes DVF des 5 dernières années autour de l’adresse du bien, puis sélection à cocher.</p>
-        <button type="button" class="addbtn" style="background:#00332E;color:#fff;border-color:#00332E" onclick="GTEC_AVIS._dvfPick()">🔍 Importer des ventes comparables (DVF)</button>
+        <button type="button" class="addbtn" style="background:#00332E;color:#fff;border-color:#00332E" onclick="H3C_AVIS._dvfPick()">🔍 Importer des ventes comparables (DVF)</button>
         <div class="rowhead row comp"><span>Date</span><span>Typologie</span><span>Adresse</span><span>Terrain m²</span><span>Bâti m²</span><span>Valeur vénale €</span><span></span></div>
         <div class="rows" id="av-comp-rows">${comp.map(compRow).join('')}</div>
-        <button type="button" class="addbtn" onclick="GTEC_AVIS._addComp()">＋ Ajouter une transaction comparable</button>
-        <div class="f full" style="margin-top:12px"><label>Analyse comparative <span style="font-weight:400;color:#6b7280">(générée automatiquement, librement modifiable — apparaît sous le tableau)</span> <button type="button" class="addbtn" style="display:inline-block;width:auto;padding:2px 10px;font-size:12px;margin-left:6px" onclick="GTEC_AVIS._dvfGenAnalyse()">↻ Régénérer</button></label>
+        <button type="button" class="addbtn" onclick="H3C_AVIS._addComp()">＋ Ajouter une transaction comparable</button>
+        <div class="f full" style="margin-top:12px"><label>Analyse comparative <span style="font-weight:400;color:#6b7280">(générée automatiquement, librement modifiable — apparaît sous le tableau)</span> <button type="button" class="addbtn" style="display:inline-block;width:auto;padding:2px 10px;font-size:12px;margin-left:6px" onclick="H3C_AVIS._dvfGenAnalyse()">↻ Régénérer</button></label>
           <textarea id="av-analyse-comp" style="min-height:120px">${a.analyse_comparative==null?'':esc(a.analyse_comparative)}</textarea></div>
 
         <div class="sep">Analyse SWOT</div>
@@ -1186,9 +1185,9 @@
         ${TA('av-resp','Mention de responsabilité (phrase type — page Conclusion)', a.commentaire_responsabilite)}
       </div>
       <div class="foot">
-        <button type="button" class="cancel" onclick="GTEC_AVIS._fermer()">Fermer</button>
-        <button type="button" class="save" onclick="GTEC_AVIS._save(false)">💾 Enregistrer</button>
-        <button type="button" class="gen" onclick="GTEC_AVIS._save(true)">📄 Enregistrer & générer l'aperçu</button>
+        <button type="button" class="cancel" onclick="H3C_AVIS._fermer()">Fermer</button>
+        <button type="button" class="save" onclick="H3C_AVIS._save(false)">💾 Enregistrer</button>
+        <button type="button" class="gen" onclick="H3C_AVIS._save(true)">📄 Enregistrer & générer l'aperçu</button>
       </div>
     </div></div>`;
 
@@ -1297,6 +1296,6 @@
     if(prop && typeof nomClient==='function') prop.value = nomClient(c);
   }
 
-  window.GTEC_AVIS = { nouveau, editer, generer, resume, publierLien, revoquerLien,
+  window.H3C_AVIS = { nouveau, editer, generer, resume, publierLien, revoquerLien,
     _calc, _addLot, _delLot, _addOcc, _delOcc, _addLoyer, _addComp, _delLoyer, _delComp, _photo, _presPhoto, _cadPhoto, _int1Photo, _int2Photo, _int3Photo, _int4Photo, _dvfPick, _dvfInsert, _dvfGenAnalyse, _dvfClose, _mselToggle, _fermer:fermer, _save:save, _pickClient:pickClient, _cadastre:ouvrirCadastre };
 })();

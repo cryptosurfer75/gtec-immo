@@ -3,7 +3,7 @@
    ----------------------------------------------------------------------------
    Reproduit la trame PowerPoint (10 pages paysage) en HTML imprimable,
    auto-remplie depuis les données d'un bien du CRM.
-   Usage :  GTEC_DOSSIER.generer(offreId)
+   Usage :  H3C_DOSSIER.generer(offreId)
    Dépend de la variable globale `sb` (client Supabase déjà initialisé).
    Fichier autonome : ne touche à rien d'autre dans le CRM.
    ========================================================================== */
@@ -20,13 +20,11 @@
   const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
   // Bloc logo + signature « Immobilier d'entreprise » (taille homogène partout)
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="Cabinet H3C"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
-  // Signatures par agent (le bien porte une initiale FB / VDM)
+  // Signature de l'agence (Florent et Maxime ne sont plus dans le projet)
   const AGENTS = {
-    FB:  { nom:'Florent BOURDIEC',     tel:'06 29 98 35 69', mail:'florent.bourdiec@gtec-immo.com' },
-    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'val.dm@h3c-immo.fr' },
-    ML:  { nom:'Maxime Legrand',       tel:'06 09 08 48 49', mail:'maxime.legrand@gtec-construction.com' }
+    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'v.demartelaere@cabinet-h3c.com' }
   };
-  const CONTACT_DEFAUT = AGENTS.FB;   // anciens biens sans agent renseigné
+  const CONTACT_DEFAUT = AGENTS.VDM;   // anciens biens sans agent renseigné
   const SECTIONS_AVEC_PLANS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',
                     'Photos','Plans','Conditions juridiques et financières'];
   // La page « Plans » n'apparaît que si une photo de plan est jointe au bien ;
@@ -598,7 +596,7 @@
   }
 
   // Construit le document HTML complet. shared=true → version « client » sans barre d'outils.
-  // agentKey (FB/VDM) : consultant dont les coordonnées apparaissent (couverture + dernière page),
+  // agentKey (VDM) : consultant dont les coordonnées apparaissent (couverture + dernière page),
   // choisi au moment de la génération — indépendant de l'agent rattaché au bien en base.
   function construireDoc(o, photos, geo, shared, agentKey){
     const aDesPlans = Array.isArray(o.plans_urls) && o.plans_urls.filter(Boolean).length > 0;
@@ -727,7 +725,7 @@
         <input id="dos-lien-input" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box">
       </div>
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
-        <button onclick="GTEC_DOSSIER.revoquerLien('${esc(offreId||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
+        <button onclick="H3C_DOSSIER.revoquerLien('${esc(offreId||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer le lien</button>
         <span style="flex:1"></span>
         <button onclick="var i=document.getElementById('dos-lien-input');i.select();document.execCommand('copy')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#006962;color:#fff">📋 Copier</button>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
@@ -737,5 +735,5 @@
     document.body.appendChild(bg);
   }
 
-  window.GTEC_DOSSIER = { generer, genererDescriptif, publierLien, revoquerLien };
+  window.H3C_DOSSIER = { generer, genererDescriptif, publierLien, revoquerLien };
 })();

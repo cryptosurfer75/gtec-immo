@@ -1,6 +1,6 @@
 /* ==========================================================================
    CABINET H3C — Module « Devis / Factures »
-   Expose window.GTEC_FACTURE. Réutilise les helpers globaux de index.html
+   Expose window.H3C_FACTURE. Réutilise les helpers globaux de index.html
    (sb, esc, euro, nomClient, panel, vide, erreur, optClients, optOffres,
    chargerClients, chargerOffresListe, ME_AGENT).
    Patron calqué sur avis-valeur.js (génération PDF, lien client, modale).
@@ -15,15 +15,15 @@
    *  affiche « [à compléter] ».
    * ------------------------------------------------------------------ */
   const AGENCE = {
-    raison_sociale:   'Cabinet H3C',
+    raison_sociale:   'H3C Immo Partenaires',
     forme_juridique:  'SAS',         // ex. SAS, SARL…
     capital:          '1 000 €',     // ex. 10 000 €
     adresse:          '2 rue Delambre, 80000 Amiens',   // siège complet
     ville:            'Amiens',      // ville de signature (« Fait à … »)
-    siret:            '10061953500014',   // SIREN 100 619 535
-    rcs:              'Amiens 100 619 535',
-    tva_intra:        'FR49100619535',
-    carte_pro:        'CPI 80012026000000003',   // n° CPI (transaction) — loi Hoguet
+    siret:            '',            // SIREN 993 163 310 — SIRET complet (avec n° d'établissement) à préciser
+    rcs:              'Amiens 993 163 310',
+    tva_intra:        'FR15993163310',   // calculé depuis le SIREN (clé officielle)
+    carte_pro:        'CPI 80012025000000009',   // n° CPI (transaction) — loi Hoguet
     garantie_fin:     '',            // organisme + montant (ou « Pas de maniement de fonds »)
     rcp:              '',            // assureur RC professionnelle
     mediateur:        '',            // médiateur de la consommation (nom + site)
@@ -174,12 +174,12 @@
       <div style="display:flex;gap:6px">
         ${segBtn('tous','Tous')} ${segBtn('devis','Devis')} ${segBtn('facture','Factures')}
       </div>
-      <select onchange="GTEC_FACTURE._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+      <select onchange="H3C_FACTURE._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
         <option value="">Tous les statuts</option>
         ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_STATUT===k?'selected':''}>${v}</option>`).join('')}
       </select>
       <input id="fa-search" type="search" autocomplete="off" placeholder="🔎 Réf., client, objet…" value="${esc(RECHERCHE)}"
-        oninput="GTEC_FACTURE._search(this.value)"
+        oninput="H3C_FACTURE._search(this.value)"
         style="flex:1;min-width:200px;max-width:380px;padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
     </div>`;
 
@@ -193,8 +193,8 @@
       : vide('Aucun document. Créez votre premier devis ou votre première facture.'));
 
     C().innerHTML = panel('Devis / Factures', `${LISTE.length} document(s)`, corps,
-      `<button class="btn btn-sm" onclick="GTEC_FACTURE.nouveau('devis')">+ Nouveau devis</button>
-       <button class="btn btn-sm" onclick="GTEC_FACTURE.nouveau('facture')">+ Nouvelle facture</button>`);
+      `<button class="btn btn-sm" onclick="H3C_FACTURE.nouveau('devis')">+ Nouveau devis</button>
+       <button class="btn btn-sm" onclick="H3C_FACTURE.nouveau('facture')">+ Nouvelle facture</button>`);
   }
 
   function carte(libelle, valeur, sous, couleur){
@@ -205,7 +205,7 @@
   }
   function segBtn(v,txt){
     const on = FILTRE_TYPE===v;
-    return `<button onclick="GTEC_FACTURE._type('${v}')" class="btn btn-sm ${on?'':'btn-ghost'}" style="padding:8px 14px">${txt}</button>`;
+    return `<button onclick="H3C_FACTURE._type('${v}')" class="btn btn-sm ${on?'':'btn-ghost'}" style="padding:8px 14px">${txt}</button>`;
   }
 
   function filtrer(){
@@ -227,7 +227,7 @@
     const sansMail = f.type==='facture' && (!f.clients || !f.clients.email);
     const ref = f.reference || `<span style="color:#90a4ae;font-style:italic">brouillon</span>`;
     const rd  = f.type==='facture' ? euro2(resteDu(f)) : '—';
-    return `<tr style="cursor:pointer" onclick="GTEC_FACTURE.editer('${f.id}')">
+    return `<tr style="cursor:pointer" onclick="H3C_FACTURE.editer('${f.id}')">
       <td><b>${ref}</b></td>
       <td>${f.type==='devis'?'📝 Devis':f.type==='avoir'?'↩︎ Avoir':'🧾 Facture'}</td>
       <td>${esc(nomClient(f.clients))}${sansMail?' <span title="Client sans e-mail : relance impossible" style="color:#b3261e">⚠</span>':''}</td>
@@ -240,16 +240,16 @@
       <td style="text-align:right;${resteDu(f)>0&&f.type==='facture'?'font-weight:700':''}">${rd}</td>
       <td>${statutBadge(f)}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" title="Aperçu / imprimer" onclick="GTEC_FACTURE.generer('${f.id}')">📄</button>
-        <button class="btn btn-ghost btn-sm" title="Lien client" onclick="GTEC_FACTURE.publierLien('${f.id}')">🔗</button>
+        <button class="btn btn-ghost btn-sm" title="Aperçu / imprimer" onclick="H3C_FACTURE.generer('${f.id}')">📄</button>
+        <button class="btn btn-ghost btn-sm" title="Lien client" onclick="H3C_FACTURE.publierLien('${f.id}')">🔗</button>
         ${f.type==='facture' && f.reference && !['payee','annulee'].includes(f.statut)
-          ? `<button class="btn btn-ghost btn-sm" title="Saisir un encaissement" onclick="GTEC_FACTURE.encaisser('${f.id}')">💶</button>` : ''}
+          ? `<button class="btn btn-ghost btn-sm" title="Saisir un encaissement" onclick="H3C_FACTURE.encaisser('${f.id}')">💶</button>` : ''}
         ${f.type==='facture' && enRetard(f)
-          ? `<button class="btn btn-ghost btn-sm" title="Relancer le client" onclick="GTEC_FACTURE.relancer('${f.id}')">✉️</button>` : ''}
+          ? `<button class="btn btn-ghost btn-sm" title="Relancer le client" onclick="H3C_FACTURE.relancer('${f.id}')">✉️</button>` : ''}
         ${f.type==='devis' && ['envoye','accepte','brouillon'].includes(f.statut)
-          ? `<button class="btn btn-ghost btn-sm" title="Transformer en facture" onclick="GTEC_FACTURE.convertir('${f.id}')">➡️</button>` : ''}
+          ? `<button class="btn btn-ghost btn-sm" title="Transformer en facture" onclick="H3C_FACTURE.convertir('${f.id}')">➡️</button>` : ''}
         ${!f.reference
-          ? `<button class="btn btn-ghost btn-sm" title="Supprimer ce brouillon" style="color:#b3261e" onclick="GTEC_FACTURE.supprimer('${f.id}')">🗑</button>` : ''}
+          ? `<button class="btn btn-ghost btn-sm" title="Supprimer ce brouillon" style="color:#b3261e" onclick="H3C_FACTURE.supprimer('${f.id}')">🗑</button>` : ''}
       </td></tr>`;
   }
 
@@ -313,13 +313,13 @@
       .map(([v,t])=>`<option value="${esc(v)}" ${f.objet===v?'selected':''}>${esc(t)}</option>`).join('');
 
     const titre = (id? (f.reference||'Brouillon') : (f.type==='devis'?'Nouveau devis':'Nouvelle facture'));
-    document.getElementById('modal-root').innerHTML = `<div id="fa-ed-bg" onclick="if(event.target===this)GTEC_FACTURE._fermer()">
+    document.getElementById('modal-root').innerHTML = `<div id="fa-ed-bg" onclick="if(event.target===this)H3C_FACTURE._fermer()">
       <div id="fa-ed">
         <div class="h"><h3>${f.type==='devis'?'📝':'🧾'} ${esc(titre)}${ED.gel?' · <span style="opacity:.7;font-weight:400">document émis (lecture seule)</span>':''}</h3>
-          <button class="x" onclick="GTEC_FACTURE._fermer()">×</button></div>
+          <button class="x" onclick="H3C_FACTURE._fermer()">×</button></div>
         <div class="b">
           <div class="grid">
-            <div class="f"><label>Client</label><div class="cli-row"><select id="fa-client" ${dis}>${optClients(f.client_id)}</select>${ED.gel?'':`<button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addClient()">+ Client</button>`}</div></div>
+            <div class="f"><label>Client</label><div class="cli-row"><select id="fa-client" ${dis}>${optClients(f.client_id)}</select>${ED.gel?'':`<button type="button" class="btn btn-ghost btn-sm" onclick="H3C_FACTURE._addClient()">+ Client</button>`}</div></div>
             <div class="f"><label>Objet</label><select id="fa-objet" ${dis}>${objetOpts}</select></div>
             <div class="f"><label>Bien lié (optionnel)</label><select id="fa-offre" ${dis}>${optOffres(f.offre_id)}</select></div>
             <div class="f"><label>Mandat lié (optionnel)</label><select id="fa-mandat" ${dis}>${optMandats(f.mandat_id)}</select></div>
@@ -333,8 +333,8 @@
           <table id="fa-lignes"><thead><tr><th>Désignation</th><th>Qté</th><th>PU HT</th><th>TVA</th><th style="text-align:right">Total HT</th><th></th></tr></thead>
             <tbody>${lignes.map(ligneRow).join('')}</tbody></table>
           ${ED.gel?'':`<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addLigne('hono')">+ Honoraires de transaction</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._addLigne()">+ Prestation</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_FACTURE._addLigne('hono')">+ Honoraires de transaction</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_FACTURE._addLigne()">+ Prestation</button>
           </div>`}
 
           <div class="fa-totaux"><table id="fa-recap"></table></div>
@@ -345,12 +345,12 @@
         <div class="foot">
           <span class="fa-msg" id="fa-msg"></span>
           <span style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._fermer()">Fermer</button>
-            ${ED.gel?'' : `<button type="button" class="btn btn-sm" onclick="GTEC_FACTURE._save(false)">💾 Enregistrer le brouillon</button>`}
-            ${ED.gel?'' : `<button type="button" class="btn btn-sm" style="background:var(--teal-dark,#004D47)" onclick="GTEC_FACTURE._save(true)">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_FACTURE._fermer()">Fermer</button>
+            ${ED.gel?'' : `<button type="button" class="btn btn-sm" onclick="H3C_FACTURE._save(false)">💾 Enregistrer le brouillon</button>`}
+            ${ED.gel?'' : `<button type="button" class="btn btn-sm" style="background:var(--teal-dark,#004D47)" onclick="H3C_FACTURE._save(true)">
                 ${f.type==='devis'?'✓ Marquer envoyé':'✓ Émettre la facture'}</button>`}
-            <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE.generer('${id||''}','live')">📄 Aperçu</button>
-            ${(id && f.type==='devis') ? `<button type="button" class="btn btn-sm" style="background:#00332E" onclick="GTEC_FACTURE.convertir('${id}')">➡️ Transformer en facture</button>` : ''}
+            <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_FACTURE.generer('${id||''}','live')">📄 Aperçu</button>
+            ${(id && f.type==='devis') ? `<button type="button" class="btn btn-sm" style="background:#00332E" onclick="H3C_FACTURE.convertir('${id}')">➡️ Transformer en facture</button>` : ''}
           </span>
         </div>
       </div></div>`;
@@ -446,20 +446,20 @@
     // appliqué au montant réglé pour distinguer, dans ce qui est réellement encaissé, la part qui compte
     // comme chiffre d'affaires (HT, base de commission) de la part TVA (juste collectée pour l'État).
     const ratioHT = Number(f.total_ttc||0)>0 ? Number(f.total_ht||0)/Number(f.total_ttc||0) : 1;
-    document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)GTEC_FACTURE._fermerEnc()"><div class="modal" style="max-width:480px">
-      <div class="modal-h"><h3>💶 Encaissement — ${esc(f.reference||'')}</h3><button class="x" onclick="GTEC_FACTURE._fermerEnc()">×</button></div>
+    document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)H3C_FACTURE._fermerEnc()"><div class="modal" style="max-width:480px">
+      <div class="modal-h"><h3>💶 Encaissement — ${esc(f.reference||'')}</h3><button class="x" onclick="H3C_FACTURE._fermerEnc()">×</button></div>
       <div class="modal-f">
         <p style="margin:0 0 2px;color:var(--gris-fonce)">Total TTC : <b>${euro2(f.total_ttc)}</b> · Déjà réglé : ${euro2(f.montant_paye)} · <b>Reste dû : ${euro2(reste)}</b></p>
         <p style="margin:0 0 12px;font-size:.8rem;color:var(--gris-fonce)">Facture : HT ${euro2(f.total_ht)} · TVA ${euro2(f.total_tva)}</p>
         <div class="f"><label>Date</label><input id="enc-date" type="date" value="${today()}"></div>
-        <div class="f"><label>Montant (€)</label><input id="enc-montant" type="number" step="0.01" value="${reste>0?reste:''}" data-ratio-ht="${ratioHT}" oninput="GTEC_FACTURE._majEncDetail(this)"></div>
+        <div class="f"><label>Montant (€)</label><input id="enc-montant" type="number" step="0.01" value="${reste>0?reste:''}" data-ratio-ht="${ratioHT}" oninput="H3C_FACTURE._majEncDetail(this)"></div>
         <div id="enc-detail" style="font-size:.78rem;color:var(--gris-fonce);margin:-6px 0 6px"></div>
         <div class="f"><label>Moyen</label><select id="enc-moyen">${MOYENS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></div>
         <div class="f"><label>Référence (n° chèque, virement…)</label><input id="enc-ref"></div>
       </div>
       <div class="modal-foot"><span class="form-msg" id="enc-msg"></span>
-        <span><button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_FACTURE._fermerEnc()">Annuler</button>
-        <button type="button" class="btn btn-sm" onclick="GTEC_FACTURE._saveEnc('${id}')">Enregistrer</button></span></div>
+        <span><button type="button" class="btn btn-ghost btn-sm" onclick="H3C_FACTURE._fermerEnc()">Annuler</button>
+        <button type="button" class="btn btn-sm" onclick="H3C_FACTURE._saveEnc('${id}')">Enregistrer</button></span></div>
     </div></div>`;
     majEncDetail(document.getElementById('enc-montant'));
   }
@@ -785,7 +785,7 @@
       <div style="padding:18px 20px"><p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Lien copié. Le client le verra en pleine page (et pourra l’enregistrer en PDF).</p>
         <input readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box"></div>
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
-        <button onclick="GTEC_FACTURE.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer</button>
+        <button onclick="H3C_FACTURE.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer</button>
         <span style="flex:1"></span>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
         <button onclick="document.getElementById('fa-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
@@ -798,7 +798,7 @@
    *  API publique
    * ------------------------------------------------------------------ */
   window.vueFactures = vueFactures;   // pour la map de dispatch de index.html
-  window.GTEC_FACTURE = {
+  window.H3C_FACTURE = {
     nouveau:(type)=>{ ED.type=(type==='facture'?'facture':'devis'); editer(null); },
     editer, generer, publierLien, revoquerLien, convertir, supprimer,
     encaisser, relancer,

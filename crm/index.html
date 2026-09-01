@@ -295,16 +295,15 @@ function refBadge(ref, type){
   const c=TYPE_COULEUR[type];
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:700">${esc(ref||'—')}</span>`;
 }
-/* ----- Agent rédacteur (FB / VDM / ML) ----- */
-const AGENTS_OPTS = [['VDM','VDM'],['FB','FB'],['ML','ML']];
+/* ----- Agent rédacteur (VDM — Florent et Maxime ne sont plus dans le projet) ----- */
+const AGENTS_OPTS = [['VDM','VDM']];
 const AGENTS_CODES = AGENTS_OPTS.map(([c])=>c);
-let ME_AGENT = 'FB';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
+let ME_AGENT = 'VDM';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
 function agentBadge(a){
   if(!AGENTS_CODES.includes(a)) return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
-  const bg = a==='VDM' ? '#00332E' : a==='FB' ? '#006962' : '#6d28d9';   // vert très foncé VDM, vert sapin FB, violet ML
-  return `<span class="tag" title="Annonce gérée par ${a}" style="background:${bg};color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
+  return `<span class="tag" title="Annonce gérée par ${a}" style="background:#00332E;color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
 }
-/* Radio FB / VDM / ML dans un formulaire (name = id) */
+/* Radio VDM dans un formulaire (name = id) */
 function fAgent(name, v){
   v = AGENTS_CODES.includes(v) ? v : ME_AGENT;
   const opt = (code,label)=>`<label style="display:inline-flex;align-items:center;gap:7px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:normal"><input type="radio" name="${name}" value="${code}" ${v===code?'checked':''} style="width:auto;flex:none;margin:0"> ${label}</label>`;
@@ -405,10 +404,7 @@ async function seDeconnecter(){ await sb.auth.signOut(); montrerLogin(); }
 async function ouvrirApp(session){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  const mail = (session.user.email||'').toLowerCase();
-  ME_AGENT = (mail.includes('val.dm') || mail.includes('martelaere') || mail.includes('cryptosurfer75')) ? 'VDM'
-           : (mail.includes('maxime') || mail.includes('legrand')) ? 'ML'
-           : (mail.includes('florent') || mail.includes('bourdiec')) ? 'FB' : 'VDM';
+  ME_AGENT = 'VDM';
   document.getElementById('who-init').textContent = ME_AGENT;
 
   // Retour de la connexion Google (?code=...) : on échange le code tout de suite (avant tout le
@@ -457,7 +453,7 @@ const TITRES = {dashboard:'Tableau de bord', offres:'Offres', avis:'Avis de vale
 function aller(vue){
   document.querySelectorAll('.topnav nav a').forEach(a=>a.classList.toggle('on', a.dataset.vue===vue));
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>GTEC_ENSEIGNES.vue(), entreprises:()=>GTEC_ENTREPRISES.vue()}[vue])();
+  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>H3C_ENSEIGNES.vue(), entreprises:()=>H3C_ENTREPRISES.vue()}[vue])();
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -513,7 +509,7 @@ function ligneOffre(o){
       <td><span title="${o.publie===true?'En ligne — cliquer pour retirer':o.publie===false?'Hors ligne — cliquer pour remettre en ligne':'Non défini — cliquer pour mettre en ligne'}"
         onclick="event.stopPropagation();toggleVitrine('${o.id}',${o.publie===true?'true':o.publie===false?'false':'null'})"
         style="cursor:pointer;display:inline-block;width:13px;height:13px;border-radius:50%;background:${o.publie===true?'var(--teal)':o.publie===false?'#d23f3f':'#fff'};border:1.5px solid ${o.publie===true?'var(--teal-dark)':o.publie===false?'#b3261e':'var(--gris-clair)'};box-shadow:0 0 0 3px ${o.publie===true?'rgba(0,105,98,.22)':o.publie===false?'rgba(210,63,63,.18)':'transparent'}"></span></td>
-      <td style="text-align:center">${window.GTEC_LEBONCOIN?GTEC_LEBONCOIN.badge(o):''}</td>
+      <td style="text-align:center">${window.H3C_LEBONCOIN?H3C_LEBONCOIN.badge(o):''}</td>
       <td style="text-align:center;${o.mandat?'':'background:rgba(210,63,63,.07)'}"><input type="checkbox" ${o.mandat?'checked':''}
         onclick="event.stopPropagation();toggleMandat('${o.id}',this.checked)"
         title="${o.mandat?'Mandat présent — cliquer pour décocher':'Mandat manquant — cocher quand le mandat est signé'}"
@@ -559,7 +555,7 @@ async function vueOffres(){
   if(error) return erreur(error);
   OFFRES = data||[];
   OFF_CPT = await compteursActions('offre');
-  if(window.GTEC_LEBONCOIN) await GTEC_LEBONCOIN.chargerLignes();
+  if(window.H3C_LEBONCOIN) await H3C_LEBONCOIN.chargerLignes();
   renderOffres();
 }
 function setOffType(v){ OFF_TYPE=v; renderOffres(); }
@@ -602,10 +598,10 @@ function renderOffres(){
 let AVIS_LISTE = [], AVIS_ARCH = false;
 function avisBase(){ return AVIS_LISTE.filter(a=> AVIS_ARCH ? a.archive : !a.archive); }
 function avisLigne(a){
-  const r = window.GTEC_AVIS ? GTEC_AVIS.resume(a) : {valeur:null,m2:null};
+  const r = window.H3C_AVIS ? H3C_AVIS.resume(a) : {valeur:null,m2:null};
   const d = (a.updated_at||a.created_at) ? new Date(a.updated_at||a.created_at).toLocaleDateString('fr-FR') : '—';
   const nom = esc(a.enseigne||a.proprietaire||'Avis de valeur');
-  return `<tr style="cursor:pointer" onclick="GTEC_AVIS.editer('${a.id}')">
+  return `<tr style="cursor:pointer" onclick="H3C_AVIS.editer('${a.id}')">
       <td>${d}</td>
       <td><span class="tag">${esc(a.reference||'—')}</span></td>
       <td><b>${nom}</b>${(a.proprietaire&&a.enseigne)?`<br><small style="color:var(--gris-fonce)">${esc(a.proprietaire)}</small>`:''}</td>
@@ -616,9 +612,9 @@ function avisLigne(a){
         ${AVIS_ARCH
           ? `<button class="btn btn-ghost btn-sm" title="Restaurer (désarchiver)" onclick="restaurerAvis('${a.id}')">↩️</button>
              <button class="btn btn-ghost btn-sm" title="Supprimer définitivement" onclick="supprimerAvisDefinitif('${a.id}')">🗑️</button>`
-          : `<button class="btn btn-ghost btn-sm" title="Modifier l'avis" onclick="GTEC_AVIS.editer('${a.id}')">✏️</button>
-             <button class="btn btn-ghost btn-sm" title="Aperçu (à enregistrer en PDF)" onclick="GTEC_AVIS.generer('${a.id}')">📄</button>
-             <button class="btn btn-ghost btn-sm" title="Lien client (à envoyer par e-mail)" onclick="GTEC_AVIS.publierLien('${a.id}')">🔗</button>
+          : `<button class="btn btn-ghost btn-sm" title="Modifier l'avis" onclick="H3C_AVIS.editer('${a.id}')">✏️</button>
+             <button class="btn btn-ghost btn-sm" title="Aperçu (à enregistrer en PDF)" onclick="H3C_AVIS.generer('${a.id}')">📄</button>
+             <button class="btn btn-ghost btn-sm" title="Lien client (à envoyer par e-mail)" onclick="H3C_AVIS.publierLien('${a.id}')">🔗</button>
              <button class="btn btn-ghost btn-sm" title="Archiver (récupérable)" onclick="archiverAvis('${a.id}')">🗄️</button>`}
       </td></tr>`;
 }
@@ -672,7 +668,7 @@ async function vueAvis(){
        <tbody id="avis-tbody">${base.map(avisLigne).join('')}</tbody></table></div>`
     : vide(AVIS_ARCH ? 'Aucun avis archivé.' : 'Aucun avis de valeur pour le moment. Cliquez sur « + Nouvel avis de valeur » pour en créer un.');
   C().innerHTML = panel(AVIS_ARCH?'Avis archivés':'Avis de valeur', `${base.length} document(s)`, corps,
-    `<button class="btn btn-sm" onclick="GTEC_AVIS.nouveau()">+ Nouvel avis de valeur</button>
+    `<button class="btn btn-sm" onclick="H3C_AVIS.nouveau()">+ Nouvel avis de valeur</button>
      <button class="btn btn-ghost btn-sm" onclick="AVIS_ARCH=!AVIS_ARCH;vueAvis()">${AVIS_ARCH?'← Avis actifs':'Archivés ('+archivees.length+')'}</button>`);
 }
 
@@ -808,11 +804,11 @@ async function compteursActions(cibleType){
 function btnAction(type,id,ref,n,pdfUrl){
   let dossier = '';
   if(type==='offre'){
-    dossier = `<button type="button" class="btn btn-ghost btn-sm" title="1) Générer le dossier (aperçu à enregistrer en PDF sur l'ordinateur)" onclick="GTEC_DOSSIER.generer('${id}')">📄</button>`
+    dossier = `<button type="button" class="btn btn-ghost btn-sm" title="1) Générer le dossier (aperçu à enregistrer en PDF sur l'ordinateur)" onclick="H3C_DOSSIER.generer('${id}')">📄</button>`
       + (pdfUrl
           ? `<a href="${esc(pdfUrl)}" target="_blank" class="btn btn-ghost btn-sm" title="Ouvrir le dossier PDF rattaché">📎</a>`
           : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`)
-      + `<button type="button" class="btn btn-ghost btn-sm" title="Lien web du dossier (pleine qualité) à envoyer au client" onclick="GTEC_DOSSIER.publierLien('${id}')">🔗</button>`;
+      + `<button type="button" class="btn btn-ghost btn-sm" title="Lien web du dossier (pleine qualité) à envoyer au client" onclick="H3C_DOSSIER.publierLien('${id}')">🔗</button>`;
   }
   return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
 }
@@ -1314,7 +1310,7 @@ function majChargesDef(){ const sel=document.getElementById('o-charges-def'), ch
   const def = sel.value==='1'; champ.disabled = def; if(def) champ.value=''; }
 
 /* ===== Brouillon automatique (anti-perte au rechargement) ===== */
-const DRAFT_KEY = 'gtec_crm_draft';
+const DRAFT_KEY = 'h3c_crm_draft';
 let CURRENT_FORM_KEY = null;
 function draftCollect(key){
   if(!key) return;
@@ -1825,7 +1821,7 @@ async function editOffre(id){ await chargerClients();
 function majHonoraires(){ ['1','2'].forEach(n=>{ const t=document.getElementById('o-hono-type'+n), w=document.getElementById('o-hono-forfait-wrap'+n); if(t&&w) w.style.display=t.value==='forfait'?'':'none'; }); }
 /* Rédige la description dans le champ (modifiable) à partir des champs saisis du formulaire */
 function genererDescriptifOffre(){
-  if(!window.GTEC_DOSSIER || !GTEC_DOSSIER.genererDescriptif){ alert('Le module dossier n’est pas chargé.'); return; }
+  if(!window.H3C_DOSSIER || !H3C_DOSSIER.genererDescriptif){ alert('Le module dossier n’est pas chargé.'); return; }
   const o = {
     type_bien:val('o-type'), transaction:val('o-trans'),
     ville:val('o-ville'), secteur:val('o-secteur'),
@@ -1838,7 +1834,7 @@ function genererDescriptifOffre(){
   };
   const ta=document.getElementById('o-desc'); if(!ta) return;
   if(ta.value.trim() && !confirm('Remplacer le texte actuel de la description ?')) return;
-  ta.value = GTEC_DOSSIER.genererDescriptif(o).join('\n\n');
+  ta.value = H3C_DOSSIER.genererDescriptif(o).join('\n\n');
   if(typeof draftCollect==='function' && typeof CURRENT_FORM_KEY!=='undefined') draftCollect(CURRENT_FORM_KEY);
 }
 function formOffre(rec){
@@ -1918,7 +1914,7 @@ function formOffre(rec){
     ${fText('o-plan','Lien vers les documents (Drive)',rec.plan_url)}
     ${fCombo('o-client','Client propriétaire',labelClient(rec.client_id),rec.client_id,{placeholder:'Tapez un nom de client…',creerBtn:'creerClientRapide'})}
     ${fCheck('o-pub','Publier sur la vitrine',rec.publie)}
-    ${rec.id ? `<div class="full"><button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_LEBONCOIN.publier('${rec.id}')">📢 Publier / gérer sur leboncoin</button></div>` : ''}
+    ${rec.id ? `<div class="full"><button type="button" class="btn btn-ghost btn-sm" onclick="H3C_LEBONCOIN.publier('${rec.id}')">📢 Publier / gérer sur leboncoin</button></div>` : ''}
     ${fSep('Photo de couverture (dossier PDF)')}
     <div class="full">
       <input id="o-cover-file" type="file" accept="image/*" onchange="apercuCover()">

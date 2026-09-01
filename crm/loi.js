@@ -1,7 +1,7 @@
 /* ==========================================================================
    CABINET H3C — Module « LOI » (Lettre d'offre)
    Deux variantes : proposition de prise à bail (location) / proposition
-   d'achat (acquisition). Expose window.GTEC_LOI. Réutilise les helpers
+   d'achat (acquisition). Expose window.H3C_LOI. Réutilise les helpers
    globaux de index.html (sb, esc, nomClient, panel, vide, erreur, charge, C,
    optClients, chargerClients, ME_AGENT, LABELS, CLIENTS).
    Patron calqué sur facture.js (modale d'édition, génération PDF, lien client).
@@ -13,15 +13,15 @@
    *  IDENTITÉ DE L'AGENCE — mêmes mentions légales que facture.js.
    * ------------------------------------------------------------------ */
   const AGENCE = {
-    raison_sociale:  'Cabinet H3C',
+    raison_sociale:  'H3C Immo Partenaires',
     forme_juridique: 'SAS',
     capital:         '1 000 €',
     adresse:         '2 rue Delambre, 80000 Amiens',
     ville:           'Amiens',
-    siret:           '10061953500014',
-    rcs:             'Amiens 100 619 535',
-    tva_intra:       'FR49100619535',
-    carte_pro:       'CPI 80012026000000003',
+    siret:           '',            // SIREN 993 163 310 — SIRET complet (avec n° d'établissement) à préciser
+    rcs:             'Amiens 993 163 310',
+    tva_intra:       'FR15993163310',   // calculé depuis le SIREN (clé officielle)
+    carte_pro:       'CPI 80012025000000009',
     mention_detention: 'Transaction sur immeubles et fonds de commerce – Non détention de fonds',
     telephone:       '',
     email:           '',
@@ -199,12 +199,12 @@
       <div style="display:flex;gap:6px">
         ${segBtn('tous','Toutes')} ${segBtn('location','🔑 Bail')} ${segBtn('acquisition','🏷️ Achat')}
       </div>
-      <select onchange="GTEC_LOI._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+      <select onchange="H3C_LOI._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
         <option value="">Tous les statuts</option>
         ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_STATUT===k?'selected':''}>${v}</option>`).join('')}
       </select>
       <input id="loi-search" type="search" autocomplete="off" placeholder="🔎 Réf., client, bien…" value="${esc(RECHERCHE)}"
-        oninput="GTEC_LOI._search(this.value)"
+        oninput="H3C_LOI._search(this.value)"
         style="flex:1;min-width:200px;max-width:380px;padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
     </div>`;
 
@@ -216,8 +216,8 @@
       : vide('Aucune proposition. Créez votre première LOI.'));
 
     C().innerHTML = panel('LOI — Propositions de bail / d’achat', `${LISTE.length} document(s)`, corps,
-      `<button class="btn btn-sm" onclick="GTEC_LOI.nouveau('location')">+ Proposition de bail</button>
-       <button class="btn btn-sm" onclick="GTEC_LOI.nouveau('acquisition')">+ Proposition d’achat</button>`);
+      `<button class="btn btn-sm" onclick="H3C_LOI.nouveau('location')">+ Proposition de bail</button>
+       <button class="btn btn-sm" onclick="H3C_LOI.nouveau('acquisition')">+ Proposition d’achat</button>`);
   }
   function carte(libelle, valeur, sous){
     return `<div class="stat"><div class="n">${esc(String(valeur))}</div><div class="l">${esc(libelle)}</div>
@@ -225,7 +225,7 @@
   }
   function segBtn(v,txt){
     const on = FILTRE_TYPE===v;
-    return `<button onclick="GTEC_LOI._type('${v}')" class="btn btn-sm ${on?'':'btn-ghost'}" style="padding:8px 14px">${txt}</button>`;
+    return `<button onclick="H3C_LOI._type('${v}')" class="btn btn-sm ${on?'':'btn-ghost'}" style="padding:8px 14px">${txt}</button>`;
   }
   function filtrer(){
     let r = LISTE;
@@ -243,7 +243,7 @@
   }
   function ligne(l){
     const c = l.contenu||{};
-    return `<tr style="cursor:pointer" onclick="GTEC_LOI.editer('${l.id}')">
+    return `<tr style="cursor:pointer" onclick="H3C_LOI.editer('${l.id}')">
       <td><b>${esc(l.reference||'—')}</b></td>
       <td>${typeBadge(l)}</td>
       <td>${esc(nomClient(l.clients))}</td>
@@ -252,9 +252,9 @@
       <td>${l.duree_validite_jours ? l.duree_validite_jours+' j' : '—'}</td>
       <td>${statutBadge(l)}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" title="Aperçu / imprimer" onclick="GTEC_LOI.generer('${l.id}')">📄</button>
-        <button class="btn btn-ghost btn-sm" title="Lien client" onclick="GTEC_LOI.publierLien('${l.id}')">🔗</button>
-        ${l.statut==='brouillon' ? `<button class="btn btn-ghost btn-sm" title="Supprimer ce brouillon" style="color:#b3261e" onclick="GTEC_LOI.supprimer('${l.id}')">🗑</button>` : ''}
+        <button class="btn btn-ghost btn-sm" title="Aperçu / imprimer" onclick="H3C_LOI.generer('${l.id}')">📄</button>
+        <button class="btn btn-ghost btn-sm" title="Lien client" onclick="H3C_LOI.publierLien('${l.id}')">🔗</button>
+        ${l.statut==='brouillon' ? `<button class="btn btn-ghost btn-sm" title="Supprimer ce brouillon" style="color:#b3261e" onclick="H3C_LOI.supprimer('${l.id}')">🗑</button>` : ''}
       </td></tr>`;
   }
 
@@ -350,14 +350,14 @@
       ${champ('Date limite de signature de l’acte', iDate('loi-date-acte', c.date_limite_acte))}
       <div class="loi-check">${iSel('loi-fin-type', c.financement_type, [['pret','Financement par prêt bancaire'],['deniers_personnels','Deniers personnels (pas de recours à un prêt)']])} <label for="loi-fin-type" style="text-transform:none;font-weight:500">Mode de financement</label></div>`;
 
-    document.getElementById('modal-root').innerHTML = `<div id="loi-ed-bg" onclick="if(event.target===this)GTEC_LOI._fermer()">
+    document.getElementById('modal-root').innerHTML = `<div id="loi-ed-bg" onclick="if(event.target===this)H3C_LOI._fermer()">
       <div id="loi-ed">
-        <div class="h"><h3>${l.type==='acquisition'?'🏷️':'🔑'} ${esc(titre)}</h3><button class="x" onclick="GTEC_LOI._fermer()">×</button></div>
+        <div class="h"><h3>${l.type==='acquisition'?'🏷️':'🔑'} ${esc(titre)}</h3><button class="x" onclick="H3C_LOI._fermer()">×</button></div>
         <div class="b">
           <div class="grid">
             <div class="f full"><label>${voc.client}</label><select id="loi-client">${optClients(l.client_id)}</select></div>
-            <div class="f full"><label>Bien concerné</label><select id="loi-offre" onchange="GTEC_LOI._pickOffre()">${optOffresLoi(l.offre_id, l.type==='acquisition'?'vente':'location')}</select></div>
-            ${champ('Mandat lié (bailleur/vendeur)', `<select id="loi-mandat" onchange="GTEC_LOI._pickMandat()">${optMandatsLoi(l.mandat_id)}</select>`)}
+            <div class="f full"><label>Bien concerné</label><select id="loi-offre" onchange="H3C_LOI._pickOffre()">${optOffresLoi(l.offre_id, l.type==='acquisition'?'vente':'location')}</select></div>
+            ${champ('Mandat lié (bailleur/vendeur)', `<select id="loi-mandat" onchange="H3C_LOI._pickMandat()">${optMandatsLoi(l.mandat_id)}</select>`)}
             ${champ('Statut', iSel('loi-statut', l.statut||'brouillon', Object.entries(STATUT_LABEL)))}
             ${champ('Date de l’offre', iDate('loi-date-offre', l.date_offre||today()))}
             ${champ('Durée de validité (jours)', iNum('loi-duree', l.duree_validite_jours!=null?l.duree_validite_jours:15))}
@@ -410,9 +410,9 @@
         <div class="foot">
           <span class="loi-msg" id="loi-msg"></span>
           <span style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_LOI._fermer()">Fermer</button>
-            <button type="button" class="btn btn-sm" onclick="GTEC_LOI._save()">💾 Enregistrer</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="GTEC_LOI.generer('${id||''}','live')">📄 Aperçu</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_LOI._fermer()">Fermer</button>
+            <button type="button" class="btn btn-sm" onclick="H3C_LOI._save()">💾 Enregistrer</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_LOI.generer('${id||''}','live')">📄 Aperçu</button>
           </span>
         </div>
       </div></div>`;
@@ -862,7 +862,7 @@
       <div style="padding:18px 20px"><p style="margin:0 0 10px;color:#4A5A5E;font-size:14px">Lien copié. Le client le verra en pleine page (et pourra l’enregistrer en PDF).</p>
         <input readonly value="${esc(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #c9d0d3;border-radius:8px;font-size:13px;box-sizing:border-box"></div>
       <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
-        <button onclick="GTEC_LOI.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer</button>
+        <button onclick="H3C_LOI.revoquerLien('${esc(id||'')}')" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#fbe9e9;color:#b3261e">🗑️ Révoquer</button>
         <span style="flex:1"></span>
         <a href="${esc(url)}" target="_blank" rel="noopener" style="border-radius:9px;padding:10px 16px;font-weight:600;background:#243A54;color:#fff;text-decoration:none">↗ Ouvrir</a>
         <button onclick="document.getElementById('loi-lien-bg').remove()" style="border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;background:#e3e8ea;color:#333">Fermer</button>
@@ -875,7 +875,7 @@
    *  API publique
    * ------------------------------------------------------------------ */
   window.vueLoi = vueLoi;
-  window.GTEC_LOI = {
+  window.H3C_LOI = {
     nouveau:(type)=>{ ED.type=(type==='acquisition'?'acquisition':'location'); editer(null); },
     editer, generer, publierLien, revoquerLien, supprimer,
     _type:(v)=>{ FILTRE_TYPE=v; vueLoi(); },
