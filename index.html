@@ -29,16 +29,16 @@ img{max-width:100%;display:block}
 /* ---------- En-tête : bandeau logo (blanc) + barre menu (vert sapin) ---------- */
 .topbar{background:#fff;border-bottom:1px solid var(--gris-clair);text-align:center;padding:16px 0}
 .topbar img{height:62px;display:inline-block}
-header{position:sticky;top:0;z-index:50;background:var(--teal);box-shadow:0 2px 10px rgba(42,51,56,.15)}
+header{position:sticky;top:0;z-index:50;background:var(--or-dark);box-shadow:0 2px 10px rgba(42,51,56,.15)}
 .menu{display:flex;justify-content:center;flex-wrap:wrap}
-.menu a{display:flex;align-items:center;height:52px;padding:0 24px;color:#fff;font-weight:500;font-size:.95rem;
-  border-left:1px solid rgba(255,255,255,.16);transition:background .15s}
-.menu a:last-child{border-right:1px solid rgba(255,255,255,.16)}
-.menu a:hover{background:rgba(255,255,255,.14)}
-.btn{display:inline-block;background:linear-gradient(135deg,var(--teal),var(--teal-dark));color:#fff;padding:11px 22px;border-radius:9px;font-weight:600;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px rgba(46,99,87,.3)}
-.btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(46,99,87,.4)}
-.btn-ghost{background:transparent;color:var(--teal);border:1.5px solid var(--teal);box-shadow:none}
-.btn-ghost:hover{background:var(--teal);color:#fff;box-shadow:0 6px 18px rgba(46,99,87,.32)}
+.menu a{display:flex;align-items:center;height:52px;padding:0 24px;color:var(--bleu);font-weight:600;font-size:.95rem;
+  border-left:1px solid rgba(0,51,46,.16);transition:background .15s}
+.menu a:last-child{border-right:1px solid rgba(0,51,46,.16)}
+.menu a:hover{background:rgba(0,51,46,.1)}
+.btn{display:inline-block;background:var(--or);color:var(--bleu);padding:12px 22px;border-radius:8px;font-weight:700;border:none;cursor:pointer;transition:background .15s,transform .15s}
+.btn:hover{background:var(--or-dark);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.5);box-shadow:none}
+.btn-ghost:hover{background:rgba(255,255,255,.12);border-color:#fff}
 
 /* ---------- Hero + recherche ---------- */
 .hero{position:relative;color:#fff;padding:122px 0 132px;overflow:hidden}
@@ -58,33 +58,34 @@ header{position:sticky;top:0;z-index:50;background:var(--teal);box-shadow:0 2px 
 .hero .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.78rem;font-weight:600;letter-spacing:.13em;
   text-transform:uppercase;background:rgba(255,255,255,.12);padding:8px 16px;border-radius:30px;margin-bottom:20px;
   backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.18)}
-.hero .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--teal-light);box-shadow:0 0 0 4px rgba(52,195,164,.25)}
+.hero .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--or);box-shadow:0 0 0 4px rgba(227,172,92,.25)}
 .hero h1{font-size:3.4rem;font-weight:800;max-width:800px;line-height:1.07;letter-spacing:-.015em;text-shadow:0 2px 24px rgba(0,0,0,.28)}
-.hero h1 .accent{color:var(--teal-light)}
+.hero h1 .accent{color:var(--or)}
 .hero p{margin-top:18px;font-size:1.2rem;opacity:.94;max-width:600px;text-shadow:0 1px 10px rgba(0,0,0,.2)}
 /* bandeau de confiance */
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px}
 .trust{display:flex;gap:14px 40px;flex-wrap:wrap;margin-top:32px}
 .trust .t{position:relative;padding-left:16px}
-.trust .t::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:3px;background:var(--teal-light)}
+.trust .t::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:3px;background:var(--or)}
 .trust .t b{display:block;font-size:1.04rem;font-weight:700;letter-spacing:.01em}
 .trust .t span{font-size:.84rem;opacity:.82}
 /* recherche : panneau de verre dépoli posé sur le hero */
-.search{background:rgba(255,255,255,.13);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.28);
-  border-radius:18px;box-shadow:0 22px 60px rgba(0,0,0,.32);padding:22px;margin-top:38px;position:relative;z-index:5;
-  display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:14px;align-items:end}
+.search{background:var(--bleu);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.32);padding:22px;margin-top:38px;position:relative;z-index:5;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:end}
 .search .search-titre{grid-column:1/-1;margin:-2px 0 2px;font-size:.82rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.9}
-.field{display:flex;flex-direction:column;gap:6px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field label{font-size:.76rem;font-weight:600;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.04em}
-.field select,.field input{padding:12px 13px;border:1.5px solid transparent;border-radius:10px;font:inherit;color:var(--noir);background:rgba(255,255,255,.96)}
-.field select:focus,.field input:focus{outline:none;border-color:var(--teal-light);box-shadow:0 0 0 3px rgba(52,195,164,.3)}
+.field select,.field input{padding:12px 13px;border:1.5px solid transparent;border-radius:10px;font:inherit;color:var(--noir);background:rgba(255,255,255,.96);width:100%}
+.field select:focus,.field input:focus{outline:none;border-color:var(--or);box-shadow:0 0 0 3px rgba(227,172,92,.3)}
 .search .btn{height:46px;font-size:.98rem}
 
 /* ---------- Sections ---------- */
 section{padding:64px 0}
-.section-label{display:inline-block;font-size:.76rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
-.section-label::before{content:'';display:inline-block;width:22px;height:2px;background:var(--teal-light);vertical-align:middle;margin-right:9px;border-radius:2px}
+.section-label{display:inline-block;font-size:.76rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--or-dark);margin-bottom:10px}
+.section-label::before{content:'';display:inline-block;width:22px;height:2px;background:var(--or);vertical-align:middle;margin-right:9px;border-radius:2px}
 .section-title{font-size:1.95rem;font-weight:800;margin-bottom:7px;color:var(--noir);letter-spacing:-.01em}
-.section-title .accent{color:var(--teal)}
+.section-title .accent{color:var(--or-dark)}
 .section-sub{color:var(--gris-fonce);margin-bottom:30px;font-size:1.02rem}
 /* apparition au défilement */
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
@@ -93,17 +94,19 @@ section{padding:64px 0}
 /* Catégories */
 .cats{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
 .cat{background:var(--gris-bg);border:1px solid var(--gris-clair);border-radius:14px;padding:24px 12px;text-align:center;cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s}
-.cat:hover{border-color:var(--teal);background:#fff;box-shadow:var(--ombre);transform:translateY(-3px)}
+.cat:hover{border-color:var(--or-dark);background:#fff;box-shadow:var(--ombre);transform:translateY(-3px)}
 .cat .ico{display:inline-flex;width:50px;height:50px;align-items:center;justify-content:center;border-radius:14px;
   background:linear-gradient(135deg,rgba(52,195,164,.16),rgba(26,39,56,.06));font-size:1.5rem}
 .cat .lbl{margin-top:10px;font-weight:600;font-size:.9rem;color:var(--noir)}
 
-/* Cartes biens */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+/* Cartes biens (mosaïque : le 1er bien en vedette, plus grand) */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
 .card{border:1px solid var(--gris-clair);border-radius:16px;overflow:hidden;background:#fff;
   transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column}
 .card:hover{box-shadow:0 24px 54px rgba(42,51,56,.38),0 8px 18px rgba(42,51,56,.20);transform:translateY(-6px)}
-.card .photo{height:200px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+.card.big{grid-column:span 2}
+.card.big .photo{height:100%;min-height:280px}
+.card .photo{height:170px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
   background:linear-gradient(135deg,var(--teal-dark),var(--teal));color:rgba(255,255,255,.55);font-size:3.2rem}
 .card .photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .card:hover .photo img{transform:scale(1.06)}
@@ -120,21 +123,30 @@ section{padding:64px 0}
   font-size:.82rem;font-weight:500;padding:5px 10px;border-radius:8px}
 .card .meta span b{color:var(--noir);font-weight:700}
 .card .sep{height:1px;background:var(--gris-clair);margin:6px 0 2px}
-.card .prix{margin-top:auto;font-size:1.28rem;font-weight:800;color:var(--teal-dark);line-height:1.2}
+.card .prix{margin-top:auto;font-size:1.28rem;font-weight:800;color:var(--or-dark);line-height:1.2}
 .card .prix small{font-weight:500;font-size:.76rem;color:var(--gris-fonce);margin-left:5px;white-space:nowrap}
 .card .voir{margin-top:12px;display:block;text-align:center;background:var(--gris-bg);color:var(--teal-dark);
   font-weight:600;padding:10px;border-radius:9px;transition:.15s}
-.card .voir:hover{background:var(--teal);color:#fff}
+.card .voir:hover{background:var(--or-dark);color:#fff}
 
-/* 3 piliers */
-.piliers{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-.pilier{text-align:left;padding:28px 26px;background:#fff;border:1px solid var(--gris-clair);border-radius:16px;
-  transition:transform .18s,box-shadow .18s,border-color .18s}
-.pilier:hover{transform:translateY(-4px);box-shadow:var(--ombre);border-color:transparent}
-.pilier .ico{display:inline-flex;width:54px;height:54px;align-items:center;justify-content:center;border-radius:14px;
-  background:linear-gradient(135deg,rgba(52,195,164,.18),rgba(30,140,120,.1));font-size:1.55rem}
-.pilier h4{margin:16px 0 7px;font-size:1.16rem;color:var(--noir)}
-.pilier p{color:var(--gris-fonce);font-size:.95rem}
+/* 3 piliers (éditorial : trait fin + texte, sans boîte) */
+.piliers{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
+.pilier{text-align:left;padding-top:20px;border-top:2px solid var(--or);transition:border-color .18s}
+.pilier h4{margin:0 0 9px;font-size:1.18rem;color:var(--noir);font-weight:800}
+.pilier p{color:var(--gris-fonce);font-size:.96rem;line-height:1.55}
+
+/* Chiffres-clés */
+.chiffres{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;border-top:1px solid var(--gris-clair);padding-top:34px}
+.chiffres .c b{display:block;font-size:2.3rem;font-weight:800;color:var(--noir);letter-spacing:-.02em}
+.chiffres .c span{color:var(--gris-fonce);font-size:.92rem}
+
+/* CTA final plein cadre */
+.cta-band{position:relative;color:#fff;padding:64px 0;background-size:cover;background-position:center}
+.cta-band::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,rgba(0,51,46,.94),rgba(0,51,46,.55))}
+.cta-band-in{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.cta-band-in h2{font-size:1.6rem;font-weight:800;max-width:520px;line-height:1.25}
+.cta-band-in p{opacity:.88;margin-top:8px}
+.cta-band-btns{display:flex;gap:12px;flex-wrap:wrap}
 
 /* Pied de page */
 footer{background:var(--bleu);color:#c5cfdb;padding:46px 0 30px;margin-top:20px}
@@ -156,7 +168,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 .fiche-c .ref{color:var(--teal);font-weight:700;font-size:.78rem}
 .fiche-c h2{font-size:1.6rem;color:var(--bleu);margin:4px 0;letter-spacing:-.01em}
 .fiche-c .ville{color:var(--gris-fonce);margin-bottom:6px}
-.fiche-prix{font-size:1.55rem;font-weight:800;color:var(--teal-dark);margin:14px 0}
+.fiche-prix{font-size:1.55rem;font-weight:800;color:var(--or-dark);margin:14px 0}
 .fiche-prix small{font-weight:500;font-size:.85rem;color:var(--gris-fonce)}
 .fiche-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
 .fiche-grid .it{background:var(--gris-bg);border-radius:10px;padding:11px 13px}
@@ -166,7 +178,7 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 .fiche-desc{color:#3a464b;line-height:1.6;white-space:pre-line}
 .fiche-eq{display:flex;flex-wrap:wrap;gap:8px}
 .fiche-eq span{background:rgba(0,105,98,.12);color:var(--teal-dark);border-radius:20px;padding:6px 12px;font-size:.85rem;font-weight:500}
-.fiche-contact{display:inline-block;margin-top:22px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));color:#fff;padding:12px 24px;border-radius:10px;font-weight:600}
+.fiche-contact{display:inline-block;margin-top:22px;background:linear-gradient(135deg,var(--or),var(--or-dark));color:var(--bleu);padding:12px 24px;border-radius:10px;font-weight:600}
 
 /* Page d'accès (code) */
 .gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#00332E,#001916);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -181,9 +193,13 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 
 @media(max-width:900px){
   .search{grid-template-columns:1fr 1fr}
+  .search .f-ville{grid-column:1/-1}
   .search .btn{grid-column:1/-1}
   .cats{grid-template-columns:repeat(3,1fr)}
   .grid,.piliers,footer .cols{grid-template-columns:1fr}
+  .card.big{grid-column:span 1}
+  .card.big .photo{height:170px;min-height:0}
+  .chiffres{grid-template-columns:1fr 1fr}
   .topbar img{height:50px}
   .menu a{padding:0 13px;font-size:.82rem;height:46px}
   .hero{padding:80px 0 90px}
@@ -228,8 +244,13 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
 <div class="hero">
   <div class="wrap">
     <span class="eyebrow">Cabinet H3C · Immobilier d'entreprise</span>
-    <h1>Les locaux qui font <span class="accent">grandir</span><br>votre activité</h1>
+    <h1>Les locaux qui font <span class="accent">grandir</span> <br>votre activité</h1>
     <p>Bureaux, locaux commerciaux, entrepôts, terrains — à la vente comme à la location. Une équipe locale, l'exigence H3C.</p>
+
+    <div class="hero-cta">
+      <a href="#biens" class="btn">Trouver un bien</a>
+      <a href="#contact" class="btn btn-ghost">Confier un bien</a>
+    </div>
 
     <div class="trust">
       <div class="t"><b>Immobilier d'entreprise</b><span>bureaux · locaux · entrepôts · terrains</span></div>
@@ -258,6 +279,10 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
           <option value="fonds_de_commerce">Fonds de commerce</option>
           <option value="terrain">Terrain</option>
         </select>
+      </div>
+      <div class="field f-ville">
+        <label>Localisation</label>
+        <input type="text" id="f-ville" placeholder="Ville, secteur…">
       </div>
       <div class="field">
         <label>Surface min (m²)</label>
@@ -299,9 +324,33 @@ footer .bas{border-top:1px solid #3a464b;margin-top:30px;padding-top:18px;font-s
     <h2 class="section-title">À votre <span class="accent">service</span></h2>
     <p class="section-sub">Une équipe locale, à l'écoute de votre projet.</p>
     <div class="piliers">
-      <div class="pilier"><div class="ico">📍</div><h4>La proximité</h4><p>Une connaissance fine du marché local et de ses opportunités.</p></div>
-      <div class="pilier"><div class="ico">🤝</div><h4>L'accompagnement</h4><p>De la recherche à la signature, un interlocuteur dédié.</p></div>
-      <div class="pilier"><div class="ico">🏗️</div><h4>L'expertise H3C</h4><p>Immobilier d'entreprise : nous parlons le langage des professionnels.</p></div>
+      <div class="pilier"><h4>La proximité</h4><p>Une connaissance fine du marché local et de ses opportunités.</p></div>
+      <div class="pilier"><h4>L'accompagnement</h4><p>De la recherche à la signature, un interlocuteur dédié.</p></div>
+      <div class="pilier"><h4>L'expertise H3C</h4><p>Immobilier d'entreprise : nous parlons le langage des professionnels.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHIFFRES-CLÉS ============ -->
+<section style="padding-top:0">
+  <div class="wrap reveal chiffres">
+    <div class="c"><b>100%</b><span>immobilier d'entreprise</span></div>
+    <div class="c"><b>5</b><span>types de biens couverts</span></div>
+    <div class="c"><b>2</b><span>modes de transaction : vente &amp; location</span></div>
+    <div class="c"><b>1</b><span>interlocuteur dédié à chaque dossier</span></div>
+  </div>
+</section>
+
+<!-- ============ CTA FINAL PLEIN CADRE ============ -->
+<section class="cta-band" style="background-image:url('hero.jpg')">
+  <div class="wrap cta-band-in reveal">
+    <div>
+      <h2>Donnons une nouvelle dimension à vos projets immobiliers</h2>
+      <p>Bénéficiez d'un regard expert pour sécuriser vos décisions.</p>
+    </div>
+    <div class="cta-band-btns">
+      <a href="#contact" class="btn">Échanger sur votre projet</a>
+      <a href="qui-sommes-nous.html" class="btn btn-ghost">Qui sommes-nous</a>
     </div>
   </div>
 </section>
@@ -444,12 +493,13 @@ function prixHtml(b){
 
 /* Une carte */
 const ETATS = {neuf:'Neuf', etat_neuf:'État neuf', bon:'Bon état', a_renover:'À rénover'};
-function carte(b){
+function carte(b, idx, total){
   const photos = (b.offre_photos||[]).slice().sort((a,c)=>((c.est_principale?1:0)-(a.est_principale?1:0))||((a.ordre||0)-(c.ordre||0)));
   const principale = photos.find(p=>p.est_principale);
   const imgUrl = (principale && principale.url) || b.cover_url || (photos[0] && photos[0].url);
   const img = imgUrl ? `<img src="${imgUrl}" alt="">` : (ICONS[b.type_bien]||'🏢');
-  return `<div class="card">
+  const big = (idx===0 && total>=5) ? ' big' : '';
+  return `<div class="card${big}">
     <div class="photo">${img}</div>
     <div class="body">
       <div class="ref-row">
@@ -477,18 +527,20 @@ function afficher(liste){
   document.getElementById('biens-count').textContent =
     liste.length ? `${liste.length} bien${liste.length>1?'s':''} disponible${liste.length>1?'s':''}` : '';
   grid.innerHTML = liste.length
-    ? liste.map(carte).join('')
+    ? liste.map((b,i)=>carte(b,i,liste.length)).join('')
     : `<div class="empty">Aucun bien ne correspond à votre recherche pour le moment.</div>`;
 }
 
 function appliquerFiltres(){
   const t = document.getElementById('f-transaction').value;
   const ty = document.getElementById('f-type').value;
+  const ville = document.getElementById('f-ville').value.trim().toLowerCase();
   const smin = parseFloat(document.getElementById('f-smin').value)||0;
   const smax = parseFloat(document.getElementById('f-smax').value)||Infinity;
   afficher(TOUS.filter(b=>
     (!t  || b.transaction===t || b.transaction==='les_deux') &&
     (!ty || b.type_bien===ty) &&
+    (!ville || (b.ville||'').toLowerCase().includes(ville) || (b.secteur||'').toLowerCase().includes(ville)) &&
     (b.surface_m2==null || (b.surface_m2>=smin && b.surface_m2<=smax))
   ));
 }
