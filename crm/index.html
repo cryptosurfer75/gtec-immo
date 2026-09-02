@@ -1778,7 +1778,7 @@ function thumbPhoto(p,i){
     </div></div>`;
 }
 /* Désigne UNE photo de la galerie comme photo de l'annonce (vitrine + portails type Leboncoin).
-   Indépendant de la photo de couverture du dossier. Re-cliquer la retire (retour à la couverture). */
+   Cette photo devient aussi, par défaut, la photo de couverture du dossier (modifiable ensuite à la main). */
 async function definirPhotoAnnonce(id){
   if(!MEDIA_OFFRE_ID) return;
   const cur=DOSSIER_PHOTOS.find(x=>String(x.id)===String(id)); if(!cur) return;
@@ -1788,6 +1788,12 @@ async function definirPhotoAnnonce(id){
   try{
     await sb.from('offre_photos').update({est_principale:false}).eq('offre_id',MEDIA_OFFRE_ID);
     if(activer) await sb.from('offre_photos').update({est_principale:true}).eq('id',id);
+    if(activer){
+      const { error } = await sb.from('offres').update({cover_url:cur.url}).eq('id',MEDIA_OFFRE_ID);
+      if(error) throw error;
+      const o = OFFRES.find(x=>String(x.id)===String(MEDIA_OFFRE_ID)); if(o) o.cover_url = cur.url;
+      showCoverPreview(cur.url);
+    }
   }catch(e){ alert('Impossible d’enregistrer la photo de l’annonce : '+(e.message||e)); }
 }
 /* Renumérote les rangs (0,1,2,…) selon l'ordre affiché et persiste ceux qui ont changé */
