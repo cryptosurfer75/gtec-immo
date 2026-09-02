@@ -1859,6 +1859,7 @@ function formOffre(rec){
     ${fSel('o-secteur','Secteur / quartier',rec.secteur||'',[['','—'],...(rec.secteur&&!SECTEURS.includes(rec.secteur)?[[rec.secteur,rec.secteur]]:[]),...SECTEURS.map(s=>[s,s])],{full:true})}
     ${fSep('Surfaces & caractéristiques')}
     ${fNum('o-surf','Surface (m²)',rec.surface_m2)}
+    <div class="f"><label>Linéaire vitrine (ml)</label><input id="o-lineaire" type="number" step="0.01" value="${rec.lineaire_vitrine==null?'':rec.lineaire_vitrine}"></div>
     ${fSel('o-etat','État',rec.etat||'',[['','—'],['neuf','Neuf'],['etat_neuf','État neuf'],['bon','Bon état'],['a_renover','À rénover']])}
     ${fNum('o-smin','Surface mini (si divisible)',rec.surface_min_m2)}
     ${fNum('o-smax','Surface maxi',rec.surface_max_m2)}
@@ -1970,7 +1971,7 @@ function formOffre(rec){
       bail:val('o-bail'), indexation:val('o-indexation'), regime_fiscal:val('o-regime'), periodicite_paiement:val('o-periodicite'),
       carte_plan_url, carte_aerienne_url, dossier_pdf_url,
       titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:val('o-secteur'),
-      surface_m2:numVal('o-surf'), surface_min_m2:numVal('o-smin'), surface_max_m2:numVal('o-smax'), nb_lots:numVal('o-lots'),
+      surface_m2:numVal('o-surf'), lineaire_vitrine:numVal('o-lineaire'), surface_min_m2:numVal('o-smin'), surface_max_m2:numVal('o-smax'), nb_lots:numVal('o-lots'),
       parkings:numVal('o-park'), etage:val('o-etage'), nb_niveaux:numVal('o-niv'), annee:numVal('o-annee'),
       dpe:val('o-dpe'), etat:val('o-etat'), divisible:val('o-div'), norme_pmr:val('o-pmr'), norme_erp:val('o-erp'),
       prix_vente:numVal('o-prix'), loyer_annuel_m2:numVal('o-loyer'), charges:numVal('o-charges'),
