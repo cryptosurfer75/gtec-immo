@@ -22,7 +22,8 @@
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="Cabinet H3C"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
   // Signature de l'agence (Florent et Maxime ne sont plus dans le projet)
   const AGENTS = {
-    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'v.demartelaere@cabinet-h3c.com' }
+    VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'v.demartelaere@cabinet-h3c.com' },
+    HC: { nom:'Héni Chaari', tel:'06 14 45 01 84', mail:'h.chaari@cabinet-h3c.com' }
   };
   const CONTACT_DEFAUT = AGENTS.VDM;   // anciens biens sans agent renseigné
   const SECTIONS_AVEC_PLANS = ['Localisation','Descriptif du bien','Équipements','Détail des surfaces',

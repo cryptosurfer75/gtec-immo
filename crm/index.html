@@ -296,8 +296,8 @@ function refBadge(ref, type){
   const c=TYPE_COULEUR[type];
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:700">${esc(ref||'—')}</span>`;
 }
-/* ----- Agent rédacteur (VDM — Florent et Maxime ne sont plus dans le projet) ----- */
-const AGENTS_OPTS = [['VDM','VDM']];
+/* ----- Agent rédacteur (VDM, HC — Florent et Maxime ne sont plus dans le projet) ----- */
+const AGENTS_OPTS = [['VDM','VDM'],['HC','HC']];
 const AGENTS_CODES = AGENTS_OPTS.map(([c])=>c);
 let ME_AGENT = 'VDM';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
 function agentBadge(a){
@@ -405,7 +405,8 @@ async function seDeconnecter(){ await sb.auth.signOut(); montrerLogin(); }
 async function ouvrirApp(session){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  ME_AGENT = 'VDM';
+  const emailConnecte = (session?.user?.email || '').toLowerCase();
+  ME_AGENT = emailConnecte.includes('h.chaari') ? 'HC' : 'VDM';
   document.getElementById('who-init').textContent = ME_AGENT;
 
   // Retour de la connexion Google (?code=...) : on échange le code tout de suite (avant tout le
@@ -1860,7 +1861,7 @@ function formOffre(rec){
     ${fSep('Surfaces & caractéristiques')}
     ${fNum('o-surf','Surface (m²)',rec.surface_m2)}
     <div class="f"><label>Linéaire vitrine (ml)</label><input id="o-lineaire" type="number" step="0.01" value="${rec.lineaire_vitrine==null?'':rec.lineaire_vitrine}"></div>
-    ${fSel('o-etat','État',rec.etat||'',[['','—'],['neuf','Neuf'],['etat_neuf','État neuf'],['bon','Bon état'],['a_renover','À rénover']])}
+    ${fSel('o-etat','État',rec.etat||'',[['','—'],['neuf','Neuf'],['etat_neuf','État neuf'],['bon','Bon état'],['brut_beton','Brut de béton'],['a_renover','À rénover']])}
     ${fNum('o-smin','Surface mini (si divisible)',rec.surface_min_m2)}
     ${fNum('o-smax','Surface maxi',rec.surface_max_m2)}
     ${fNum('o-lots','Nombre de lots',rec.nb_lots)}
@@ -2192,7 +2193,7 @@ window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); })
 
 init();
 </script>
-<script src="dossier.js?v=14"></script>
+<script src="dossier.js?v=15"></script>
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=3"></script>
 <script src="facture.js?v=3"></script>
