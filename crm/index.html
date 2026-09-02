@@ -812,7 +812,9 @@ function btnAction(type,id,ref,n,pdfUrl){
           : `<button type="button" class="btn btn-ghost btn-sm" title="2) Rattacher le PDF enregistré à ce bien" onclick="rattacherDossierPdf('${id}')">📤</button>`)
       + `<button type="button" class="btn btn-ghost btn-sm" title="Lien web du dossier (pleine qualité) à envoyer au client" onclick="H3C_DOSSIER.publierLien('${id}')">🔗</button>`;
   }
-  return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button></td>`;
+  return `<td onclick="event.stopPropagation()">${dossier}<button type="button" class="btn btn-ghost btn-sm" onclick="ouvrirActions('${type}','${id}','${esc(ref||'')}')">💬${n?` <b>${n}</b>`:''}</button>`
+    + `<button type="button" class="btn btn-ghost btn-sm" title="Infos — notes libres sur cette fiche" onclick="ouvrirInfos('${type}','${id}','${esc(ref||'')}')">ℹ️</button>`
+    + `<button type="button" class="btn btn-ghost btn-sm" title="Dénonce — suivi des envois du dossier" onclick="ouvrirDenonce('${type}','${id}','${esc(ref||'')}')">📨</button></td>`;
 }
 /* Rattache le dossier PDF (enregistré sur l'ordinateur) à un bien, en un clic depuis le tableau — sans ouvrir la fiche. */
 function rattacherDossierPdf(offreId){
@@ -879,6 +881,82 @@ async function supprimerAction(id, cibleType, cibleId){
   if(error){ alert('Erreur : '+error.message); return; }
   await rafraichirActions(cibleType, cibleId);
   if(cibleType==='offre') vueOffres(); else vueDemandes();
+}
+
+/* ===== INFOS (note libre sur la fiche — structurable plus tard selon les besoins) ===== */
+function ouvrirInfos(cibleType, cibleId, ref){
+  const titre='Infos — '+(cibleType==='offre'?'bien':'demande')+(ref?' '+ref:'');
+  const item = (cibleType==='offre'?OFFRES:DEMANDES).find(x=>String(x.id)===String(cibleId));
+  document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)fermerModal()"><div class="modal">
+    <div class="modal-h"><h3>${esc(titre)}</h3><button class="x" onclick="fermerModal()">×</button></div>
+    <div class="modal-b">
+      ${fArea('info-notes','Notes',item?item.notes:'')}
+      <div style="display:flex;justify-content:flex-end;gap:10px"><button type="button" class="btn btn-ghost btn-sm" onclick="fermerModal()">Annuler</button><button type="button" class="btn btn-sm" onclick="enregistrerInfos('${cibleType}','${cibleId}')">Enregistrer</button></div>
+    </div></div></div>`;
+}
+async function enregistrerInfos(cibleType, cibleId){
+  const table = cibleType==='offre' ? 'offres' : 'demandes';
+  const notes = val('info-notes') || null;
+  const { error } = await sb.from(table).update({notes}).eq('id',cibleId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  const item = (cibleType==='offre'?OFFRES:DEMANDES).find(x=>String(x.id)===String(cibleId));
+  if(item) item.notes = notes;
+  fermerModal();
+}
+
+/* ===== DÉNONCE (suivi des envois du dossier à des prospects) ===== */
+const ACTIONS_DENONCE = ["Dossier envoyé","Dossier à l'étude","Prise de RDV visite","Négociation en cours","LOI signé","Signature notaire","Dossier clôturé"];
+async function ouvrirDenonce(cibleType, cibleId, ref){
+  const titre='Dénonce — '+(cibleType==='offre'?'bien':'demande')+(ref?' '+ref:'');
+  document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)fermerModal()"><div class="modal">
+    <div class="modal-h"><h3>${esc(titre)}</h3><button class="x" onclick="fermerModal()">×</button></div>
+    <div class="modal-b" id="den-b"><div class="loading">Chargement…</div></div></div></div>`;
+  await rafraichirDenonces(cibleType, cibleId);
+}
+async function rafraichirDenonces(cibleType, cibleId){
+  const b=document.getElementById('den-b'); if(!b) return;
+  const { data } = await sb.from('denonces').select('*').eq('cible_type',cibleType).eq('cible_id',cibleId)
+    .order('date_envoi',{ascending:false}).order('created_at',{ascending:false});
+  const opts = (sel)=>ACTIONS_DENONCE.map(a=>`<option value="${esc(a)}" ${sel===a?'selected':''}>${esc(a)}</option>`).join('');
+  const lignes = (data||[]).map(d=>`<tr>
+      <td>${esc(d.date_envoi||'—')}</td>
+      <td>${esc(d.destinataire||'—')}</td>
+      <td>${esc(d.contact||'—')}</td>
+      <td><select onchange="majActionDenonce('${d.id}',this.value)">${opts(d.action)}</select></td>
+      <td><button type="button" class="lien" onclick="supprimerDenonce('${d.id}','${cibleType}','${cibleId}')">Supprimer</button></td>
+    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--gris-fonce);padding:16px">Aucun envoi pour le moment.</td></tr>`;
+  const today=new Date().toISOString().slice(0,10);
+  b.innerHTML = `
+    <form onsubmit="return ajouterDenonce(event,'${cibleType}','${cibleId}')">
+      <div class="form-grid">
+        <div class="f"><label>Date d'envoi</label><input id="den-date" type="date" value="${today}"></div>
+        <div class="f"><label>Destinataire</label><input id="den-dest" type="text"></div>
+        <div class="f"><label>Contact</label><input id="den-contact" type="text"></div>
+        <div class="f"><label>Action</label><select id="den-action">${opts()}</select></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin:2px 0 18px"><button class="btn btn-sm" type="submit">Ajouter</button></div>
+    </form>
+    <div class="tscroll"><table><thead><tr><th>Date d'envoi</th><th>Destinataire</th><th>Contact</th><th>Action</th><th></th></tr></thead><tbody>${lignes}</tbody></table></div>`;
+}
+async function ajouterDenonce(ev, cibleType, cibleId){
+  ev.preventDefault();
+  const payload={ cible_type:cibleType, cible_id:cibleId,
+    date_envoi:val('den-date')||null, destinataire:val('den-dest')||null,
+    contact:val('den-contact')||null, action:val('den-action')||null };
+  const { error } = await sb.from('denonces').insert(payload);
+  if(error){ alert('Erreur : '+error.message); return false; }
+  await rafraichirDenonces(cibleType, cibleId);
+  return false;
+}
+async function majActionDenonce(id, action){
+  const { error } = await sb.from('denonces').update({action}).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+async function supprimerDenonce(id, cibleType, cibleId){
+  if(!confirm('Supprimer cette ligne ?')) return;
+  const { error } = await sb.from('denonces').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await rafraichirDenonces(cibleType, cibleId);
 }
 
 /* ===== CLIENTS ===== */
