@@ -342,7 +342,7 @@ const AMIENS_METRO = [
 const HDF_DEPARTEMENTS = {
   'Nord (59)': [['Lille','59000'],['Roubaix','59100'],['Tourcoing','59200'],['Dunkerque','59140'],['Valenciennes','59300'],['Douai','59500'],['Cambrai','59400'],['Maubeuge','59600']],
   'Pas-de-Calais (62)': [['Arras','62000'],['Calais','62100'],['Boulogne-sur-Mer','62200'],['Lens','62300'],['Béthune','62400'],['Saint-Omer','62500']],
-  'Somme (80)': [['Abbeville','80100'],['Albert','80300'],['Péronne','80200'],['Doullens','80600'],['Montdidier','80500']],
+  'Somme (80)': [['Amiens Métropole','__metro__'],['Abbeville','80100'],['Albert','80300'],['Péronne','80200'],['Doullens','80600'],['Montdidier','80500']],
   'Oise (60)': [['Beauvais','60000'],['Compiègne','60200'],['Creil','60100'],['Senlis','60300'],['Chantilly','60500']],
   'Aisne (02)': [['Saint-Quentin','02100'],['Laon','02000'],['Soissons','02200'],['Château-Thierry','02400']],
 };
@@ -2162,7 +2162,9 @@ function formDemande(rec){
             <div style="width:100%">
               <div style="font-size:.74rem;font-weight:700;color:var(--gris-fonce);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px">${esc(dep)}</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
-                ${villes.map(([v,cp])=>`<span class="metro-chip" data-v="${esc(v)}" onclick="ajouterVilleMetro('${esc(v)}','${cp}')">${esc(v)}</span>`).join('')}
+                ${villes.map(([v,cp])=>cp==='__metro__'
+                  ? `<span class="metro-chip metro-all" data-v="__metro__" onclick="toutMetro()">✓ ${esc(v)} (toutes les communes)</span>`
+                  : `<span class="metro-chip" data-v="${esc(v)}" onclick="ajouterVilleMetro('${esc(v)}','${cp}')">${esc(v)}</span>`).join('')}
               </div>
             </div>`).join('')}
         </div>
@@ -2231,7 +2233,14 @@ function ajouterVilleMetro(v,cp){
 }
 function majMetroChips(){
   const villes=[...document.querySelectorAll('#loc-list .loc-ville')].map(i=>(i.value||'').trim().toLowerCase());
-  document.querySelectorAll('.metro-chip[data-v]').forEach(ch=>ch.classList.toggle('on', villes.includes((ch.dataset.v||'').toLowerCase())));
+  document.querySelectorAll('.metro-chip[data-v]').forEach(ch=>{
+    const v=ch.dataset.v||'';
+    if(v==='__metro__') return;   // le raccourci « Amiens Métropole » est traité à part, ci-dessous
+    ch.classList.toggle('on', villes.includes(v.toLowerCase()));
+  });
+  const metro=AMIENS_METRO.map(([v])=>v.toLowerCase());
+  const toutMetroCoche = metro.every(v=>villes.includes(v));
+  document.querySelectorAll('.metro-chip[data-v="__metro__"]').forEach(ch=>ch.classList.toggle('on', toutMetroCoche));
 }
 function toutMetro(){
   AMIENS_METRO.forEach(([v,cp])=>{
