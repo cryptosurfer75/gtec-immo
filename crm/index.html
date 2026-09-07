@@ -311,14 +311,15 @@ function refBadge(ref, type){
   const c=TYPE_COULEUR[type];
   return `<span class="tag" style="${c?`background:${c.bg};color:${c.color};`:''}font-weight:700">${esc(ref||'—')}</span>`;
 }
-/* ----- Agent rédacteur (VDM, HC — Florent et Maxime ne sont plus dans le projet) ----- */
-const AGENTS_OPTS = [['VDM','VDM'],['HC','HC']];
+/* ----- Agent rédacteur (VDM, HC — Florent et Maxime ne sont plus dans le projet) -----
+   '?' = pas encore attribué à un consultant (à traiter). */
+const AGENTS_OPTS = [['VDM','VDM'],['HC','HC'],['','?']];
 const AGENTS_CODES = AGENTS_OPTS.map(([c])=>c);
 let ME_AGENT = 'VDM';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
 const AGENT_COULEUR = { VDM:'#8b5cf6', HC:'#00332E' };   // VDM en violet léger pour se distinguer de HC au premier coup d'œil
 function agentBadge(a){
-  if(!AGENTS_CODES.includes(a)) return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
-  return `<span class="tag" title="Annonce gérée par ${a}" style="background:${AGENT_COULEUR[a]||'#00332E'};color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
+  if(a==='VDM'||a==='HC') return `<span class="tag" title="Annonce gérée par ${a}" style="background:${AGENT_COULEUR[a]};color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
+  return '<span class="tag" title="Pas encore attribuée à un consultant" style="background:#a98300;color:#fff;font-weight:700;font-size:.68rem">?</span>';
 }
 /* Radio VDM dans un formulaire (name = id) */
 function fAgent(name, v){
@@ -2101,7 +2102,7 @@ function formOffre(rec){
     let dossier_pdf_url = rec.dossier_pdf_url || null;
     if(DOSSIER_PDF_FILE){ if(rec.dossier_pdf_url) await supprimerCoverStorage(rec.dossier_pdf_url); dossier_pdf_url = await uploadMediaOffre(DOSSIER_PDF_FILE); }
     else if(DOSSIER_PDF_REMOVE){ if(rec.dossier_pdf_url) await supprimerCoverStorage(rec.dossier_pdf_url); dossier_pdf_url = null; }
-    await save('offres', rec.id, { agent:radioVal('o-agent')||ME_AGENT, type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
+    await save('offres', rec.id, { agent:radioVal('o-agent'), type_bien:val('o-type'), transaction:val('o-trans'), statut:val('o-statut'),
       bail:val('o-bail'), indexation:val('o-indexation'), regime_fiscal:val('o-regime'), periodicite_paiement:val('o-periodicite'),
       carte_plan_url, carte_aerienne_url, dossier_pdf_url,
       titre:val('o-titre'), adresse:val('o-adresse'), ville:cap('o-ville'), code_postal:val('o-cp'), secteur:val('o-secteur'),
@@ -2290,7 +2291,7 @@ function viderMetro(){
   majMetroChips(); draftCollect(CURRENT_FORM_KEY);
 }
 async function saveDemande(rec){
-  const payload={ agent:radioVal('d-agent')||ME_AGENT,
+  const payload={ agent:radioVal('d-agent'),
     client_id:exigerCombo('d-client','Sélectionnez le client dans la liste (ou cliquez sur « + Nouveau ») avant d’enregistrer.'),
     transaction:val('d-trans'), statut:val('d-statut'), notes:val('d-notes'),
     surface_min_m2:numVal('d-smin'), surface_max_m2:numVal('d-smax'), budget_max:numVal('d-budget'),
