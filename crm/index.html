@@ -2198,6 +2198,8 @@ function formDemande(rec){
       <div id="loc-list"></div>
       <button type="button" class="lien" onclick="ajouterLoc()">+ Ajouter une autre ville</button>
     </div>
+    ${fSep('Note')}
+    ${fArea('d-notes','Infos particulières',rec.notes)}
   </div>`;
   ouvrirForm(rec.id?'Modifier la demande':'Nouvelle demande', corps, ()=>saveDemande(rec),
     rec.id ? async()=>{ await sb.from('demande_localites').delete().eq('demande_id', rec.id); await sb.from('actions').delete().eq('cible_type','demande').eq('cible_id',rec.id); await del('demandes', rec.id); vueDemandes(); } : null,
@@ -2289,7 +2291,7 @@ function viderMetro(){
 async function saveDemande(rec){
   const payload={ agent:radioVal('d-agent')||ME_AGENT,
     client_id:exigerCombo('d-client','Sélectionnez le client dans la liste (ou cliquez sur « + Nouveau ») avant d’enregistrer.'),
-    transaction:val('d-trans'), statut:val('d-statut'),
+    transaction:val('d-trans'), statut:val('d-statut'), notes:val('d-notes'),
     surface_min_m2:numVal('d-smin'), surface_max_m2:numVal('d-smax'), budget_max:numVal('d-budget'),
     tolerance_budget_pct:numVal('d-tolb')??15, tolerance_surface_pct:numVal('d-tols')??15, urgence:val('d-urgence'),
     types_bien: Object.keys(LABELS).filter(k=>document.getElementById('dt-'+k).checked),
