@@ -337,6 +337,15 @@ const AMIENS_METRO = [
   ['Amiens','80000'],['Longueau','80330'],['Camon','80450'],['Dury','80480'],['Boves','80440'],
   ['Cagny','80330'],['Saleux','80480'],['Salouël','80480'],['Pont-de-Metz','80480'],['Rivery','80136']
 ];
+/* Grandes villes des Hauts-de-France par département, pour la sélection rapide dans une demande.
+   Liste volontairement resserrée aux principales villes pour commencer — à compléter au besoin. */
+const HDF_DEPARTEMENTS = {
+  'Nord (59)': [['Lille','59000'],['Roubaix','59100'],['Tourcoing','59200'],['Dunkerque','59140'],['Valenciennes','59300'],['Douai','59500'],['Cambrai','59400'],['Maubeuge','59600']],
+  'Pas-de-Calais (62)': [['Arras','62000'],['Calais','62100'],['Boulogne-sur-Mer','62200'],['Lens','62300'],['Béthune','62400'],['Saint-Omer','62500']],
+  'Somme (80)': [['Abbeville','80100'],['Albert','80300'],['Péronne','80200'],['Doullens','80600'],['Montdidier','80500']],
+  'Oise (60)': [['Beauvais','60000'],['Compiègne','60200'],['Creil','60100'],['Senlis','60300'],['Chantilly','60500']],
+  'Aisne (02)': [['Saint-Quentin','02100'],['Laon','02000'],['Soissons','02200'],['Château-Thierry','02400']],
+};
 /* résumé compact des localités d'une demande (regroupe la métropole) */
 function localitesResume(locs){
   const villes=(locs||[]).map(l=>(l.ville||'').trim()).filter(Boolean);
@@ -2146,6 +2155,18 @@ function formDemande(rec){
           ${AMIENS_METRO.map(([v,cp])=>`<span class="metro-chip" data-v="${esc(v)}" onclick="ajouterVilleMetro('${esc(v)}','${cp}')">${esc(v)}</span>`).join('')}
         </div>
       </div>
+      <div class="metro">
+        <div class="metro-h" onclick="toggleDepts()">📍 Grandes villes des Hauts-de-France — sélectionner <span id="dept-chev">▸</span></div>
+        <div id="dept-list" class="metro-list" style="display:none;flex-direction:column;align-items:flex-start;gap:12px">
+          ${Object.entries(HDF_DEPARTEMENTS).map(([dep,villes])=>`
+            <div style="width:100%">
+              <div style="font-size:.74rem;font-weight:700;color:var(--gris-fonce);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px">${esc(dep)}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                ${villes.map(([v,cp])=>`<span class="metro-chip" data-v="${esc(v)}" onclick="ajouterVilleMetro('${esc(v)}','${cp}')">${esc(v)}</span>`).join('')}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
       <div id="loc-list"></div>
       <button type="button" class="lien" onclick="ajouterLoc()">+ Ajouter une autre ville</button>
     </div>
@@ -2199,6 +2220,8 @@ function ajouterLoc(ville,cp){
 }
 function toggleMetro(){ const l=document.getElementById('metro-list'); const open=l.style.display==='none';
   l.style.display=open?'flex':'none'; document.getElementById('metro-chev').textContent=open?'▾':'▸'; }
+function toggleDepts(){ const l=document.getElementById('dept-list'); const open=l.style.display==='none';
+  l.style.display=open?'flex':'none'; document.getElementById('dept-chev').textContent=open?'▾':'▸'; }
 function ajouterVilleMetro(v,cp){
   const rows=[...document.querySelectorAll('#loc-list .loc-row')];
   const ex=rows.find(r=>(r.querySelector('.loc-ville').value||'').trim().toLowerCase()===v.toLowerCase());
