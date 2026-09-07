@@ -174,7 +174,7 @@
     const groupes = filtrerGroupes();
     const corps = stats + filtres + (groupes.length
       ? `<div class="tscroll"><table><thead><tr>
-           <th>Enseigne</th><th>Personnes</th><th>Statut</th><th style="text-align:center">🌡️</th>
+           <th>Enseigne</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
            <th>Prochaine relance</th><th>Actions</th>
          </tr></thead><tbody id="en-tbody">${groupes.map(ligneGroupe).join('')}</tbody></table></div>`
       : vide('Aucun contact enregistré. Ajoutez la première enseigne démarchée.'));
@@ -205,20 +205,12 @@
       return true;
     };
     const groupes = grouperParEnseigne(LISTE).filter(g => g.personnes.some(matchPersonne));
-    return groupes.sort((a,b)=>{
-      const ra = groupeEnRetard(a.personnes)?0:1, rb = groupeEnRetard(b.personnes)?0:1;
-      if(ra!==rb) return ra-rb;
-      const ta = meilleureTemp(a.personnes)==='chaud'?0:1, tb = meilleureTemp(b.personnes)==='chaud'?0:1;
-      if(ta!==tb) return ta-tb;
-      const da = Math.max(...a.personnes.map(p=>new Date(p.created_at).getTime()));
-      const db = Math.max(...b.personnes.map(p=>new Date(p.created_at).getTime()));
-      return db-da;
-    });
+    return groupes.sort((a,b)=>(a.enseigne||'').localeCompare(b.enseigne||'','fr',{sensitivity:'base'}));
   }
   function rafraichirTbody(){
     const tb = document.getElementById('en-tbody'); if(!tb) return;
     const groupes = filtrerGroupes();
-    tb.innerHTML = groupes.length ? groupes.map(ligneGroupe).join('') : `<tr><td colspan="6">${vide('Aucun résultat.')}</td></tr>`;
+    tb.innerHTML = groupes.length ? groupes.map(ligneGroupe).join('') : `<tr><td colspan="8">${vide('Aucun résultat.')}</td></tr>`;
   }
 
   /* affichage de la colonne « personnes » : un seul nom affiché directement, plusieurs
@@ -231,9 +223,30 @@
     return `<span style="position:relative;display:inline-block">
       <span class="lien" onclick="event.stopPropagation();toggleLocPop('${id}')">${esc(noms[0])} <b>+${noms.length-1}</b> ▾</span>
       <div id="${id}" class="loc-pop" onclick="event.stopPropagation()" style="display:none">
-        ${noms.map(n=>`<div>${esc(n)}</div>`).join('')}
+        ${g.personnes.map(p=>`<div><b>${esc(p.nom||'?')}</b>${p.telephone?' — '+esc(p.telephone):''}${p.email?' — '+esc(p.email):''}</div>`).join('')}
       </div>
     </span>`;
+  }
+  /* contact « en tête » du groupe pour l'affichage rapide tél/email en colonne
+     (même priorité que meilleurStatut : le plus avancé dans le suivi en premier) */
+  function contactPrincipal(personnes){
+    let best = personnes[0], bestIdx = Infinity;
+    personnes.forEach(p=>{
+      const i = STATUT_PRIORITE.indexOf(p.statut);
+      const idx = i<0 ? STATUT_PRIORITE.length : i;
+      if(idx < bestIdx){ bestIdx = idx; best = p; }
+    });
+    return best;
+  }
+  function telCell(g){
+    const p = contactPrincipal(g.personnes);
+    if(!p.telephone) return '<span style="color:#90a4ae">—</span>';
+    return `<a href="tel:${esc(p.telephone.replace(/[^0-9+]/g,''))}" onclick="event.stopPropagation()" style="white-space:nowrap">${esc(p.telephone)}</a>`;
+  }
+  function emailCell(g){
+    const p = contactPrincipal(g.personnes);
+    if(!p.email) return '<span style="color:#90a4ae">—</span>';
+    return `<a href="mailto:${esc(p.email)}" onclick="event.stopPropagation()" style="word-break:break-all">${esc(p.email)}</a>`;
   }
   function ligneGroupe(g){
     const retard = groupeEnRetard(g.personnes);
@@ -244,6 +257,8 @@
     return `<tr style="cursor:pointer" onclick="H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
       <td><b>${esc(g.enseigne)}</b></td>
       <td>${personnesCell(g)}</td>
+      <td>${telCell(g)}</td>
+      <td>${emailCell(g)}</td>
       <td>${statutBadge(meilleurStatut(g.personnes))}${g.personnes.length>1?` <span style="font-size:.72rem;color:var(--gris-fonce)">(meilleur des ${g.personnes.length})</span>`:''}</td>
       <td style="text-align:center">${tempIcon(meilleureTemp(g.personnes))}</td>
       <td>${relanceTxt}</td>
