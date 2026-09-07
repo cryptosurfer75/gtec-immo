@@ -129,19 +129,36 @@
   function groupeEnRetard(personnes){ return personnes.some(enRetard); }
   function nbEchangesGroupe(personnes){ return personnes.reduce((s,p)=>s+(ECHANGE_COUNTS[p.id]||0),0); }
   async function chargerCompteursEchanges(){
-    const ids = LISTE.map(c=>c.id);
     ECHANGE_COUNTS = {};
-    if(!ids.length) return;
-    const { data } = await sb.from('enseigne_echanges').select('contact_id').in('contact_id', ids);
+    // Pas de filtre .in(id...) : avec des milliers de contacts la liste d'ids dépasserait
+    // la longueur d'URL gérable — la table des échanges reste de toute façon petite.
+    const { data } = await sb.from('enseigne_echanges').select('contact_id');
     (data||[]).forEach(e=>{ ECHANGE_COUNTS[e.contact_id] = (ECHANGE_COUNTS[e.contact_id]||0)+1; });
   }
 
   /* ==================================================================
      VUE LISTE (groupée par enseigne) + INDICATEURS
      ================================================================== */
+  /* Supabase/PostgREST plafonne chaque requête à 1000 lignes (réglage du projet) : on
+     pagine tant qu'une page revient pleine, sinon les enseignes les plus anciennes
+     (hors des 1000 plus récentes) restent invisibles — vécu le 08/09 avec Carrefour,
+     Noz, Maisons du Monde absentes de la recherche après l'import massif. */
+  async function chargerToutesLesLignes(){
+    const PAGE = 1000;
+    let from = 0, tout = [];
+    while(true){
+      const { data, error } = await sb.from('enseigne_contacts').select('*')
+        .order('created_at',{ascending:false}).range(from, from+PAGE-1);
+      if(error) return { error };
+      tout = tout.concat(data||[]);
+      if(!data || data.length < PAGE) break;
+      from += PAGE;
+    }
+    return { data: tout };
+  }
   async function vueEnseignes(){
     charge();
-    const { data, error } = await sb.from('enseigne_contacts').select('*').order('created_at',{ascending:false});
+    const { data, error } = await chargerToutesLesLignes();
     if(error) return erreur(error);
     LISTE = data||[];
     await chargerCompteursEchanges();
