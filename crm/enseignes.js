@@ -221,17 +221,29 @@
     tb.innerHTML = groupes.length ? groupes.map(ligneGroupe).join('') : `<tr><td colspan="6">${vide('Aucun résultat.')}</td></tr>`;
   }
 
+  /* affichage de la colonne « personnes » : un seul nom affiché directement, plusieurs
+     → menu déroulant (même principe que les localités des demandes) pour ne pas étirer
+     la ligne du tableau. */
+  function personnesCell(g){
+    const noms = g.personnes.map(p=>p.nom||'?');
+    if(noms.length<=1) return esc(noms[0]||'—');
+    const id = 'en-pop-'+g.cle.replace(/[^a-z0-9]/gi,'');
+    return `<span style="position:relative;display:inline-block">
+      <span class="lien" onclick="event.stopPropagation();toggleLocPop('${id}')">${esc(noms[0])} <b>+${noms.length-1}</b> ▾</span>
+      <div id="${id}" class="loc-pop" onclick="event.stopPropagation()" style="display:none">
+        ${noms.map(n=>`<div>${esc(n)}</div>`).join('')}
+      </div>
+    </span>`;
+  }
   function ligneGroupe(g){
     const retard = groupeEnRetard(g.personnes);
     const prochaine = prochaineRelanceGroupe(g.personnes);
     const relanceTxt = prochaine
       ? `<span style="${retard?'color:#b3261e;font-weight:700':''}">${retard?'⏰ ':''}${fmtDate(prochaine)}</span>`
       : '<span style="color:#90a4ae">—</span>';
-    const noms = g.personnes.map(p=>esc(p.nom)).join(', ');
     return `<tr style="cursor:pointer" onclick="H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
       <td><b>${esc(g.enseigne)}</b></td>
-      <td><span title="${noms}">${g.personnes.length} personne${g.personnes.length>1?'s':''}</span>
-        <div style="font-size:.78rem;color:var(--gris-fonce)">${noms.length>60?noms.slice(0,60)+'…':noms}</div></td>
+      <td>${personnesCell(g)}</td>
       <td>${statutBadge(meilleurStatut(g.personnes))}${g.personnes.length>1?` <span style="font-size:.72rem;color:var(--gris-fonce)">(meilleur des ${g.personnes.length})</span>`:''}</td>
       <td style="text-align:center">${tempIcon(meilleureTemp(g.personnes))}</td>
       <td>${relanceTxt}</td>
