@@ -315,9 +315,10 @@ function refBadge(ref, type){
 const AGENTS_OPTS = [['VDM','VDM'],['HC','HC']];
 const AGENTS_CODES = AGENTS_OPTS.map(([c])=>c);
 let ME_AGENT = 'VDM';   // pré-sélection selon l'utilisateur connecté (défini à la connexion)
+const AGENT_COULEUR = { VDM:'#8b5cf6', HC:'#00332E' };   // VDM en violet léger pour se distinguer de HC au premier coup d'œil
 function agentBadge(a){
   if(!AGENTS_CODES.includes(a)) return '<span class="tag" style="background:var(--gris-clair);color:var(--gris-fonce);font-weight:700;font-size:.68rem">—</span>';
-  return `<span class="tag" title="Annonce gérée par ${a}" style="background:#00332E;color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
+  return `<span class="tag" title="Annonce gérée par ${a}" style="background:${AGENT_COULEUR[a]||'#00332E'};color:#fff;font-weight:700;font-size:.68rem">${a}</span>`;
 }
 /* Radio VDM dans un formulaire (name = id) */
 function fAgent(name, v){
