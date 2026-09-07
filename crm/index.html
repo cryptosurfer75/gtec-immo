@@ -159,6 +159,10 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 .ac-list div:last-child{border-bottom:none}
 .ac-list div:hover{background:var(--gris-bg)}
 .ac-list .cp{color:var(--teal-dark);font-weight:600;margin-left:6px}
+/* menu déroulant des localités d'une demande, quand il y en a plusieurs (tableau des demandes) */
+.loc-pop{position:absolute;top:100%;left:0;margin-top:4px;z-index:30;background:#fff;border:1px solid var(--gris-clair);
+  border-radius:9px;box-shadow:0 12px 30px rgba(42,51,56,.2);min-width:180px;max-height:220px;overflow:auto;padding:6px 0}
+.loc-pop div{padding:6px 12px;font-size:.86rem;white-space:nowrap}
 /* offres/demandes rattachées au client */
 .lien-row{padding:9px 11px;border:1px solid var(--gris-clair);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:.9rem}
 .lien-row:hover{background:var(--gris-bg);border-color:var(--teal)}
@@ -346,18 +350,40 @@ const HDF_DEPARTEMENTS = {
   'Oise (60)': [['Beauvais','60000'],['Compiègne','60200'],['Creil','60100'],['Senlis','60300'],['Chantilly','60500']],
   'Aisne (02)': [['Saint-Quentin','02100'],['Laon','02000'],['Soissons','02200'],['Château-Thierry','02400']],
 };
-/* résumé compact des localités d'une demande (regroupe la métropole) */
-function localitesResume(locs){
+/* liste compacte des localités d'une demande (regroupe la métropole) */
+function localitesListe(locs){
   const villes=(locs||[]).map(l=>(l.ville||'').trim()).filter(Boolean);
-  if(!villes.length) return '—';
+  if(!villes.length) return [];
   const metro=AMIENS_METRO.map(([v])=>v.toLowerCase());
   const dansMetro=villes.filter(v=>metro.includes(v.toLowerCase()));
   const autres=villes.filter(v=>!metro.includes(v.toLowerCase()));
   const parts=[];
   if(dansMetro.length) parts.push(dansMetro.length===AMIENS_METRO.length ? 'Amiens Métropole' : `Amiens Métropole (${dansMetro.length}/${AMIENS_METRO.length})`);
   parts.push(...autres);
-  return parts.join(', ');
+  return parts;
 }
+/* résumé compact des localités d'une demande (regroupe la métropole) */
+function localitesResume(locs){ const l=localitesListe(locs); return l.length?l.join(', '):'—'; }
+/* affichage dans le tableau : une seule localité affichée directement, plusieurs → menu déroulant
+   pour ne pas étirer le tableau en hauteur (une ligne par ville, empilées). */
+function localitesCell(d){
+  const l=localitesListe(d.demande_localites);
+  if(!l.length) return '—';
+  if(l.length===1) return esc(l[0]);
+  const id='loc-pop-'+d.id;
+  return `<span style="position:relative;display:inline-block">
+    <span class="lien" onclick="event.stopPropagation();toggleLocPop('${id}')">${esc(l[0])} <b>+${l.length-1}</b> ▾</span>
+    <div id="${id}" class="loc-pop" onclick="event.stopPropagation()" style="display:none">
+      ${l.map(v=>`<div>${esc(v)}</div>`).join('')}
+    </div>
+  </span>`;
+}
+function toggleLocPop(id){
+  document.querySelectorAll('.loc-pop').forEach(p=>{ if(p.id!==id) p.style.display='none'; });
+  const p=document.getElementById(id);
+  if(p) p.style.display = p.style.display==='none' ? 'block' : 'none';
+}
+document.addEventListener('click', ()=>document.querySelectorAll('.loc-pop').forEach(p=>p.style.display='none'));
 const HONO_30 = '30 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_20 = '20 % HT du montant du loyer annuel hors-taxes, hors charges';
 const HONO_15 = '15 % HT du montant du loyer annuel hors-taxes, hors charges';
@@ -707,7 +733,7 @@ function ligneDemande(d){
       <td>${urgenceBadge(d.urgence)}</td>
       <td>${d.surface_min_m2||d.surface_max_m2?`${d.surface_min_m2||0}–${d.surface_max_m2||'∞'} m²`:'—'}</td>
       <td>${d.budget_max?(d.transaction==='location'?euro(d.budget_max*12)+' / an':euro(d.budget_max)):'—'}</td>
-      <td>${esc(localitesResume(d.demande_localites))}</td>
+      <td>${localitesCell(d)}</td>
       <td><button class="btn btn-sm" title="Rapprocher" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocher('${d.id}')">R</button></td>
       ${btnAction('demande',d.id,d.reference,DEM_CPT[d.id]||0)}
     </tr>`;
