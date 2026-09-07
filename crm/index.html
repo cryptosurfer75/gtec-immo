@@ -2189,7 +2189,7 @@ function formDemande(rec){
               <div style="font-size:.74rem;font-weight:700;color:var(--gris-fonce);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px">${esc(dep)}</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
                 ${villes.map(([v,cp])=>cp==='__metro__'
-                  ? `<span class="metro-chip metro-all" data-v="__metro__" onclick="toutMetro()">✓ ${esc(v)} (toutes les communes)</span>`
+                  ? `<span class="metro-chip metro-all" data-v="__metro__" onclick="toutMetro()">✓ ${esc(v)}</span>`
                   : `<span class="metro-chip" data-v="${esc(v)}" onclick="ajouterVilleMetro('${esc(v)}','${cp}')">${esc(v)}</span>`).join('')}
               </div>
             </div>`).join('')}
