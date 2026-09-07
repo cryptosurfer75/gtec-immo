@@ -173,9 +173,9 @@
 
     const groupes = filtrerGroupes();
     const corps = stats + filtres + (groupes.length
-      ? `<div class="tscroll"><table><thead><tr>
+      ? `<div class="tscroll"><table class="en-table"><thead><tr>
            <th>Enseigne</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
-           <th>Prochaine relance</th><th>Actions</th>
+           <th>Relance</th><th>Actions</th>
          </tr></thead><tbody id="en-tbody">${groupes.map(ligneGroupe).join('')}</tbody></table></div>`
       : vide('Aucun contact enregistré. Ajoutez la première enseigne démarchée.'));
 

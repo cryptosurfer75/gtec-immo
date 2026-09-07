@@ -97,6 +97,18 @@ tbody tr:hover{background:#fafcfc}
 #offres-tbody tr:not(:last-child) td:first-child, #demandes-tbody tr:not(:last-child) td:first-child{border-image:linear-gradient(90deg,transparent,rgba(0,105,98,.32) 92%) 1}
 #offres-tbody tr:not(:last-child) td:last-child, #demandes-tbody tr:not(:last-child) td:last-child{border-image:linear-gradient(90deg,rgba(0,105,98,.32) 8%,transparent) 1}
 td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
+/* Tableau Enseignes : colonnes resserrées pour limiter le défilement horizontal
+   (beaucoup de colonnes depuis l'ajout tél/email — on réduit padding/police et on
+   autorise le retour à la ligne sur les colonnes de texte long). */
+.en-table th,.en-table td{padding:8px 10px;font-size:.83rem}
+.en-table td{white-space:normal;word-break:break-word}
+.en-table td:nth-child(1){max-width:170px}
+.en-table td:nth-child(2){max-width:140px}
+.en-table td:nth-child(3){max-width:120px;white-space:nowrap}
+.en-table td:nth-child(4){max-width:190px}
+.en-table td:nth-child(6){white-space:nowrap}
+.en-table td:nth-child(7){max-width:100px;white-space:nowrap}
+.en-table td:last-child{white-space:nowrap}
 /* Table de la fenêtre Dénonce : tient sur la largeur de la modale, sans scroll horizontal */
 .den-table{table-layout:fixed}
 .den-table th,.den-table td{white-space:normal;word-break:break-word;padding:8px 10px;font-size:.82rem}
