@@ -280,7 +280,8 @@
       <td style="text-align:center">${tempIcon(meilleureTemp(g.personnes))}</td>
       <td>${relanceTxt}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" title="Suivi : historique des échanges et relances à planifier" onclick="H3C_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${nbEchangesGroupe(g.personnes)?` <b>${nbEchangesGroupe(g.personnes)}</b>`:''}</button>
+        ${(()=>{ const n=nbEchangesGroupe(g.personnes);
+          return `<button class="btn btn-ghost btn-sm" style="${n?'background:rgba(46,125,50,.15);border-color:#2e7d32;color:#2e7d32':''}" title="${n?'Déjà traité — '+n+' action(s) enregistrée(s)':'Aucune action enregistrée pour l’instant'}" onclick="H3C_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${n?` <b>${n}</b>`:''}</button>`; })()}
       </td></tr>`;
   }
 
@@ -397,10 +398,37 @@
     const hist = echanges.length ? echanges.map(rowHist).join('') : vide('Aucun échange enregistré pour l’instant.');
 
     b.innerHTML = `
-      <div class="form-sep" style="margin-top:0">📅 À venir</div>
+      <div class="form-sep" style="margin-top:0">➕ Nouvelle action</div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="f"><label>Personne</label><select id="suivi-personne">${personnes.map(p=>`<option value="${p.id}">${esc(p.nom||'?')}</option>`).join('')}</select></div>
+        <div class="f"><label>Type d'action</label><select id="suivi-type" onchange="H3C_ENSEIGNES._majPlaceholderSuivi(this.value)">
+          ${Object.entries(TYPE_ACTION_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+        </select></div>
+        <div class="f full"><textarea id="suivi-note" rows="2" placeholder="${esc(placeholderEchange(''))}"></textarea></div>
+      </div>
+      <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._ajouterEchangeSuivi('${esc(cle)}')">+ Ajouter à l'historique</button>
+      <div class="form-sep">📅 À venir</div>
       <div class="act-list" style="margin-top:10px">${aVenir}</div>
       <div class="form-sep">🕓 Historique</div>
       <div class="act-list" style="margin-top:10px">${hist}</div>`;
+  }
+
+  /* Ajoute une action typée (appel, e-mail, relance, RDV…) directement depuis la modale Suivi,
+     sans passer par l'éditeur complet de la personne — même mécanique que ajouterEchange(). */
+  async function ajouterEchangeSuivi(cle){
+    const contactId = document.getElementById('suivi-personne').value;
+    const type_action = document.getElementById('suivi-type').value;
+    const contenu = document.getElementById('suivi-note').value.trim();
+    if(!contenu){
+      alert(type_action==='reponse_recue' ? 'Collez le texte de la réponse reçue avant de l’ajouter.' : 'Décrivez brièvement l’échange avant de l’ajouter.');
+      return;
+    }
+    const { error } = await sb.from('enseigne_echanges').insert({ contact_id:contactId, date:today(), type_action, contenu, auteur:window.ME_AGENT||null });
+    if(error){ alert('Erreur : '+error.message); return; }
+    await sb.from('enseigne_contacts').update({ derniere_action_date: today() }).eq('id', contactId);
+    ECHANGE_COUNTS[contactId] = (ECHANGE_COUNTS[contactId]||0)+1;
+    rafraichirTbody();
+    await rafraichirSuivi(cle);
   }
 
   /* Planifie (ou efface) la prochaine relance d'une personne depuis la modale Suivi,
@@ -606,6 +634,8 @@
     _save: sauvegarder,
     _ajouterEchange: ajouterEchange,
     _majPlaceholderEchange(type){ const t = document.getElementById('en-nvcontenu'); if(t) t.placeholder = placeholderEchange(type); },
+    _ajouterEchangeSuivi: ajouterEchangeSuivi,
+    _majPlaceholderSuivi(type){ const t = document.getElementById('suivi-note'); if(t) t.placeholder = placeholderEchange(type); },
     _planifier: planifier
   };
 })();
