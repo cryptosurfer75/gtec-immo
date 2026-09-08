@@ -60,6 +60,14 @@
     email: "Texte de l'e-mail envoyé, ou résumé…"
   };
   const placeholderEchange = type => PLACEHOLDER_ECHANGE[type] || "Résumé de l'échange…";
+  // Statut suggéré selon le type d'action choisi (juste une suggestion pré-remplie,
+  // toujours modifiable avant d'enregistrer — appel/e-mail/note n'imposent rien,
+  // le résultat dépend trop de ce qui a été dit pour le deviner.
+  const ACTION_VERS_STATUT = {
+    connexion_envoyee: 'demande_envoyee', connexion_acceptee: 'connecte',
+    message_envoye: 'message_envoye', reponse_recue: 'reponse_recue',
+    relance: 'relance_prevue', rdv: 'rdv_prevu'
+  };
 
   const today = () => new Date().toISOString().slice(0,10);
   const fmtDate = d => { if(!d) return '—'; const [y,m,j] = String(d).slice(0,10).split('-'); return `${j}/${m}/${y}`; };
@@ -400,14 +408,18 @@
     b.innerHTML = `
       <div class="form-sep" style="margin-top:0">➕ Nouvelle action</div>
       <div class="form-grid" style="margin-top:10px">
-        <div class="f"><label>Personne</label><select id="suivi-personne">${personnes.map(p=>`<option value="${p.id}">${esc(p.nom||'?')}</option>`).join('')}</select></div>
-        <div class="f"><label>Type d'action</label><select id="suivi-type" onchange="H3C_ENSEIGNES._majPlaceholderSuivi(this.value)">
+        <div class="f"><label>Personne</label><select id="suivi-personne" onchange="H3C_ENSEIGNES._majStatutPersonne()">${personnes.map(p=>`<option value="${p.id}" data-statut="${p.statut}">${esc(p.nom||'?')}</option>`).join('')}</select></div>
+        <div class="f"><label>Type d'action</label><select id="suivi-type" onchange="H3C_ENSEIGNES._majPlaceholderSuivi(this.value);H3C_ENSEIGNES._majStatutSuggere(this.value)">
           ${Object.entries(TYPE_ACTION_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+        </select></div>
+        <div class="f"><label>Statut (pré-rempli selon l'action, modifiable)</label><select id="suivi-statut">
+          ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${k===personnes[0].statut?'selected':''}>${v}</option>`).join('')}
         </select></div>
         <div class="f full"><textarea id="suivi-note" rows="2" placeholder="${esc(placeholderEchange(''))}"></textarea></div>
       </div>
       <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._ajouterEchangeSuivi('${esc(cle)}')">+ Ajouter à l'historique</button>
       <div class="form-sep">📅 À venir</div>
+      <p style="font-size:.8rem;color:var(--gris-fonce);margin:2px 0 8px">Poser une date ici bascule automatiquement le statut sur « Relance prévue ».</p>
       <div class="act-list" style="margin-top:10px">${aVenir}</div>
       <div class="form-sep">🕓 Historique</div>
       <div class="act-list" style="margin-top:10px">${hist}</div>`;
@@ -418,6 +430,7 @@
   async function ajouterEchangeSuivi(cle){
     const contactId = document.getElementById('suivi-personne').value;
     const type_action = document.getElementById('suivi-type').value;
+    const statut = document.getElementById('suivi-statut').value;
     const contenu = document.getElementById('suivi-note').value.trim();
     if(!contenu){
       alert(type_action==='reponse_recue' ? 'Collez le texte de la réponse reçue avant de l’ajouter.' : 'Décrivez brièvement l’échange avant de l’ajouter.');
@@ -425,7 +438,8 @@
     }
     const { error } = await sb.from('enseigne_echanges').insert({ contact_id:contactId, date:today(), type_action, contenu, auteur:window.ME_AGENT||null });
     if(error){ alert('Erreur : '+error.message); return; }
-    await sb.from('enseigne_contacts').update({ derniere_action_date: today() }).eq('id', contactId);
+    await sb.from('enseigne_contacts').update({ derniere_action_date: today(), statut }).eq('id', contactId);
+    const p = LISTE.find(x=>String(x.id)===String(contactId)); if(p) p.statut = statut;
     ECHANGE_COUNTS[contactId] = (ECHANGE_COUNTS[contactId]||0)+1;
     rafraichirTbody();
     await rafraichirSuivi(cle);
@@ -636,6 +650,8 @@
     _majPlaceholderEchange(type){ const t = document.getElementById('en-nvcontenu'); if(t) t.placeholder = placeholderEchange(type); },
     _ajouterEchangeSuivi: ajouterEchangeSuivi,
     _majPlaceholderSuivi(type){ const t = document.getElementById('suivi-note'); if(t) t.placeholder = placeholderEchange(type); },
+    _majStatutSuggere(type){ const suggere = ACTION_VERS_STATUT[type]; const s = document.getElementById('suivi-statut'); if(suggere && s) s.value = suggere; },
+    _majStatutPersonne(){ const p = document.getElementById('suivi-personne'), s = document.getElementById('suivi-statut'); const opt = p && p.selectedOptions[0]; if(opt && s) s.value = opt.dataset.statut; },
     _planifier: planifier
   };
 })();
