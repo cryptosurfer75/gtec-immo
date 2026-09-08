@@ -102,6 +102,10 @@ tbody tr:hover{background:#fafcfc}
 #offres-tbody tr:not(:last-child) td:first-child, #demandes-tbody tr:not(:last-child) td:first-child{border-image:linear-gradient(90deg,transparent,rgba(0,105,98,.32) 92%) 1}
 #offres-tbody tr:not(:last-child) td:last-child, #demandes-tbody tr:not(:last-child) td:last-child{border-image:linear-gradient(90deg,rgba(0,105,98,.32) 8%,transparent) 1}
 td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
+/* Tableau Demandes : titres de colonnes centrés, colonne Type(s) resserrée (les badges
+   passent à la ligne au lieu d'élargir la colonne). */
+.tbl-demandes th{text-align:center}
+.tbl-demandes th:nth-child(4),.tbl-demandes td:nth-child(4){max-width:150px;white-space:normal}
 /* Tableau Enseignes : colonnes resserrées pour limiter le défilement horizontal
    (beaucoup de colonnes depuis l'ajout tél/email — on réduit padding/police et on
    autorise le retour à la ligne sur les colonnes de texte long). */
@@ -820,7 +824,7 @@ function renderDemandes(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultat${DEM_LISTE.length>1?'s':''}</span>
        </div>
-       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Transaction</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
+       <div class="tscroll"><table class="tbl-demandes"><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Transaction</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
        <tbody id="demandes-tbody">${DEM_LISTE.length
           ? DEM_LISTE.map(ligneDemande).join('')
           : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ${DEM_TYPE?'dans cette catégorie':(DEM_ARCH?'archivée':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
