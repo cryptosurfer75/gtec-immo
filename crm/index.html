@@ -1088,8 +1088,12 @@ async function irVersEnseigne(cle){ aller('enseignes'); await H3C_ENSEIGNES.vue(
 async function irVersEntreprise(cle){ aller('entreprises'); await H3C_ENTREPRISES.vue(); H3C_ENTREPRISES.ficheEntreprise(cle); }
 /* Contacts = pure recherche, sans liste établie : rien ne s'affiche tant qu'on n'a pas tapé au moins 2 caractères. */
 const MSG_CONTACTS_VIDE = `<div class="empty">Tape au moins 2 caractères pour chercher un contact — il peut venir d'une fiche Client, d'une Offre/Demande, d'une Enseigne ou d'une Entreprise locale.</div>`;
+/* Chaque mot tapé doit se retrouver quelque part dans le texte, peu importe l'ordre —
+   pour que "pierre dion" trouve "DION Pierre" aussi bien que "dion pierre". */
+function tousLesMots(texte, mots){ return mots.every(m=>texte.includes(m)); }
 function filtrerClients(q){
   const t = normTxt(q).trim();
+  const mots = t.split(/\s+/).filter(Boolean);
   const zone = document.getElementById('clients-resultats');
   const cnt = document.getElementById('clients-count');
   if(!zone) return;
@@ -1098,9 +1102,9 @@ function filtrerClients(q){
     if(cnt) cnt.textContent = '';
     return;
   }
-  const clientsTrouves = CLIENTS_FULL.filter(c=>clientRecherche(c).includes(t))
+  const clientsTrouves = CLIENTS_FULL.filter(c=>tousLesMots(clientRecherche(c), mots))
     .sort((a,b)=> nomClient(a).localeCompare(nomClient(b),'fr',{sensitivity:'base'}));
-  const extraTrouves = EXTRA_CONTACTS.filter(c=>extraRecherche(c).includes(t));
+  const extraTrouves = EXTRA_CONTACTS.filter(c=>tousLesMots(extraRecherche(c), mots));
   const total = clientsTrouves.length + extraTrouves.length;
   if(cnt) cnt.textContent = `${total} résultat${total>1?'s':''}`;
   zone.innerHTML = total
