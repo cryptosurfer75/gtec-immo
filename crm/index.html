@@ -137,6 +137,9 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 /* Carte résultat de recherche Contacts (client, société, personne d'une enseigne/entreprise locale) */
 .contact-carte{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--gris-clair);border-radius:8px;margin-bottom:6px;cursor:pointer}
 .contact-carte:hover{border-color:var(--or)}
+.contact-coord{font-size:.8rem;margin-top:3px}
+.contact-coord a{color:var(--gris-fonce);text-decoration:none}
+.contact-coord a:hover{color:var(--or-dark);text-decoration:underline}
 
 /* modale matching */
 .modal-bg{position:fixed;inset:0;background:rgba(26,39,56,.55);display:flex;align-items:flex-start;justify-content:center;
@@ -1052,14 +1055,22 @@ function clientRecherche(c){
     clientRoles(c).map(r=>ROLE_LABELS[r]||r).join(' '),
     c.email, c.telephone, c.raison_sociale, c.siret].filter(Boolean).join(' '));
 }
+/* Icônes 📞/✉️ cliquables (appel/mail direct depuis l'ordinateur) — même principe que sur les fiches Enseignes.
+   stopPropagation empêche le clic sur l'icône de déclencher aussi l'ouverture de la carte. */
+function coordIcones(tel, email){
+  return [
+    tel ? `<a href="tel:${esc(tel)}" onclick="event.stopPropagation()" title="Appeler ${esc(formatTel(tel))}">📞 ${esc(formatTel(tel))}</a>` : '',
+    email ? `<a href="mailto:${esc(email)}" onclick="event.stopPropagation()" title="Écrire à ${esc(email)}">✉️ ${esc(email)}</a>` : ''
+  ].filter(Boolean).join(' &nbsp;·&nbsp; ');
+}
 function carteContactClient(c){
   const estSoc = c.type_client==='societe';
   const sousTitre = [estSoc?contactClient(c):null, c.fonction, clientRoles(c).map(r=>ROLE_LABELS[r]||r).join(' · ')].filter(Boolean).join(' — ');
-  const coord = [formatTel(c.telephone), c.email].filter(Boolean).join(' · ');
+  const coord = coordIcones(c.telephone, c.email);
   return `<div class="contact-carte" onclick="editClient('${c.id}')">
     <div style="flex:1;min-width:0">
       ${nomClientBadge(c)}${sousTitre?` <span style="font-size:.82rem;color:var(--gris-fonce)">— ${esc(sousTitre)}</span>`:''}
-      ${coord?`<div style="font-size:.8rem;color:var(--gris-fonce);margin-top:2px">${esc(coord)}</div>`:''}
+      ${coord?`<div class="contact-coord">${coord}</div>`:''}
     </div>
     <span class="tag" style="font-size:.72rem;white-space:nowrap">${estSoc?'Société':'Client'}</span>
   </div>`;
@@ -1075,10 +1086,12 @@ function carteContactExtra(c){
   const icone = c.source==='Enseigne' ? '🏷️' : '🏭';
   const fn = c.source==='Enseigne' ? 'irVersEnseigne' : 'irVersEntreprise';
   const action = esc(`${fn}('${escJs(c.cle)}')`);
+  const coord = coordIcones(c.telephone, c.email);
   return `<div class="contact-carte" onclick="${action}">
     <div style="flex:1;min-width:0">
       <b>${esc(c.nom||'—')}</b>${c.poste?` <span style="font-size:.82rem;color:var(--gris-fonce)">— ${esc(c.poste)}</span>`:''}
       <div style="font-size:.8rem;color:var(--gris-fonce);margin-top:2px">${icone} ${esc(c.libelle||'—')}</div>
+      ${coord?`<div class="contact-coord">${coord}</div>`:''}
     </div>
     <span class="tag" style="font-size:.72rem;white-space:nowrap">${esc(c.source)}</span>
   </div>`;
