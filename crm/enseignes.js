@@ -24,6 +24,10 @@
   let FILTRE_CATEGORIE = '';  // '' = toutes, '__non__' = non catégorisées
   let SEULEMENT_RELANCES = false;
   let RECHERCHE = '';
+  // Onglet actif : 'enseigne' = vraies enseignes retail (Mcdo, Leclerc, Kryss…), 'contact' = tout
+  // le reste (notaires, holdings, sociétés de conseil, erreurs de saisie…) qui n'est pas une marque
+  // rattachable — masqué de la vue Enseignes par défaut mais jamais supprimé (juste un onglet à part).
+  let VUE_TYPE = 'enseigne';
   // Pagination client (8234 enseignes début septembre 2026, contre ~288 en juillet lors de la
   // conception initiale) : reconstruire TOUTES les lignes (avec un <select> de 14 options chacune)
   // à chaque filtre/tri prend plusieurs dizaines de secondes — mesuré ~73s. On ne rend qu'une page.
@@ -167,6 +171,9 @@
     if(!cat) return `<span style="color:#90a4ae;font-size:.8rem">— Non catégorisé —</span>`;
     return `<span class="tag" style="background:rgba(0,105,98,.14);color:#004D47;font-weight:700">${esc(CATEGORIE_LABEL[cat]||cat)}</span>`;
   }
+  // est_enseigne = attribut d'enseigne lui aussi (même nom → même statut) : si UNE personne du
+  // groupe a été explicitement marquée "pas une enseigne", tout le groupe suit.
+  function estEnseigneGroupe(personnes){ return !personnes.some(p=>p.est_enseigne===false); }
   function nbEchangesGroupe(personnes){ return personnes.reduce((s,p)=>s+(ECHANGE_COUNTS[p.id]||0),0); }
   async function chargerCompteursEchanges(){
     ECHANGE_COUNTS = {};
@@ -204,19 +211,32 @@
     await chargerCompteursEchanges();
 
     const groupesTous = grouperParEnseigne(LISTE);
-    const enAttente = LISTE.filter(c=>['demande_envoyee','en_attente'].includes(c.statut)).length;
-    const messages   = LISTE.filter(c=>['message_envoye','reponse_recue','relance_prevue','rdv_prevu'].includes(c.statut)).length;
-    const chauds     = LISTE.filter(c=>c.temperature==='chaud').length;
-    const relances   = LISTE.filter(enRetard).length;
-    const nonCategorisees = groupesTous.filter(g=>!categorieGroupe(g.personnes)).length;
+    const groupesEnseignes = groupesTous.filter(g=>estEnseigneGroupe(g.personnes));
+    const groupesAutres = groupesTous.filter(g=>!estEnseigneGroupe(g.personnes));
+    // Les stats/compteurs sont toujours scopés à l'onglet actif, pas au fichier entier.
+    const groupesActifs = VUE_TYPE==='enseigne' ? groupesEnseignes : groupesAutres;
+    const personnesActives = groupesActifs.flatMap(g=>g.personnes);
+    const enAttente = personnesActives.filter(c=>['demande_envoyee','en_attente'].includes(c.statut)).length;
+    const messages   = personnesActives.filter(c=>['message_envoye','reponse_recue','relance_prevue','rdv_prevu'].includes(c.statut)).length;
+    const chauds     = personnesActives.filter(c=>c.temperature==='chaud').length;
+    const relances   = personnesActives.filter(enRetard).length;
+    const nonCategorisees = groupesEnseignes.filter(g=>!categorieGroupe(g.personnes)).length;
+
+    const onglets = `<div style="display:flex;gap:8px;padding:14px 16px 0">
+      <button class="btn btn-sm ${VUE_TYPE==='enseigne'?'':'btn-ghost'}" onclick="H3C_ENSEIGNES._vueType('enseigne')">🏢 Enseignes (${groupesEnseignes.length})</button>
+      <button class="btn btn-sm ${VUE_TYPE==='contact'?'':'btn-ghost'}" onclick="H3C_ENSEIGNES._vueType('contact')">👤 Autres contacts (${groupesAutres.length})</button>
+    </div>
+    <p style="font-size:.8rem;color:var(--gris-fonce);padding:6px 16px 0">${VUE_TYPE==='enseigne'
+      ? 'Marques rattachables à une enseigne (McDo, Leclerc, Kryss…) — celles qui comptent pour les rapprochements.'
+      : 'Notaires, holdings, sociétés de conseil, erreurs de saisie… — pas de vraie marque à rattacher. Rien n’est supprimé, juste séparé pour garder la liste des enseignes lisible.'}</p>`;
 
     const stats = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;padding:16px 16px 4px">
-      ${carte('Enseignes suivies', groupesTous.length, `${LISTE.length} personne(s) au total`)}
+      ${carte(VUE_TYPE==='enseigne'?'Enseignes suivies':'Autres contacts', groupesActifs.length, `${personnesActives.length} personne(s) au total`)}
       ${carte('En attente', enAttente, 'connexion pas encore acceptée')}
       ${carte('Messages envoyés', messages, 'prise de contact faite')}
       ${carte('🔥 Prospects chauds', chauds, 'à suivre en priorité', chauds?'#e8912d':null)}
       ${carte('⏰ Relances dues', relances, relances?'à traiter maintenant':'rien en retard', relances?'#b3261e':null)}
-      ${carte('🗂️ Non catégorisées', nonCategorisees, nonCategorisees?'à qualifier (secteur)':'toutes classées', nonCategorisees?'#e8912d':null, 'en-stat-noncat')}
+      ${VUE_TYPE==='enseigne' ? carte('🗂️ Non catégorisées', nonCategorisees, nonCategorisees?'à qualifier (secteur)':'toutes classées', nonCategorisees?'#e8912d':null, 'en-stat-noncat') : ''}
     </div>`;
 
     const filtres = `<div style="padding:12px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -225,11 +245,11 @@
         <option value="">Tous les statuts</option>
         ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_STATUT===k?'selected':''}>${v}</option>`).join('')}
       </select>
-      <select onchange="H3C_ENSEIGNES._categorieFiltre(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+      ${VUE_TYPE==='enseigne' ? `<select onchange="H3C_ENSEIGNES._categorieFiltre(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
         <option value="">Toutes catégories</option>
         <option value="__non__" ${FILTRE_CATEGORIE==='__non__'?'selected':''}>— Non catégorisé —</option>
         ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_CATEGORIE===k?'selected':''}>${v}</option>`).join('')}
-      </select>
+      </select>` : ''}
       <input id="en-search" type="search" autocomplete="off" placeholder="🔎 Enseigne, contact, poste…" value="${esc(RECHERCHE)}"
         oninput="H3C_ENSEIGNES._search(this.value)"
         style="flex:1;min-width:200px;max-width:380px;padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
@@ -237,15 +257,16 @@
 
     const groupes = filtrerGroupes();
     const page = pageGroupes(groupes);
-    const corps = stats + filtres + (groupes.length
+    const corps = onglets + stats + filtres + (groupes.length
       ? `<div class="tscroll"><table class="en-table"><thead><tr>
-           <th>Enseigne</th><th>Catégorie</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
+           <th>Enseigne</th><th>${VUE_TYPE==='enseigne'?'Catégorie':'Type'}</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
            <th>Relance</th><th>Actions</th>
          </tr></thead><tbody id="en-tbody">${page.map(ligneGroupe).join('')}</tbody></table></div>
          <div id="en-pagination">${paginationBar(groupes.length)}</div>`
-      : vide('Aucun contact enregistré. Ajoutez la première enseigne démarchée.'));
+      : vide(VUE_TYPE==='enseigne' ? 'Aucune enseigne dans cet onglet.' : 'Aucun autre contact.'));
 
-    C().innerHTML = panel('Enseignes', `${groupesTous.length} enseigne(s) · ${LISTE.length} personne(s)`, corps,
+    C().innerHTML = panel(VUE_TYPE==='enseigne'?'Enseignes':'Enseignes — Autres contacts',
+      `${groupesEnseignes.length} enseigne(s) · ${groupesAutres.length} autre(s) contact(s) · ${LISTE.length} personne(s) au total`, corps,
       `<button class="btn btn-sm" onclick="H3C_ENSEIGNES.nouvelleEnseigne()">+ Nouvelle enseigne</button>`);
 
     datalistEnseignes();
@@ -270,7 +291,9 @@
       if(q && !([(c.enseigne||''),(c.nom||''),(c.poste||'')].join(' ').toLowerCase().includes(q))) return false;
       return true;
     };
-    let groupes = grouperParEnseigne(LISTE).filter(g => g.personnes.some(matchPersonne));
+    let groupes = grouperParEnseigne(LISTE)
+      .filter(g => estEnseigneGroupe(g.personnes) === (VUE_TYPE==='enseigne'))
+      .filter(g => g.personnes.some(matchPersonne));
     // La catégorie est un attribut d'enseigne (pas de personne) : filtre appliqué au niveau groupe.
     if(FILTRE_CATEGORIE){
       groupes = groupes.filter(g=>{
@@ -348,6 +371,12 @@
       ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${cat===k?'selected':''}>${v}</option>`).join('')}
     </select>`;
   }
+  // 2e colonne : sélecteur de catégorie sur l'onglet Enseignes, bouton de reclassement sur
+  // l'onglet Autres contacts (toujours réversible dans les deux sens, d'un clic).
+  function typeCell(g){
+    if(VUE_TYPE==='enseigne') return categorieCell(g);
+    return `<button class="btn btn-ghost btn-sm" title="Ce n'est pas une enseigne retail ? Cliquer pour la remettre dans Enseignes" onclick="H3C_ENSEIGNES._estEnseigne('${esc(g.cle)}',true)">🏢 C'est une enseigne</button>`;
+  }
   function ligneGroupe(g){
     const retard = groupeEnRetard(g.personnes);
     const prochaine = prochaineRelanceGroupe(g.personnes);
@@ -356,7 +385,7 @@
       : '<span style="color:#90a4ae">—</span>';
     return `<tr style="cursor:pointer" onclick="H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
       <td><b>${esc(g.enseigne)}</b></td>
-      <td onclick="event.stopPropagation()">${categorieCell(g)}</td>
+      <td onclick="event.stopPropagation()">${typeCell(g)}</td>
       <td>${personnesCell(g)}</td>
       <td>${telCell(g)}</td>
       <td>${emailCell(g)}</td>
@@ -366,6 +395,7 @@
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
         ${(()=>{ const n=nbEchangesGroupe(g.personnes);
           return `<button class="btn btn-ghost btn-sm" style="${n?'background:rgba(46,125,50,.15);border-color:#2e7d32;color:#2e7d32':''}" title="${n?'Déjà traité — '+n+' action(s) enregistrée(s)':'Aucune action enregistrée pour l’instant'}" onclick="H3C_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${n?` <b>${n}</b>`:''}</button>`; })()}
+        ${VUE_TYPE==='enseigne' ? `<button class="btn btn-ghost btn-sm" title="Ce n'est pas une vraie enseigne retail (notaire, holding, société de conseil…)" onclick="H3C_ENSEIGNES._estEnseigne('${esc(g.cle)}',false)">🚫</button>` : ''}
       </td></tr>`;
   }
 
@@ -736,6 +766,20 @@
     rafraichirTbody();
   }
 
+  /* Reclassement Enseigne <-> Autre contact (toujours réversible, d'un clic). Recharge la vue
+     entière (pas juste le tbody) : la ligne change d'onglet, les compteurs des 2 onglets et des
+     stats en dépendent — contrairement à setCategorie(), ce n'est pas une action fréquente/en
+     masse donc le coût d'un rechargement complet est acceptable ici. */
+  async function setEstEnseigne(cle, valeur){
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe) return;
+    const ids = groupe.personnes.map(p=>p.id);
+    const { error } = await sb.from('enseigne_contacts').update({ est_enseigne: valeur }).in('id', ids);
+    if(error){ alert('Erreur : '+error.message); return; }
+    groupe.personnes.forEach(p=>{ p.est_enseigne = valeur; });
+    vueEnseignes();
+  }
+
   async function supprimer(id){
     const c = LISTE.find(x=>String(x.id)===String(id));
     if(!confirm(`Supprimer définitivement le contact ${c?c.nom+' ('+c.enseigne+')':''} ainsi que son historique ?`)) return;
@@ -753,6 +797,8 @@
     _statut(v){ FILTRE_STATUT=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _categorieFiltre(v){ FILTRE_CATEGORIE=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _categorie: setCategorie,
+    _estEnseigne: setEstEnseigne,
+    _vueType(v){ VUE_TYPE=v; FILTRE_CATEGORIE=''; PAGE_COURANTE=0; vueEnseignes(); },
     _search(v){ RECHERCHE=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _toggleRelances(){ SEULEMENT_RELANCES=!SEULEMENT_RELANCES; PAGE_COURANTE=0; vueEnseignes(); },
     _page(n){ PAGE_COURANTE=n; rafraichirTbody(); document.querySelector('.tscroll')?.scrollTo({top:0}); },
