@@ -13,8 +13,47 @@
   const $   = id => document.getElementById(id);
   const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const PAL = ['#006962','#00332E','#C2410C','#B91C1C','#7C3AED','#0E7490','#15803D','#A16207'];
-  const T = { sections:[], pages:[], curSection:null, curPage:null, timer:null };
+  const T = { sections:[], pages:[], curSection:null, curPage:null, timer:null, unreadPages:new Set() };
   const dateFr = d => d ? d.split('-').reverse().join('/') : '';
+
+  /* ---------------- pastille "nouveau message" (section MESSAGERIE uniquement) ----------------
+     Pas de nouvelle table : on compare updated_at (BDD) à la date de dernière lecture (localStorage,
+     par navigateur = par collaborateur). Concerne TOUTES les pages qui vivent dans une section dont
+     le nom contient "messagerie" (ex : pages "HC" / "VDM") — aucune autre section de Teams n'allume
+     la pastille. */
+  const DOT = '<span class="team-msg-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#dc2626;box-shadow:0 0 0 2px #fff;flex:none"></span>';
+  const readKey = id => 'h3c_team_msg_read_'+id;
+  function isMsgSection(sectionId){
+    const s = T.sections.find(x=>x.id===sectionId);
+    return !!(s && s.nom && s.nom.toLowerCase().includes('messagerie'));
+  }
+  function paintNavBadge(){
+    const a = document.querySelector('.topnav a[data-vue="teams"]'); if(!a) return;
+    const old = a.querySelector('.team-msg-dot'); if(old) old.remove();
+    if(T.unreadPages.size) a.insertAdjacentHTML('beforeend', DOT);
+  }
+  async function checkMessages(){
+    try{
+      const { data:secs, error:e1 } = await sb.from('team_sections').select('id').ilike('nom','%messagerie%');
+      if(e1) return;
+      const secIds = (secs||[]).map(s=>s.id);
+      if(!secIds.length){ T.unreadPages.clear(); paintNavBadge(); return; }
+      const { data, error } = await sb.from('team_pages').select('id,updated_at').in('section_id',secIds);
+      if(error) return;
+      (data||[]).forEach(p=>{
+        const seen = localStorage.getItem(readKey(p.id));
+        if(!seen){ if(p.updated_at) localStorage.setItem(readKey(p.id), p.updated_at); return; }
+        if(p.updated_at && p.updated_at > seen) T.unreadPages.add(p.id); else T.unreadPages.delete(p.id);
+      });
+      paintNavBadge();
+      if($('team-page-list')) renderPages();
+    }catch(e){}
+  }
+  function markRead(pageId, ts){
+    if(!pageId) return;
+    try{ localStorage.setItem(readKey(pageId), ts || new Date().toISOString()); }catch(e){}
+    if(T.unreadPages.delete(pageId)){ paintNavBadge(); if($('team-page-list')) renderPages(); }
+  }
 
   function injectCss(){
     if($('team-css')) return;
@@ -131,6 +170,7 @@
     $('team-page-list').innerHTML = T.pages.length ? T.pages.map(p=>`
       <div class="team-page${p.id===T.curPage?' on':''}" onclick="H3C_TEAMS.selPage('${p.id}')">
         <span class="lbl">${esc(p.titre||'Sans titre')}${p.date_note?`<small>${esc(dateFr(p.date_note))}</small>`:''}</span>
+        ${T.unreadPages.has(p.id)?DOT:''}
         <button class="mini" title="Renommer" onclick="event.stopPropagation();H3C_TEAMS.renPage('${p.id}')">✎</button>
         <button class="mini" title="Supprimer" onclick="event.stopPropagation();H3C_TEAMS.delPage('${p.id}')">×</button>
       </div>`).join('') : '<div class="team-empty">Aucune page.<br>Créez-en une ci-dessous.</div>';
@@ -167,6 +207,7 @@
       return;
     }
     const { data:page } = await sb.from('team_pages').select('*').eq('id',T.curPage).single();
+    if(page && isMsgSection(T.curSection)) markRead(page.id, page.updated_at);
     const dval = page&&page.date_note ? page.date_note : '';
     w.innerHTML = `
       <div class="team-page-title">
@@ -181,7 +222,13 @@
         <button title="Titre" onclick="H3C_TEAMS.fmt('formatBlock','H3')">Titre</button>
         <span id="team-save-state" class="team-save">enregistré</span>
       </div>
-      <div id="team-editor" class="team-ed" contenteditable="true" oninput="H3C_TEAMS.onInput()">${page&&page.contenu?page.contenu:''}</div>`;
+      <div id="team-editor" class="team-ed" contenteditable="true" oninput="H3C_TEAMS.onInput()">${page&&page.contenu?page.contenu:''}</div>
+      ${isMsgSection(T.curSection) ? `
+      <div class="team-chat-bar" style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--gris-clair);background:var(--gris-bg);flex:none">
+        <input id="team-chat-input" type="text" placeholder="Écrire un message…" style="flex:1;padding:9px 12px;border:1px solid var(--gris-clair);border-radius:8px;font:inherit" onkeydown="if(event.key==='Enter'){event.preventDefault();H3C_TEAMS.sendMsg();}">
+        <button id="team-chat-send" onclick="H3C_TEAMS.sendMsg()" style="padding:9px 18px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer">Envoyer</button>
+      </div>` : ''}`;
+    const ed0 = $('team-editor'); if(ed0) ed0.scrollTop = ed0.scrollHeight;
   }
   function fmt(cmd,val){ document.execCommand(cmd,false,val||null); const e=$('team-editor'); if(e) e.focus(); onInput(); }
   function onInput(){ const st=$('team-save-state'); if(st) st.textContent='enregistrement…'; clearTimeout(T.timer); T.timer=setTimeout(saveNote,800); }
@@ -190,8 +237,36 @@
     const ed = $('team-editor'); if(!ed) return;
     try{
       await sb.from('team_pages').update({contenu:ed.innerHTML, updated_at:new Date().toISOString()}).eq('id',T.curPage);
+      if(isMsgSection(T.curSection)) markRead(T.curPage);
       const st=$('team-save-state'); if(st) st.textContent='enregistré';
     }catch(e){ const st=$('team-save-state'); if(st) st.textContent='échec d’enregistrement'; }
+  }
+  /* Bouton "Envoyer" (page Messagerie uniquement) : ajoute le message au fil, sauvegarde tout de suite
+     (sans attendre le debounce de saveNote), pose la date du jour et purge la pastille pour l'auteur.
+     Relit le contenu le plus récent en base juste avant d'écrire (au lieu de repartir du innerHTML
+     local, potentiellement périmé) pour ne pas écraser un message envoyé entre-temps par l'autre
+     collaborateur si les deux ont la page ouverte en même temps. */
+  async function sendMsg(){
+    if(!T.curPage || !isMsgSection(T.curSection)) return;
+    const inp = $('team-chat-input'); if(!inp) return;
+    const txt = inp.value.trim(); if(!txt) return;
+    const btn = $('team-chat-send'); if(btn){ btn.disabled=true; btn.textContent='Envoi…'; }
+    clearTimeout(T.timer);
+    const auteur = (typeof ME_AGENT!=='undefined' && ME_AGENT) ? ME_AGENT : '?';
+    const heure = new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const bloc = `<p style="margin:0 0 10px"><b style="color:var(--teal-dark)">${esc(auteur)}</b> <span style="font-size:.72rem;color:var(--gris-fonce)">${esc(heure)}</span><br>${esc(txt).replace(/\n/g,'<br>')}</p>`;
+    const today = new Date().toISOString().slice(0,10);
+    try{
+      const { data:fresh } = await sb.from('team_pages').select('contenu').eq('id',T.curPage).single();
+      const contenu = (fresh && fresh.contenu ? fresh.contenu : '') + bloc;
+      await sb.from('team_pages').update({ contenu, updated_at:new Date().toISOString(), date_note:today }).eq('id',T.curPage);
+      markRead(T.curPage);
+      const ed = $('team-editor'); if(ed){ ed.innerHTML = contenu; ed.scrollTop = ed.scrollHeight; }
+      const p = T.pages.find(x=>x.id===T.curPage); if(p){ p.date_note = today; renderPages(); }
+      inp.value=''; inp.focus();
+      const st=$('team-save-state'); if(st) st.textContent='message envoyé ✓';
+    }catch(e){ alert('Erreur d’envoi : '+e.message); }
+    if(btn){ btn.disabled=false; btn.textContent='Envoyer'; }
   }
   async function setDate(v){
     if(!T.curPage) return;
@@ -201,5 +276,13 @@
 
   window.vueTeams = vue;
   window.H3C_TEAMS = { vue, addSection, renSection, delSection, selSection,
-    addPage, selPage, renPage, delPage, fmt, onInput, setDate };
+    addPage, selPage, renPage, delPage, fmt, onInput, setDate, checkMessages, sendMsg };
+
+  /* ---------------- surveillance pastille (indépendante de l'onglet Teams) ---------------- */
+  (function watchMessages(){
+    function tick(){ sb.auth.getSession().then(({data})=>{ if(data && data.session) checkMessages(); }); }
+    tick();
+    sb.auth.onAuthStateChange((_e,s)=>{ if(s) checkMessages(); });
+    setInterval(tick, 60000);
+  })();
 })();
