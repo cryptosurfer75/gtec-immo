@@ -108,11 +108,12 @@ td.num{font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap}
 .en-table th,.en-table td{padding:8px 10px;font-size:.83rem}
 .en-table td{white-space:normal;word-break:break-word}
 .en-table td:nth-child(1){max-width:170px}
-.en-table td:nth-child(2){max-width:140px}
-.en-table td:nth-child(3){max-width:120px;white-space:nowrap}
-.en-table td:nth-child(4){max-width:190px}
-.en-table td:nth-child(6){white-space:nowrap}
-.en-table td:nth-child(7){max-width:100px;white-space:nowrap}
+.en-table td:nth-child(2){max-width:180px}
+.en-table td:nth-child(3){max-width:140px}
+.en-table td:nth-child(4){max-width:120px;white-space:nowrap}
+.en-table td:nth-child(5){max-width:190px}
+.en-table td:nth-child(7){white-space:nowrap}
+.en-table td:nth-child(8){max-width:100px;white-space:nowrap}
 .en-table td:last-child{white-space:nowrap}
 /* Table de la fenêtre Dénonce : tient sur la largeur de la modale, sans scroll horizontal */
 .den-table{table-layout:fixed}
@@ -313,7 +314,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* Numéro de version affiché discrètement à côté du logo (bandeau du haut) : à incrémenter à chaque modif
    de crm/index.html, pour vérifier en un coup d'œil que tout le monde a bien la même version chargée. */
-const CRM_VERSION = 3;
+const CRM_VERSION = 4;
 document.getElementById('crm-ver').textContent = 'v'+CRM_VERSION;
 
 const LABELS = {bureaux:'Bureaux', local_commercial:'Local commercial', entrepot_logistique:'Entrepôt / Logistique',
@@ -2427,14 +2428,17 @@ function formMandat(rec){
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) draftCollect(CURRENT_FORM_KEY); });
 window.addEventListener('beforeunload', ()=>{ draftCollect(CURRENT_FORM_KEY); });
 
-init();
+// Attendre la fin du parsing (donc que tous les <script src=...> de fonctionnalités plus bas,
+// teams.js/enseignes.js/etc., aient bien défini leurs fonctions) avant le 1er aller('dashboard') —
+// sinon course possible : init() est async et peut résoudre avant qu'un module ait fini de charger.
+document.addEventListener('DOMContentLoaded', init);
 </script>
 <script src="dossier.js?v=15"></script>
 <script src="avis-valeur.js?v=51"></script>
 <script src="teams.js?v=7"></script>
 <script src="facture.js?v=3"></script>
 <script src="loi.js?v=7"></script>
-<script src="enseignes.js?v=6"></script>
+<script src="enseignes.js?v=7"></script>
 <script src="entreprises-locales.js?v=1"></script>
 <script src="prospection.js?v=1"></script>
 <script src="leboncoin.js?v=1"></script>

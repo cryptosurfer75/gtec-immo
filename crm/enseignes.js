@@ -21,6 +21,7 @@
   let LISTE = [];
   let ECHANGES = [];          // historique de la personne actuellement ouverte dans l'éditeur
   let FILTRE_STATUT = '';     // '' = tous
+  let FILTRE_CATEGORIE = '';  // '' = toutes, '__non__' = non catégorisées
   let SEULEMENT_RELANCES = false;
   let RECHERCHE = '';
   let ED = { id: null, enseigneVerrouillee: null };
@@ -53,6 +54,25 @@
     appel: 'Appel téléphonique', email: 'E-mail', rdv: 'Rendez-vous', note: 'Note'
   };
   const CANAL_LABEL = { connexion:'Demande de connexion', message_direct:'Message direct (déjà relation)', email_direct:'Coordonnées directes (annuaire)' };
+  // Catégorisation des enseignes (secteur d'activité), pour cartographier le fichier lors des
+  // rapprochements avec un local vacant (ex : "ce local est idéal pour un opticien"). Nomenclature
+  // proche de celle utilisée dans l'immobilier commercial / annuaire FFF.
+  const CATEGORIE_LABEL = {
+    alimentaire:            'Alimentaire',
+    restauration:           'Restauration',
+    grande_distribution:    'Grande distribution',
+    equipement_maison:      'Équipement de la maison',
+    equipement_personne:    'Équipement de la personne',
+    sante_beaute:           'Santé - Beauté - Optique',
+    sport_loisirs_culture:  'Sport - Loisirs - Culture',
+    automobile:             'Automobile',
+    banque_assurance:       'Banque - Assurance',
+    services_particuliers:  'Services aux particuliers',
+    services_entreprises:   'Services aux entreprises',
+    hotellerie:             'Hôtellerie',
+    batiment_bricolage:     'Bâtiment - Bricolage',
+    autre:                  'Autre'
+  };
   // Placeholder du champ « échange » adapté au type choisi : pour une réponse reçue,
   // on veut le texte exact (copier-coller LinkedIn/e-mail), pas un résumé paraphrasé.
   const PLACEHOLDER_ECHANGE = {
@@ -135,6 +155,13 @@
     return dates[0] || null;
   }
   function groupeEnRetard(personnes){ return personnes.some(enRetard); }
+  // Catégorie = attribut d'enseigne (pas de personne) : en pratique toutes les personnes d'un
+  // même groupe partagent la même valeur (synchronisée à l'écriture), on prend la 1re trouvée.
+  function categorieGroupe(personnes){ const p = personnes.find(x=>x.categorie); return p ? p.categorie : null; }
+  function categorieBadge(cat){
+    if(!cat) return `<span style="color:#90a4ae;font-size:.8rem">— Non catégorisé —</span>`;
+    return `<span class="tag" style="background:rgba(0,105,98,.14);color:#004D47;font-weight:700">${esc(CATEGORIE_LABEL[cat]||cat)}</span>`;
+  }
   function nbEchangesGroupe(personnes){ return personnes.reduce((s,p)=>s+(ECHANGE_COUNTS[p.id]||0),0); }
   async function chargerCompteursEchanges(){
     ECHANGE_COUNTS = {};
@@ -176,6 +203,7 @@
     const messages   = LISTE.filter(c=>['message_envoye','reponse_recue','relance_prevue','rdv_prevu'].includes(c.statut)).length;
     const chauds     = LISTE.filter(c=>c.temperature==='chaud').length;
     const relances   = LISTE.filter(enRetard).length;
+    const nonCategorisees = groupesTous.filter(g=>!categorieGroupe(g.personnes)).length;
 
     const stats = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;padding:16px 16px 4px">
       ${carte('Enseignes suivies', groupesTous.length, `${LISTE.length} personne(s) au total`)}
@@ -183,6 +211,7 @@
       ${carte('Messages envoyés', messages, 'prise de contact faite')}
       ${carte('🔥 Prospects chauds', chauds, 'à suivre en priorité', chauds?'#e8912d':null)}
       ${carte('⏰ Relances dues', relances, relances?'à traiter maintenant':'rien en retard', relances?'#b3261e':null)}
+      ${carte('🗂️ Non catégorisées', nonCategorisees, nonCategorisees?'à qualifier (secteur)':'toutes classées', nonCategorisees?'#e8912d':null)}
     </div>`;
 
     const filtres = `<div style="padding:12px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -190,6 +219,11 @@
       <select onchange="H3C_ENSEIGNES._statut(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
         <option value="">Tous les statuts</option>
         ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_STATUT===k?'selected':''}>${v}</option>`).join('')}
+      </select>
+      <select onchange="H3C_ENSEIGNES._categorieFiltre(this.value)" style="padding:9px 11px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+        <option value="">Toutes catégories</option>
+        <option value="__non__" ${FILTRE_CATEGORIE==='__non__'?'selected':''}>— Non catégorisé —</option>
+        ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_CATEGORIE===k?'selected':''}>${v}</option>`).join('')}
       </select>
       <input id="en-search" type="search" autocomplete="off" placeholder="🔎 Enseigne, contact, poste…" value="${esc(RECHERCHE)}"
         oninput="H3C_ENSEIGNES._search(this.value)"
@@ -199,7 +233,7 @@
     const groupes = filtrerGroupes();
     const corps = stats + filtres + (groupes.length
       ? `<div class="tscroll"><table class="en-table"><thead><tr>
-           <th>Enseigne</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
+           <th>Enseigne</th><th>Catégorie</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
            <th>Relance</th><th>Actions</th>
          </tr></thead><tbody id="en-tbody">${groupes.map(ligneGroupe).join('')}</tbody></table></div>`
       : vide('Aucun contact enregistré. Ajoutez la première enseigne démarchée.'));
@@ -229,7 +263,14 @@
       if(q && !([(c.enseigne||''),(c.nom||''),(c.poste||'')].join(' ').toLowerCase().includes(q))) return false;
       return true;
     };
-    const groupes = grouperParEnseigne(LISTE).filter(g => g.personnes.some(matchPersonne));
+    let groupes = grouperParEnseigne(LISTE).filter(g => g.personnes.some(matchPersonne));
+    // La catégorie est un attribut d'enseigne (pas de personne) : filtre appliqué au niveau groupe.
+    if(FILTRE_CATEGORIE){
+      groupes = groupes.filter(g=>{
+        const cat = categorieGroupe(g.personnes);
+        return FILTRE_CATEGORIE==='__non__' ? !cat : cat===FILTRE_CATEGORIE;
+      });
+    }
     return groupes.sort((a,b)=>(a.enseigne||'').localeCompare(b.enseigne||'','fr',{sensitivity:'base'}));
   }
   function rafraichirTbody(){
@@ -273,6 +314,13 @@
     if(!p.email) return '<span style="color:#90a4ae">—</span>';
     return `<a href="mailto:${esc(p.email)}" onclick="event.stopPropagation()" style="word-break:break-all">${esc(p.email)}</a>`;
   }
+  function categorieCell(g){
+    const cat = categorieGroupe(g.personnes);
+    return `<select onchange="H3C_ENSEIGNES._categorie('${esc(g.cle)}',this.value)" style="padding:5px 7px;border:1.5px solid var(--gris-clair);border-radius:7px;font:inherit;font-size:.8rem;max-width:170px;${cat?'':'color:#90a4ae'}">
+      <option value="">— Non catégorisé —</option>
+      ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${cat===k?'selected':''}>${v}</option>`).join('')}
+    </select>`;
+  }
   function ligneGroupe(g){
     const retard = groupeEnRetard(g.personnes);
     const prochaine = prochaineRelanceGroupe(g.personnes);
@@ -281,6 +329,7 @@
       : '<span style="color:#90a4ae">—</span>';
     return `<tr style="cursor:pointer" onclick="H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
       <td><b>${esc(g.enseigne)}</b></td>
+      <td onclick="event.stopPropagation()">${categorieCell(g)}</td>
       <td>${personnesCell(g)}</td>
       <td>${telCell(g)}</td>
       <td>${emailCell(g)}</td>
@@ -306,7 +355,7 @@
       return new Date(b.created_at)-new Date(a.created_at);
     });
     document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)H3C_ENSEIGNES._fermerFiche()"><div class="modal" style="max-width:760px">
-      <div class="modal-h"><h3>🏢 ${esc(groupe.enseigne)}</h3><button class="x" onclick="H3C_ENSEIGNES._fermerFiche()">×</button></div>
+      <div class="modal-h"><h3>🏢 ${esc(groupe.enseigne)} ${categorieBadge(categorieGroupe(personnes))}</h3><button class="x" onclick="H3C_ENSEIGNES._fermerFiche()">×</button></div>
       <div class="modal-f">
         <p style="font-size:.85rem;color:var(--gris-fonce);margin-top:-6px">${personnes.length} personne${personnes.length>1?'s':''} rattachée${personnes.length>1?'s':''} à cette enseigne (développement, immobilier, franchisé, partenaire…).</p>
         <div id="en-fiche-personnes">${personnes.map(rowPersonne).join('')}</div>
@@ -524,6 +573,9 @@
     const enseigneChamp = ED.enseigneVerrouillee
       ? `<div class="f"><label>Enseigne</label><input id="en-enseigne" value="${esc(c.enseigne||'')}" readonly style="background:var(--gris-bg)"></div>`
       : `<div class="f"><label>Enseigne *</label><input id="en-enseigne" list="en-datalist-enseignes" value="${esc(c.enseigne||'')}" placeholder="Ex : Decathlon, Lidl, Franprix…"></div>`;
+    // Catégorie déjà posée sur l'enseigne (si une autre personne du groupe l'a déjà, on la reprend).
+    const groupeCourant = c.enseigne ? grouperParEnseigne(LISTE).find(g=>g.cle===normEnseigne(c.enseigne)) : null;
+    const catActuelle = c.categorie || (groupeCourant ? categorieGroupe(groupeCourant.personnes) : null);
 
     document.getElementById('modal-root2').innerHTML = `<div class="modal-bg" style="z-index:200" onclick="if(event.target===this)H3C_ENSEIGNES._fermer()"><div class="modal">
       <div class="modal-h"><h3>🤝 ${id?esc(c.enseigne)+' — '+esc(c.nom):(ED.enseigneVerrouillee?'Nouvelle personne — '+esc(ED.enseigneVerrouillee):'Nouvelle enseigne')}</h3>
@@ -538,6 +590,10 @@
           </select></div>
           <div class="f"><label>Statut</label><select id="en-statut">
             ${Object.entries(STATUT_LABEL).map(([k,v])=>`<option value="${k}" ${c.statut===k?'selected':''}>${v}</option>`).join('')}
+          </select></div>
+          <div class="f"><label>Catégorie (secteur)</label><select id="en-categorie">
+            <option value="">— Non catégorisé —</option>
+            ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${catActuelle===k?'selected':''}>${v}</option>`).join('')}
           </select></div>
           <div class="f"><label>Température</label><select id="en-temp">
             <option value="inconnu" ${c.temperature==='inconnu'?'selected':''}>— Inconnu</option>
@@ -596,11 +652,19 @@
         prochaine_relance_date: document.getElementById('en-relance').value || null,
         notes: document.getElementById('en-notes').value.trim() || null,
         derniere_action_date: today(),
-        agent: window.ME_AGENT || null
+        agent: window.ME_AGENT || null,
+        categorie: document.getElementById('en-categorie').value || null
       };
       let idSauve = ED.id;
       if(ED.id){ const { error } = await sb.from('enseigne_contacts').update(payload).eq('id', ED.id); if(error) throw error; }
       else { const { data, error } = await sb.from('enseigne_contacts').insert(payload).select('id').single(); if(error) throw error; idSauve = data.id; }
+      // La catégorie est un attribut d'enseigne : on la propage aux autres personnes du même
+      // groupe pour rester cohérent avec le sélecteur rapide du tableau (jamais si le champ est
+      // resté "Non catégorisé", pour ne pas effacer une catégorie déjà posée par ailleurs).
+      if(payload.categorie){
+        const idsGroupe = LISTE.filter(x=>normEnseigne(x.enseigne)===normEnseigne(enseigne) && String(x.id)!==String(idSauve)).map(x=>x.id);
+        if(idsGroupe.length) await sb.from('enseigne_contacts').update({categorie:payload.categorie}).in('id', idsGroupe);
+      }
       const retourFiche = FICHE_ENSEIGNE || normEnseigne(enseigne);
       document.querySelector('#modal-root2 .modal-bg')?.remove();
       await vueEnseignes();
@@ -625,6 +689,18 @@
     document.getElementById('en-nvcontenu').value = '';
   }
 
+  /* Sélecteur rapide de catégorie depuis le tableau : met à jour toutes les personnes
+     de l'enseigne d'un coup (la catégorie est un attribut d'enseigne, pas de personne). */
+  async function setCategorie(cle, valeur){
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe) return;
+    const ids = groupe.personnes.map(p=>p.id);
+    const { error } = await sb.from('enseigne_contacts').update({ categorie: valeur||null }).in('id', ids);
+    if(error){ alert('Erreur : '+error.message); return; }
+    groupe.personnes.forEach(p=>{ p.categorie = valeur||null; });
+    vueEnseignes();
+  }
+
   async function supprimer(id){
     const c = LISTE.find(x=>String(x.id)===String(id));
     if(!confirm(`Supprimer définitivement le contact ${c?c.nom+' ('+c.enseigne+')':''} ainsi que son historique ?`)) return;
@@ -640,6 +716,8 @@
   window.H3C_ENSEIGNES = {
     vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, editer, supprimer, relanceRapide, ouvrirSuivi,
     _statut(v){ FILTRE_STATUT=v; rafraichirTbody(); },
+    _categorieFiltre(v){ FILTRE_CATEGORIE=v; rafraichirTbody(); },
+    _categorie: setCategorie,
     _search(v){ RECHERCHE=v; rafraichirTbody(); },
     _toggleRelances(){ SEULEMENT_RELANCES=!SEULEMENT_RELANCES; vueEnseignes(); },
     _fermer: fermer,
