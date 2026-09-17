@@ -24,6 +24,11 @@
   let FILTRE_CATEGORIE = '';  // '' = toutes, '__non__' = non catégorisées
   let SEULEMENT_RELANCES = false;
   let RECHERCHE = '';
+  // Pagination client (8234 enseignes début septembre 2026, contre ~288 en juillet lors de la
+  // conception initiale) : reconstruire TOUTES les lignes (avec un <select> de 14 options chacune)
+  // à chaque filtre/tri prend plusieurs dizaines de secondes — mesuré ~73s. On ne rend qu'une page.
+  const PAGE_TAILLE = 100;
+  let PAGE_COURANTE = 0;
   let ED = { id: null, enseigneVerrouillee: null };
   let FICHE_ENSEIGNE = null;  // clé (normalisée) de l'enseigne actuellement ouverte en fiche détaillée
   let SUIVI_ENSEIGNE = null;  // clé de l'enseigne actuellement ouverte dans la modale Suivi (historique + planification)
@@ -211,7 +216,7 @@
       ${carte('Messages envoyés', messages, 'prise de contact faite')}
       ${carte('🔥 Prospects chauds', chauds, 'à suivre en priorité', chauds?'#e8912d':null)}
       ${carte('⏰ Relances dues', relances, relances?'à traiter maintenant':'rien en retard', relances?'#b3261e':null)}
-      ${carte('🗂️ Non catégorisées', nonCategorisees, nonCategorisees?'à qualifier (secteur)':'toutes classées', nonCategorisees?'#e8912d':null)}
+      ${carte('🗂️ Non catégorisées', nonCategorisees, nonCategorisees?'à qualifier (secteur)':'toutes classées', nonCategorisees?'#e8912d':null, 'en-stat-noncat')}
     </div>`;
 
     const filtres = `<div style="padding:12px 16px;border-bottom:1px solid var(--gris-clair);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -231,11 +236,13 @@
     </div>`;
 
     const groupes = filtrerGroupes();
+    const page = pageGroupes(groupes);
     const corps = stats + filtres + (groupes.length
       ? `<div class="tscroll"><table class="en-table"><thead><tr>
            <th>Enseigne</th><th>Catégorie</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
            <th>Relance</th><th>Actions</th>
-         </tr></thead><tbody id="en-tbody">${groupes.map(ligneGroupe).join('')}</tbody></table></div>`
+         </tr></thead><tbody id="en-tbody">${page.map(ligneGroupe).join('')}</tbody></table></div>
+         <div id="en-pagination">${paginationBar(groupes.length)}</div>`
       : vide('Aucun contact enregistré. Ajoutez la première enseigne démarchée.'));
 
     C().innerHTML = panel('Enseignes', `${groupesTous.length} enseigne(s) · ${LISTE.length} personne(s)`, corps,
@@ -244,9 +251,9 @@
     datalistEnseignes();
   }
 
-  function carte(libelle, valeur, sous, couleur){
+  function carte(libelle, valeur, sous, couleur, id){
     return `<div class="stat" style="${couleur?'border-left:4px solid '+couleur:''}">
-      <div class="n" style="${couleur?'color:'+couleur:''}">${esc(String(valeur))}</div>
+      <div class="n"${id?` id="${id}"`:''} style="${couleur?'color:'+couleur:''}">${esc(String(valeur))}</div>
       <div class="l">${esc(libelle)}</div>
       <div style="font-size:.72rem;color:var(--gris-fonce);margin-top:2px">${esc(sous||'')}</div></div>`;
   }
@@ -273,10 +280,30 @@
     }
     return groupes.sort((a,b)=>(a.enseigne||'').localeCompare(b.enseigne||'','fr',{sensitivity:'base'}));
   }
+  /* Découpe la liste déjà filtrée/triée en pages de PAGE_TAILLE (recale PAGE_COURANTE si elle
+     déborde, ex : un filtre qui réduit fortement le nombre de résultats). */
+  function pageGroupes(groupes){
+    const dernierePage = Math.max(0, Math.ceil(groupes.length/PAGE_TAILLE)-1);
+    if(PAGE_COURANTE > dernierePage) PAGE_COURANTE = dernierePage;
+    if(PAGE_COURANTE < 0) PAGE_COURANTE = 0;
+    return groupes.slice(PAGE_COURANTE*PAGE_TAILLE, (PAGE_COURANTE+1)*PAGE_TAILLE);
+  }
+  function paginationBar(total){
+    if(total <= PAGE_TAILLE) return '';
+    const pages = Math.max(1, Math.ceil(total/PAGE_TAILLE));
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--gris-clair)">
+      <button class="btn btn-ghost btn-sm" ${PAGE_COURANTE<=0?'disabled':''} onclick="H3C_ENSEIGNES._page(${PAGE_COURANTE-1})">‹ Précédent</button>
+      <span style="font-size:.85rem;color:var(--gris-fonce)">Page ${PAGE_COURANTE+1} / ${pages} — ${total} enseigne(s)</span>
+      <button class="btn btn-ghost btn-sm" ${PAGE_COURANTE>=pages-1?'disabled':''} onclick="H3C_ENSEIGNES._page(${PAGE_COURANTE+1})">Suivant ›</button>
+    </div>`;
+  }
   function rafraichirTbody(){
     const tb = document.getElementById('en-tbody'); if(!tb) return;
     const groupes = filtrerGroupes();
-    tb.innerHTML = groupes.length ? groupes.map(ligneGroupe).join('') : `<tr><td colspan="8">${vide('Aucun résultat.')}</td></tr>`;
+    const page = pageGroupes(groupes);
+    tb.innerHTML = page.length ? page.map(ligneGroupe).join('') : `<tr><td colspan="9">${vide('Aucun résultat.')}</td></tr>`;
+    const pag = document.getElementById('en-pagination');
+    if(pag) pag.innerHTML = paginationBar(groupes.length);
   }
 
   /* affichage de la colonne « personnes » : un seul nom affiché directement, plusieurs
@@ -690,15 +717,23 @@
   }
 
   /* Sélecteur rapide de catégorie depuis le tableau : met à jour toutes les personnes
-     de l'enseigne d'un coup (la catégorie est un attribut d'enseigne, pas de personne). */
+     de l'enseigne d'un coup (la catégorie est un attribut d'enseigne, pas de personne).
+     Ne recharge PAS tout via vueEnseignes() (8000+ enseignes / 11000+ personnes à repaginer
+     et re-rendre à chaque clic serait trop lent) : on patche juste le tbody + le compteur. */
   async function setCategorie(cle, valeur){
     const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
     if(!groupe) return;
+    const etaitCategorisee = !!categorieGroupe(groupe.personnes);
     const ids = groupe.personnes.map(p=>p.id);
     const { error } = await sb.from('enseigne_contacts').update({ categorie: valeur||null }).in('id', ids);
     if(error){ alert('Erreur : '+error.message); return; }
     groupe.personnes.forEach(p=>{ p.categorie = valeur||null; });
-    vueEnseignes();
+    const estCategorisee = !!valeur;
+    if(etaitCategorisee !== estCategorisee){
+      const el = document.getElementById('en-stat-noncat');
+      if(el) el.textContent = String(Number(el.textContent||0) + (estCategorisee ? -1 : 1));
+    }
+    rafraichirTbody();
   }
 
   async function supprimer(id){
@@ -715,11 +750,12 @@
 
   window.H3C_ENSEIGNES = {
     vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, editer, supprimer, relanceRapide, ouvrirSuivi,
-    _statut(v){ FILTRE_STATUT=v; rafraichirTbody(); },
-    _categorieFiltre(v){ FILTRE_CATEGORIE=v; rafraichirTbody(); },
+    _statut(v){ FILTRE_STATUT=v; PAGE_COURANTE=0; rafraichirTbody(); },
+    _categorieFiltre(v){ FILTRE_CATEGORIE=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _categorie: setCategorie,
-    _search(v){ RECHERCHE=v; rafraichirTbody(); },
-    _toggleRelances(){ SEULEMENT_RELANCES=!SEULEMENT_RELANCES; vueEnseignes(); },
+    _search(v){ RECHERCHE=v; PAGE_COURANTE=0; rafraichirTbody(); },
+    _toggleRelances(){ SEULEMENT_RELANCES=!SEULEMENT_RELANCES; PAGE_COURANTE=0; vueEnseignes(); },
+    _page(n){ PAGE_COURANTE=n; rafraichirTbody(); document.querySelector('.tscroll')?.scrollTo({top:0}); },
     _fermer: fermer,
     _fermerFiche: fermerFiche,
     _fermerSuivi: fermerSuivi,
