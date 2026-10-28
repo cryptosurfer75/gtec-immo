@@ -254,7 +254,8 @@
     clearTimeout(T.timer);
     const auteur = (typeof ME_AGENT!=='undefined' && ME_AGENT) ? ME_AGENT : '?';
     const heure = new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    const bloc = `<p style="margin:0 0 10px"><b style="color:var(--teal-dark)">${esc(auteur)}</b> <span style="font-size:.72rem;color:var(--gris-fonce)">${esc(heure)}</span><br>${esc(txt).replace(/\n/g,'<br>')}</p>`;
+    const msgId = 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const bloc = `<p id="${msgId}" style="margin:0 0 10px"><b style="color:var(--teal-dark)">${esc(auteur)}</b> <span style="font-size:.72rem;color:var(--gris-fonce)">${esc(heure)}</span><span onclick="H3C_TEAMS.supprimerMsg('${msgId}')" title="Supprimer ce message" style="float:right;cursor:pointer;color:#b3261e;font-weight:700;padding:0 4px">×</span><br>${esc(txt).replace(/\n/g,'<br>')}</p>`;
     const today = new Date().toISOString().slice(0,10);
     try{
       const { data:fresh } = await sb.from('team_pages').select('contenu').eq('id',T.curPage).single();
@@ -268,6 +269,24 @@
     }catch(e){ alert('Erreur d’envoi : '+e.message); }
     if(btn){ btn.disabled=false; btn.textContent='Envoyer'; }
   }
+  /* Suppression d'un message individuel (croix en bout de ligne) : les messages n'étant que des
+     <p id="..."> concaténés dans le contenu HTML de la page (pas de table dédiée), on relit le
+     contenu le plus récent, on retire juste ce bloc, et on réenregistre — même précaution
+     anti-écrasement que sendMsg() si l'autre collaborateur a la page ouverte en même temps. */
+  async function supprimerMsg(msgId){
+    if(!T.curPage || !confirm('Supprimer ce message ?')) return;
+    try{
+      const { data:fresh } = await sb.from('team_pages').select('contenu').eq('id',T.curPage).single();
+      const tmp = document.createElement('div');
+      tmp.innerHTML = fresh && fresh.contenu ? fresh.contenu : '';
+      const el = tmp.querySelector('#'+CSS.escape(msgId));
+      if(!el) return;
+      el.remove();
+      const contenu = tmp.innerHTML;
+      await sb.from('team_pages').update({ contenu, updated_at:new Date().toISOString() }).eq('id',T.curPage);
+      const ed = $('team-editor'); if(ed) ed.innerHTML = contenu;
+    }catch(e){ alert('Erreur de suppression : '+e.message); }
+  }
   async function setDate(v){
     if(!T.curPage) return;
     await sb.from('team_pages').update({date_note: v||null}).eq('id',T.curPage);
@@ -276,7 +295,7 @@
 
   window.vueTeams = vue;
   window.H3C_TEAMS = { vue, addSection, renSection, delSection, selSection,
-    addPage, selPage, renPage, delPage, fmt, onInput, setDate, checkMessages, sendMsg };
+    addPage, selPage, renPage, delPage, fmt, onInput, setDate, checkMessages, sendMsg, supprimerMsg };
 
   /* ---------------- surveillance pastille (indépendante de l'onglet Teams) ---------------- */
   (function watchMessages(){

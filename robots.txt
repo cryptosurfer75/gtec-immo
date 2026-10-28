@@ -2,4 +2,4 @@ User-agent: *
 Disallow: /crm/
 Allow: /
 
-Sitemap: https://gtec-immobilier.fr/sitemap.xml
+Sitemap: https://www.cabinet-h3c.fr/sitemap.xml

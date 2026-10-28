@@ -25,9 +25,9 @@
     mention_detention: 'Transaction sur immeubles et fonds de commerce – Non détention de fonds',
     telephone:       '',
     email:           '',
-    site:            'gtec-immobilier.fr'
+    site:            'www.cabinet-h3c.fr'
   };
-  const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
+  const LOGO = 'https://www.cabinet-h3c.fr/logo-h3c-vert.png?v=1';
 
   /* ------------------------------------------------------------------ *
    *  État
@@ -843,7 +843,7 @@
       const up = await sb.storage.from('offres').upload('lois-public/'+id+'.html', blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
       if(up.error) throw up.error;
     }catch(e){ alert('Publication impossible : '+(e.message||e)); return; }
-    afficherLien('https://gtec-immobilier.fr/l/?id=' + encodeURIComponent(id), id);
+    afficherLien('https://www.cabinet-h3c.fr/l/?id=' + encodeURIComponent(id), id);
   }
   async function revoquerLien(id){
     if(!id) return;

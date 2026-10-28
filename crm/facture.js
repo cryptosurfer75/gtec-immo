@@ -32,7 +32,7 @@
     bic:              'QNTOFRP1XXX',
     email:            '',            // email comptabilité (relances)
     telephone:        '',
-    site:             'gtec-immobilier.fr',   // site web (en-tête du document)
+    site:             'www.cabinet-h3c.fr',   // site web (en-tête du document)
     taux_penalites:   '3 fois le taux d’intérêt légal',  // pénalités de retard
     echeance_jours:   30,            // délai de paiement par défaut
     validite_jours:   30             // durée de validité d'un devis
@@ -538,7 +538,7 @@
     const ref = f.reference || (estDevis?'(brouillon)':'(non émise)');
     const cliNom = nomClient(c);
     const ag = AGENCE;
-    const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
+    const LOGO = 'https://www.cabinet-h3c.fr/logo-h3c-vert.png?v=1';
 
     const toolbar = shared ? '' : `<div class="noprint" style="position:sticky;top:0;background:#00332E;padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:9">
       <button onclick="window.print()" style="border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;background:#006962;color:#fff">📄 Enregistrer en PDF / Imprimer</button>
@@ -766,7 +766,7 @@
       const up = await sb.storage.from('offres').upload('factures-public/'+id+'.html', blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
       if(up.error) throw up.error;
     }catch(e){ alert('Publication impossible : '+(e.message||e)); return; }
-    afficherLien('https://gtec-immobilier.fr/f/?id=' + encodeURIComponent(id), id);
+    afficherLien('https://www.cabinet-h3c.fr/f/?id=' + encodeURIComponent(id), id);
   }
   async function revoquerLien(id){
     if(!id) return;

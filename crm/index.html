@@ -543,7 +543,17 @@ function aller(vue){
   document.getElementById('nav-documents-toggle').classList.toggle('on', NAV_DOCUMENTS.includes(vue));
   if(NAV_OFFRES.includes(vue)) document.querySelector('.topnav a[data-vue="offres"]').classList.add('on');
   document.getElementById('vue-titre').textContent = TITRES[vue];
-  ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>H3C_ENSEIGNES.vue(), entreprises:()=>H3C_ENTREPRISES.vue(), prospection:()=>H3C_PROSPECTION.vue()}[vue])();
+  return ({dashboard:vueDashboard, offres:vueOffres, avis:vueAvis, demandes:vueDemandes, clients:vueClients, mandats:vueMandats, teams:vueTeams, factures:vueFactures, loi:vueLoi, enseignes:()=>H3C_ENSEIGNES.vue(), entreprises:()=>H3C_ENTREPRISES.vue(), prospection:()=>H3C_PROSPECTION.vue()}[vue])();
+}
+/* Pont vers la recherche transversale de contacts (onglet Contacts) : ferme le formulaire en cours,
+   bascule sur Contacts et lance directement la recherche sur ce nom — pour retrouver le contact
+   Enseignes/Entreprises correspondant sans ressaisir le nom à la main. */
+async function chercherContactTransversal(nom){
+  if(!nom) return;
+  fermerModal();
+  await aller('clients');
+  const inp = document.getElementById('clients-search');
+  if(inp){ inp.value = nom; filtrerClients(nom); inp.focus(); }
 }
 const C = () => document.getElementById('content');
 const charge = () => C().innerHTML = '<div class="loading">Chargement…</div>';
@@ -765,23 +775,65 @@ async function vueAvis(){
 
 /* ===== DEMANDES (+ matching) ===== */
 let DEMANDES = [], DEM_ARCH = false, DEM_CPT = {}, DEM_LISTE = [], DEM_TYPE = '';   // DEM_TYPE = '' → tous les types
+/* Bouton "📞" en bout de ligne : ouvre au clic la liste des contacts avec téléphone/e-mail
+   rattachés à cette demande (le contact du client s'il en a un) et, par défaut, ceux trouvés
+   côté prospection Enseignes sous un nom proche — c'est là que vivent les vraies coordonnées la
+   plupart du temps, la fiche client seule étant souvent vide (cf. Besson, ITM Express, Netto…). */
+function contactsCell(d){
+  const id = 'dem-contacts-'+d.id;
+  return `<span style="position:relative;display:inline-block">
+    <span class="lien" onclick="event.stopPropagation();ouvrirContactsDemande('${d.id}','${id}')" title="Voir les contacts de cette demande">📞</span>
+    <div id="${id}" class="loc-pop" onclick="event.stopPropagation()" style="display:none;min-width:230px;max-width:280px"></div>
+  </span>`;
+}
+async function ouvrirContactsDemande(demandeId, popId){
+  const pop = document.getElementById(popId); if(!pop) return;
+  const dejaOuvert = pop.style.display!=='none';
+  toggleLocPop(popId);
+  if(dejaOuvert) return;
+  pop.innerHTML = '<div style="padding:6px 12px;color:var(--gris-fonce);font-size:.82rem">Recherche…</div>';
+  const d = DEMANDES.find(x=>String(x.id)===String(demandeId)); if(!d) return;
+  const contacts = [];
+  if(d.clients && (d.clients.telephone||d.clients.email)){
+    const nomC = contactClient(d.clients) || nomClient(d.clients);
+    contacts.push({ nom:nomC, tel:d.clients.telephone, email:d.clients.email, source:'Fiche client' });
+  }
+  // beaucoup de clients sont catégorisés "particulier" alors qu'il s'agit d'une enseigne : le nom
+  // de la société se retrouve alors dans "nom" et pas "raison_sociale" (ex. La Vignery, Rapid Pare
+  // Brise) — nomClient() couvre les deux cas, contrairement à raison_sociale seule.
+  const motCle = (nomClient(d.clients)||'').split('(')[0].trim();
+  if(motCle.length>=3){
+    const { data } = await sb.from('enseigne_contacts').select('nom,telephone,email,enseigne').ilike('enseigne', `%${motCle}%`).limit(8);
+    (data||[]).forEach(c=>{ if(c.telephone||c.email) contacts.push({ nom:c.nom, tel:c.telephone, email:c.email, source:c.enseigne }); });
+  }
+  pop.innerHTML = contacts.length
+    ? contacts.map(c=>`<div style="white-space:normal;padding:7px 12px;border-bottom:1px solid var(--gris-bg)">
+        <b>${esc(c.nom||'?')}</b><div style="font-size:.7rem;color:var(--gris-fonce)">${esc(c.source)}</div>
+        <div style="font-size:.85rem;margin-top:2px">
+          ${c.tel?`<a href="tel:${esc(c.tel.replace(/[^0-9+]/g,''))}">${esc(formatTel(c.tel))}</a>`:''}
+          ${c.tel&&c.email?' · ':''}
+          ${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:''}
+        </div></div>`).join('')
+    : '<div style="white-space:normal;padding:8px 12px;color:var(--gris-fonce);font-size:.85rem">Aucun contact avec téléphone/e-mail trouvé pour cette enseigne.</div>';
+}
 function ligneDemande(d){
   return `<tr style="cursor:pointer" onclick="editDemande('${d.id}')">
       <td style="text-align:center">${agentBadge(d.agent)}</td>
       <td>${refBadge(d.reference, (d.types_bien||[])[0])}</td>
       <td>${nomClientLien(d.clients, d.client_id)}</td>
-      <td>${(d.types_bien||[]).map(t=>typeBadge(t)).join(' ')||'—'}</td>
+      <td style="max-width:130px">${(d.types_bien||[]).map(t=>typeBadge(t)).join(' ')||'—'}</td>
       <td><span class="tag ${d.transaction==='achat'?'blue':'green'}">${esc(d.transaction||'—')}</span></td>
       <td>${urgenceBadge(d.urgence)}</td>
       <td>${d.surface_min_m2||d.surface_max_m2?`${d.surface_min_m2||0}–${d.surface_max_m2||'∞'} m²`:'—'}</td>
       <td>${d.budget_max?(d.transaction==='location'?euro(d.budget_max*12)+' / an':euro(d.budget_max)):'—'}</td>
       <td>${localitesCell(d)}</td>
+      <td onclick="event.stopPropagation()">${contactsCell(d)}</td>
       <td><button class="btn btn-sm" title="Rapprocher" style="padding:6px 11px;font-weight:700" onclick="event.stopPropagation();rapprocher('${d.id}')">R</button></td>
       ${btnAction('demande',d.id,d.reference,DEM_CPT[d.id]||0)}
     </tr>`;
 }
 function demandeRecherche(d){
-  return normTxt([d.reference, nomClient(d.clients), d.agent,
+  return normTxt([d.reference, nomClient(d.clients), d.agent, d.clients&&d.clients.telephone, d.clients&&d.clients.email,
     (d.types_bien||[]).map(t=>LABELS[t]||t).join(' '), d.transaction, d.urgence,
     (d.demande_localites||[]).map(l=>(l.ville||'')+' '+(l.code_postal||'')).join(' ')].filter(Boolean).join(' '));
 }
@@ -790,14 +842,14 @@ function filtrerDemandes(q){
   const liste = t ? DEM_LISTE.filter(d=>demandeRecherche(d).includes(t)) : DEM_LISTE;
   const tb = document.getElementById('demandes-tbody');
   if(tb) tb.innerHTML = liste.length ? liste.map(ligneDemande).join('')
-    : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ne correspond à « ${esc(q)} ».</td></tr>`;
+    : `<tr><td colspan="12" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ne correspond à « ${esc(q)} ».</td></tr>`;
   const cnt = document.getElementById('demandes-count');
   if(cnt) cnt.textContent = `${liste.length} résultat${liste.length>1?'s':''}`;
 }
 async function vueDemandes(){
   charge();
   const { data, error } = await sb.from('demandes')
-    .select('*, clients(type_client,nom,prenom,raison_sociale), demande_localites(ville,code_postal)')
+    .select('*, clients(type_client,nom,prenom,raison_sociale,telephone,email), demande_localites(ville,code_postal)')
     .order('date_demande',{ascending:false});
   if(error) return erreur(error);
   DEMANDES = data||[];
@@ -823,10 +875,10 @@ function renderDemandes(){
            style="flex:1;min-width:240px;max-width:460px;padding:10px 13px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
          <span id="demandes-count" style="font-size:.85rem;color:var(--gris-fonce);font-weight:600">${DEM_LISTE.length} résultat${DEM_LISTE.length>1?'s':''}</span>
        </div>
-       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th>Type(s)</th><th>Transaction</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th>Action</th></tr></thead>
+       <div class="tscroll"><table><thead><tr><th>Par</th><th>Réf.</th><th>Client</th><th style="max-width:130px">Type(s)</th><th>Transaction</th><th>Urgence</th><th>Surface</th><th>Budget</th><th>Localités</th><th></th><th></th><th>Action</th></tr></thead>
        <tbody id="demandes-tbody">${DEM_LISTE.length
           ? DEM_LISTE.map(ligneDemande).join('')
-          : `<tr><td colspan="11" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ${DEM_TYPE?'dans cette catégorie':(DEM_ARCH?'archivée':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
+          : `<tr><td colspan="12" style="text-align:center;color:var(--gris-fonce);padding:24px">Aucune demande ${DEM_TYPE?'dans cette catégorie':(DEM_ARCH?'archivée':'pour le moment')}.</td></tr>`}</tbody></table></div>`;
   C().innerHTML = panel(DEM_ARCH?'Demandes archivées':'Demandes clients', `${DEM_LISTE.length} demande(s)`, corps,
     `<button class="btn btn-sm" onclick="nouvelleDemande()">+ Ajouter une demande</button>
      <button class="btn btn-ghost btn-sm" onclick="DEM_ARCH=!DEM_ARCH;vueDemandes()">${DEM_ARCH?'← Demandes actives':'Archivées ('+archivees.length+')'}</button>`);
@@ -1653,6 +1705,7 @@ function formClient(rec, liens){
       <div style="font-size:.78rem;color:var(--gris-fonce);margin-top:3px">Registre officiel des entreprises — choisis dans la liste pour remplir la fiche. Société absente (trop récente / non immatriculée) : clique « saisir à la main » ou remplis directement les champs ci-dessous.</div></div>
     <div class="f full" id="c-scan-zone" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button type="button" class="btn btn-ghost btn-sm" onclick="importerGoogleContact()">🔗 Depuis Google Contacts</button>
+      <button type="button" class="btn btn-ghost btn-sm" title="Cherche un contact avec téléphone/e-mail sous ce nom, côté prospection Enseignes/Entreprises locales" onclick="chercherContactClientCourant()">🔎 Chercher ce contact dans Enseignes/Entreprises</button>
       <span id="c-scan-msg" style="font-size:.8rem;color:var(--gris-fonce)"></span>
       <div id="c-scan-google" class="full hidden" style="width:100%;font-size:.85rem;background:var(--gris-bg);border:1px solid var(--gris-clair);border-radius:8px;padding:8px"></div>
     </div>
@@ -1682,6 +1735,12 @@ function formClient(rec, liens){
   }, rec.id ? async()=>{ await del('clients', rec.id); vueClients(); } : null, 'client:'+(rec.id||'new'));
   brancherEntrepriseAuto(document.getElementById('c-recherche'));
   draftApply('client:'+(rec.id||'new'));
+}
+/* Nom actuellement saisi dans la fiche client ouverte (raison sociale en priorité, sinon prénom+nom) */
+function chercherContactClientCourant(){
+  const nom = val('c-raison') || [val('c-prenom'),val('c-nom')].filter(Boolean).join(' ');
+  if(!nom){ alert('Indique d’abord un nom ou une raison sociale.'); return; }
+  chercherContactTransversal(nom);
 }
 
 /* ----- ÉQUIPEMENTS (sélecteur 2 volets) ----- */
@@ -2435,10 +2494,10 @@ document.addEventListener('DOMContentLoaded', init);
 </script>
 <script src="dossier.js?v=15"></script>
 <script src="avis-valeur.js?v=51"></script>
-<script src="teams.js?v=7"></script>
+<script src="teams.js?v=8"></script>
 <script src="facture.js?v=3"></script>
 <script src="loi.js?v=7"></script>
-<script src="enseignes.js?v=10"></script>
+<script src="enseignes.js?v=14"></script>
 <script src="entreprises-locales.js?v=1"></script>
 <script src="prospection.js?v=1"></script>
 <script src="leboncoin.js?v=1"></script>

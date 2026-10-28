@@ -25,7 +25,7 @@ const CORS = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
-const REDIRECT_URI = "https://gtec-immobilier.fr/crm/";
+const REDIRECT_URI = "https://www.cabinet-h3c.fr/crm/";
 const SCOPE = "https://www.googleapis.com/auth/contacts.readonly";
 
 async function utilisateurAppelant(req: Request, sbAdmin: ReturnType<typeof createClient>) {

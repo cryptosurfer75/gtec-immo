@@ -9,7 +9,7 @@
 //
 // Secrets attendus (Supabase → Settings → Edge Functions → Secrets) :
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (injectés d'office),
-//   RESEND_API_KEY, RELANCE_FROM (ex. "GTEC Immobilier <compta@gtec-immobilier.fr>").
+//   RESEND_API_KEY, RELANCE_FROM (ex. "H3C Immo Partenaires <compta@cabinet-h3c.fr>").
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     const SB_URL = Deno.env.get("SUPABASE_URL")!;
     const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const RESEND = Deno.env.get("RESEND_API_KEY");
-    const FROM = Deno.env.get("RELANCE_FROM") || "GTEC Immobilier <onboarding@resend.dev>";
+    const FROM = Deno.env.get("RELANCE_FROM") || "H3C Immo Partenaires <onboarding@resend.dev>";
     if (!RESEND) return json({ error: "RESEND_API_KEY non configurée." }, 500);
 
     const sb = createClient(SB_URL, SB_KEY);

@@ -167,6 +167,9 @@
   // Catégorie = attribut d'enseigne (pas de personne) : en pratique toutes les personnes d'un
   // même groupe partagent la même valeur (synchronisée à l'écriture), on prend la 1re trouvée.
   function categorieGroupe(personnes){ const p = personnes.find(x=>x.categorie); return p ? p.categorie : null; }
+  // Note "enseigne" (contexte général, indépendant d'une personne précise) : posée en
+  // doublon sur chaque personne du groupe, même principe que la catégorie ci-dessus.
+  function noteGroupe(personnes){ const p = personnes.find(x=>x.note_enseigne); return p ? p.note_enseigne : null; }
   function categorieBadge(cat){
     if(!cat) return `<span style="color:#90a4ae;font-size:.8rem">— Non catégorisé —</span>`;
     return `<span class="tag" style="background:rgba(0,105,98,.14);color:#004D47;font-weight:700">${esc(CATEGORIE_LABEL[cat]||cat)}</span>`;
@@ -250,20 +253,21 @@
         <option value="__non__" ${FILTRE_CATEGORIE==='__non__'?'selected':''}>— Non catégorisé —</option>
         ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${FILTRE_CATEGORIE===k?'selected':''}>${v}</option>`).join('')}
       </select>` : ''}
-      <input id="en-search" type="search" autocomplete="off" placeholder="🔎 Enseigne, contact, poste…" value="${esc(RECHERCHE)}"
+      <input id="en-search" type="search" autocomplete="off" placeholder="🔎 Enseigne, contact, poste… (cherche partout, Enseignes + Autres contacts)" value="${esc(RECHERCHE)}"
         oninput="H3C_ENSEIGNES._search(this.value)"
-        style="flex:1;min-width:200px;max-width:380px;padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
+        style="flex:1;min-width:200px;max-width:420px;padding:9px 12px;border:1.5px solid var(--gris-clair);border-radius:9px;font:inherit">
     </div>`;
 
+    const recherche = !!(RECHERCHE||'').trim();
     const groupes = filtrerGroupes();
     const page = pageGroupes(groupes);
     const corps = onglets + stats + filtres + (groupes.length
       ? `<div class="tscroll"><table class="en-table"><thead><tr>
-           <th>Enseigne</th><th>${VUE_TYPE==='enseigne'?'Catégorie':'Type'}</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
+           <th>Enseigne</th><th>Catégorie / Type</th><th>Personnes</th><th>Téléphone</th><th>Email</th><th>Statut</th><th style="text-align:center">🌡️</th>
            <th>Relance</th><th>Actions</th>
          </tr></thead><tbody id="en-tbody">${page.map(ligneGroupe).join('')}</tbody></table></div>
          <div id="en-pagination">${paginationBar(groupes.length)}</div>`
-      : vide(VUE_TYPE==='enseigne' ? 'Aucune enseigne dans cet onglet.' : 'Aucun autre contact.'));
+      : vide(recherche ? 'Aucun résultat pour cette recherche, dans aucun des 2 onglets.' : (VUE_TYPE==='enseigne' ? 'Aucune enseigne dans cet onglet.' : 'Aucun autre contact.')));
 
     C().innerHTML = panel(VUE_TYPE==='enseigne'?'Enseignes':'Enseignes — Autres contacts',
       `${groupesEnseignes.length} enseigne(s) · ${groupesAutres.length} autre(s) contact(s) · ${LISTE.length} personne(s) au total`, corps,
@@ -291,8 +295,11 @@
       if(q && !([(c.enseigne||''),(c.nom||''),(c.poste||'')].join(' ').toLowerCase().includes(q))) return false;
       return true;
     };
+    // Une recherche texte porte sur tout le fichier (Enseignes + Autres contacts) : sans ça,
+    // on ne sait jamais dans quel onglet chercher et on fait la recherche 2 fois pour rien.
+    // Sans recherche, on revient au filtre par onglet habituel.
     let groupes = grouperParEnseigne(LISTE)
-      .filter(g => estEnseigneGroupe(g.personnes) === (VUE_TYPE==='enseigne'))
+      .filter(g => q || estEnseigneGroupe(g.personnes) === (VUE_TYPE==='enseigne'))
       .filter(g => g.personnes.some(matchPersonne));
     // La catégorie est un attribut d'enseigne (pas de personne) : filtre appliqué au niveau groupe.
     if(FILTRE_CATEGORIE){
@@ -331,21 +338,31 @@
 
   /* affichage de la colonne « personnes » : un seul nom affiché directement, plusieurs
      → menu déroulant (même principe que les localités des demandes) pour ne pas étirer
-     la ligne du tableau. */
+     la ligne du tableau. Le nom affiché est le contact principal (choisi à la main via
+     ★, ou déduit du statut le plus avancé à défaut) ; les autres personnes du menu ont
+     un bouton pour devenir le principal à leur tour. */
   function personnesCell(g){
-    const noms = g.personnes.map(p=>p.nom||'?');
-    if(noms.length<=1) return esc(noms[0]||'—');
+    if(g.personnes.length<=1) return esc(g.personnes[0]?.nom||'—');
+    const principal = contactPrincipal(g.personnes);
     const id = 'en-pop-'+g.cle.replace(/[^a-z0-9]/gi,'');
     return `<span style="position:relative;display:inline-block">
-      <span class="lien" onclick="event.stopPropagation();toggleLocPop('${id}')">${esc(noms[0])} <b>+${noms.length-1}</b> ▾</span>
+      <span class="lien" onclick="event.stopPropagation();toggleLocPop('${id}')">${esc(principal.nom||'?')} <b>+${g.personnes.length-1}</b> ▾</span>
       <div id="${id}" class="loc-pop" onclick="event.stopPropagation()" style="display:none">
-        ${g.personnes.map(p=>`<div><b>${esc(p.nom||'?')}</b>${p.telephone?' — '+esc(p.telephone):''}${p.email?' — '+esc(p.email):''}</div>`).join('')}
+        ${g.personnes.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span><b>${esc(p.nom||'?')}</b>${p.telephone?' — '+esc(p.telephone):''}${p.email?' — '+esc(p.email):''}</span>
+          ${p===principal
+            ? '<span title="Contact principal" style="color:#f9a825;white-space:nowrap">★ principal</span>'
+            : `<button type="button" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:.72rem;white-space:nowrap" onclick="H3C_ENSEIGNES._contactPrincipal('${esc(g.cle)}','${p.id}')">☆ Définir principal</button>`}
+        </div>`).join('')}
       </div>
     </span>`;
   }
-  /* contact « en tête » du groupe pour l'affichage rapide tél/email en colonne
-     (même priorité que meilleurStatut : le plus avancé dans le suivi en premier) */
+  /* contact « en tête » du groupe pour l'affichage rapide tél/email en colonne :
+     priorité au choix manuel (contact_principal), sinon au statut le plus avancé
+     dans le suivi (même ordre que meilleurStatut). */
   function contactPrincipal(personnes){
+    const manuel = personnes.find(p=>p.contact_principal);
+    if(manuel) return manuel;
     let best = personnes[0], bestIdx = Infinity;
     personnes.forEach(p=>{
       const i = STATUT_PRIORITE.indexOf(p.statut);
@@ -353,6 +370,19 @@
       if(idx < bestIdx){ bestIdx = idx; best = p; }
     });
     return best;
+  }
+  /* fixe manuellement le contact principal d'une enseigne : un seul à la fois,
+     donc on repasse d'abord tous les autres à false avant de poser le nouveau. */
+  async function setContactPrincipal(cle, id){
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe) return;
+    const ids = groupe.personnes.map(p=>p.id);
+    const { error } = await sb.from('enseigne_contacts').update({ contact_principal:false }).in('id', ids);
+    if(error){ alert('Erreur : '+error.message); return; }
+    const { error: err2 } = await sb.from('enseigne_contacts').update({ contact_principal:true }).eq('id', id);
+    if(err2){ alert('Erreur : '+err2.message); return; }
+    groupe.personnes.forEach(p=>{ p.contact_principal = (String(p.id)===String(id)); });
+    if(FICHE_ENSEIGNE===cle) ficheContacts(cle); else rafraichirTbody();
   }
   function telCell(g){
     const p = contactPrincipal(g.personnes);
@@ -371,10 +401,11 @@
       ${Object.entries(CATEGORIE_LABEL).map(([k,v])=>`<option value="${k}" ${cat===k?'selected':''}>${v}</option>`).join('')}
     </select>`;
   }
-  // 2e colonne : sélecteur de catégorie sur l'onglet Enseignes, bouton de reclassement sur
-  // l'onglet Autres contacts (toujours réversible dans les deux sens, d'un clic).
+  // 2e colonne : sélecteur de catégorie pour une vraie enseigne, bouton de reclassement pour
+  // un « autre contact » (toujours réversible dans les deux sens, d'un clic). Basé sur le type
+  // réel du groupe (pas l'onglet actif) pour rester correct quand une recherche mélange les 2.
   function typeCell(g){
-    if(VUE_TYPE==='enseigne') return categorieCell(g);
+    if(estEnseigneGroupe(g.personnes)) return categorieCell(g);
     return `<button class="btn btn-ghost btn-sm" title="Ce n'est pas une enseigne retail ? Cliquer pour la remettre dans Enseignes" onclick="H3C_ENSEIGNES._estEnseigne('${esc(g.cle)}',true)">🏢 C'est une enseigne</button>`;
   }
   function ligneGroupe(g){
@@ -383,7 +414,10 @@
     const relanceTxt = prochaine
       ? `<span style="${retard?'color:#b3261e;font-weight:700':''}">${retard?'⏰ ':''}${fmtDate(prochaine)}</span>`
       : '<span style="color:#90a4ae">—</span>';
-    return `<tr style="cursor:pointer" onclick="H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')">
+    const ouvrir = g.personnes.length===1
+      ? `H3C_ENSEIGNES.editer('${esc(g.personnes[0].id)}')`
+      : `H3C_ENSEIGNES.ficheEnseigne('${esc(g.cle)}')`; // fiche enseigne (nom + note) ; liste des contacts accessible depuis là
+    return `<tr style="cursor:pointer" onclick="${ouvrir}">
       <td><b>${esc(g.enseigne)}</b></td>
       <td onclick="event.stopPropagation()">${typeCell(g)}</td>
       <td>${personnesCell(g)}</td>
@@ -395,14 +429,55 @@
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
         ${(()=>{ const n=nbEchangesGroupe(g.personnes);
           return `<button class="btn btn-ghost btn-sm" style="${n?'background:rgba(46,125,50,.15);border-color:#2e7d32;color:#2e7d32':''}" title="${n?'Déjà traité — '+n+' action(s) enregistrée(s)':'Aucune action enregistrée pour l’instant'}" onclick="H3C_ENSEIGNES.ouvrirSuivi('${esc(g.cle)}')">💬${n?` <b>${n}</b>`:''}</button>`; })()}
-        ${VUE_TYPE==='enseigne' ? `<button class="btn btn-ghost btn-sm" title="Ce n'est pas une vraie enseigne retail (notaire, holding, société de conseil…)" onclick="H3C_ENSEIGNES._estEnseigne('${esc(g.cle)}',false)">🚫</button>` : ''}
+        ${estEnseigneGroupe(g.personnes) ? `<button class="btn btn-ghost btn-sm" title="Ce n'est pas une vraie enseigne retail (notaire, holding, société de conseil…)" onclick="H3C_ENSEIGNES._estEnseigne('${esc(g.cle)}',false)">🚫</button>` : ''}
       </td></tr>`;
   }
 
   /* ==================================================================
-     FICHE ENSEIGNE (liste des personnes rattachées)
+     FICHE ENSEIGNE : nom + note générale (indépendante des personnes),
+     ouverte au clic sur le nom dans le tableau. La gestion des contacts
+     (liste des personnes rattachées) est un cran plus loin, dans
+     ficheContacts() ci-dessous, accessible depuis un bouton de cette fiche.
      ================================================================== */
   function ficheEnseigne(cle){
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe) return;
+    document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)H3C_ENSEIGNES._fermerFiche()"><div class="modal">
+      <div class="modal-h"><h3>🏢 Fiche enseigne</h3><button class="x" onclick="H3C_ENSEIGNES._fermerFiche()">×</button></div>
+      <div class="modal-f">
+        <div class="form-grid">
+          <div class="f full"><label>Nom de l'enseigne</label><input id="en-info-nom" value="${esc(groupe.enseigne)}"></div>
+          <div class="f full"><label>Note générale</label><textarea id="en-info-note" rows="4" placeholder="Contexte général sur cette enseigne (stratégie d'implantation, historique, éléments à retenir…)">${esc(noteGroupe(groupe.personnes)||'')}</textarea></div>
+        </div>
+        <p style="font-size:.85rem;color:var(--gris-fonce);margin-top:10px">${groupe.personnes.length} contact${groupe.personnes.length>1?'s':''} rattaché${groupe.personnes.length>1?'s':''}.
+          <span class="lien" onclick="H3C_ENSEIGNES._fermerFiche();H3C_ENSEIGNES.ficheContacts('${esc(cle)}')">Voir/gérer les contacts →</span></p>
+      </div>
+      <div class="modal-foot"><span></span><span style="display:flex;gap:8px">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._fermerFiche()">Annuler</button>
+        <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._saveInfoEnseigne('${esc(cle)}')">Enregistrer</button>
+      </span></div>
+    </div></div>`;
+  }
+  async function enregistrerInfoEnseigne(cle){
+    const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
+    if(!groupe) return;
+    const nom = document.getElementById('en-info-nom').value.trim();
+    const note = document.getElementById('en-info-note').value.trim();
+    if(!nom){ alert('Le nom de l’enseigne ne peut pas être vide.'); return; }
+    const ids = groupe.personnes.map(p=>p.id);
+    const payload = { note_enseigne: note||null };
+    if(nom!==groupe.enseigne) payload.enseigne = nom;
+    const { error } = await sb.from('enseigne_contacts').update(payload).in('id', ids);
+    if(error){ alert('Erreur : '+error.message); return; }
+    groupe.personnes.forEach(p=>{ Object.assign(p, payload); });
+    fermerFiche();
+    vueEnseignes();
+  }
+  /* ==================================================================
+     LISTE DES CONTACTS d'une enseigne (accessible depuis la fiche enseigne
+     ci-dessus, ou directement depuis le bouton 💬 Suivi)
+     ================================================================== */
+  function ficheContacts(cle){
     FICHE_ENSEIGNE = cle;
     const groupe = grouperParEnseigne(LISTE).find(g=>g.cle===cle);
     if(!groupe){ FICHE_ENSEIGNE=null; return; }
@@ -415,13 +490,13 @@
       <div class="modal-h"><h3>🏢 ${esc(groupe.enseigne)} ${categorieBadge(categorieGroupe(personnes))}</h3><button class="x" onclick="H3C_ENSEIGNES._fermerFiche()">×</button></div>
       <div class="modal-f">
         <p style="font-size:.85rem;color:var(--gris-fonce);margin-top:-6px">${personnes.length} personne${personnes.length>1?'s':''} rattachée${personnes.length>1?'s':''} à cette enseigne (développement, immobilier, franchisé, partenaire…).</p>
-        <div id="en-fiche-personnes">${personnes.map(rowPersonne).join('')}</div>
+        <div id="en-fiche-personnes">${personnes.map(p=>rowPersonne(p, cle, personnes.length>1)).join('')}</div>
         <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="H3C_ENSEIGNES.ajouterPersonne('${esc(groupe.enseigne)}')">＋ Ajouter une personne à cette enseigne</button>
       </div>
       <div class="modal-foot"><span></span><button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._fermerFiche()">Fermer</button></div>
     </div></div>`;
   }
-  function rowPersonne(c){
+  function rowPersonne(c, cle, plusieurs){
     const coord = [
       c.telephone ? `<a href="tel:${esc(c.telephone)}" onclick="event.stopPropagation()" title="Appeler">📞</a>` : '',
       c.email ? `<a href="mailto:${esc(c.email)}" onclick="event.stopPropagation()" title="${esc(c.email)}">✉️</a>` : '',
@@ -435,6 +510,11 @@
         <div style="margin-top:3px">${statutBadge(c.statut)} ${tempIcon(c.temperature)} <span style="margin-left:6px">${coord}</span></div>
       </div>
       <div onclick="event.stopPropagation()" style="white-space:nowrap">
+        ${plusieurs
+          ? (c.contact_principal
+            ? '<span title="Contact principal" style="color:#f9a825;margin-right:4px">★</span>'
+            : `<button class="btn btn-ghost btn-sm" title="Définir comme contact principal" onclick="H3C_ENSEIGNES._contactPrincipal('${esc(cle)}','${c.id}')">☆</button>`)
+          : ''}
         <button class="btn btn-ghost btn-sm" title="Modifier" onclick="H3C_ENSEIGNES.editer('${c.id}')">✏️</button>
         <button class="btn btn-ghost btn-sm" title="Supprimer" style="color:#b3261e" onclick="H3C_ENSEIGNES.supprimer('${c.id}')">🗑</button>
       </div></div>`;
@@ -459,7 +539,7 @@
       <div class="modal-b" id="suivi-b"><div class="loading">Chargement…</div></div>
       <div class="modal-foot"><span></span><span style="display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" class="btn btn-ghost btn-sm" onclick="H3C_ENSEIGNES._fermerSuivi()">Fermer</button>
-        <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._fermerSuivi();H3C_ENSEIGNES.ficheEnseigne('${esc(cle)}')">✏️ Gérer les personnes</button>
+        <button type="button" class="btn btn-sm" onclick="H3C_ENSEIGNES._fermerSuivi();H3C_ENSEIGNES.ficheContacts('${esc(cle)}')">✏️ Gérer les personnes</button>
       </span></div>
     </div></div>`;
     await rafraichirSuivi(cle);
@@ -591,7 +671,7 @@
     }
     await sb.from('enseigne_contacts').update(payload).eq('id', id);
     await vueEnseignes();
-    if(FICHE_ENSEIGNE) ficheEnseigne(FICHE_ENSEIGNE);
+    if(FICHE_ENSEIGNE) ficheContacts(FICHE_ENSEIGNE);
   }
 
   /* ==================================================================
@@ -722,10 +802,13 @@
         const idsGroupe = LISTE.filter(x=>normEnseigne(x.enseigne)===normEnseigne(enseigne) && String(x.id)!==String(idSauve)).map(x=>x.id);
         if(idsGroupe.length) await sb.from('enseigne_contacts').update({categorie:payload.categorie}).in('id', idsGroupe);
       }
-      const retourFiche = FICHE_ENSEIGNE || normEnseigne(enseigne);
+      // Après une édition directe depuis le tableau (enseigne à 1 seul contact), on referme
+      // simplement sans rouvrir de fiche ; après une édition/ajout depuis la liste des
+      // contacts d'une enseigne (ou la création d'une toute nouvelle enseigne), on y revient.
+      const retourFiche = FICHE_ENSEIGNE || (!ED.id ? normEnseigne(enseigne) : null);
       document.querySelector('#modal-root2 .modal-bg')?.remove();
       await vueEnseignes();
-      ficheEnseigne(retourFiche);
+      if(retourFiche) ficheContacts(retourFiche);
     }catch(e){ msg.className='form-msg err'; msg.textContent='Erreur : '+(e.message||e); }
   }
 
@@ -788,16 +871,18 @@
     document.querySelector('#modal-root2 .modal-bg')?.remove();
     const retourFiche = FICHE_ENSEIGNE;
     await vueEnseignes();
-    if(retourFiche && grouperParEnseigne(LISTE).some(g=>g.cle===retourFiche)) ficheEnseigne(retourFiche);
+    if(retourFiche && grouperParEnseigne(LISTE).some(g=>g.cle===retourFiche)) ficheContacts(retourFiche);
     else fermerFiche();
   }
 
   window.H3C_ENSEIGNES = {
-    vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, editer, supprimer, relanceRapide, ouvrirSuivi,
+    vue: vueEnseignes, nouvelleEnseigne, ajouterPersonne, ficheEnseigne, ficheContacts, editer, supprimer, relanceRapide, ouvrirSuivi,
     _statut(v){ FILTRE_STATUT=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _categorieFiltre(v){ FILTRE_CATEGORIE=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _categorie: setCategorie,
     _estEnseigne: setEstEnseigne,
+    _contactPrincipal: setContactPrincipal,
+    _saveInfoEnseigne: enregistrerInfoEnseigne,
     _vueType(v){ VUE_TYPE=v; FILTRE_CATEGORIE=''; PAGE_COURANTE=0; vueEnseignes(); },
     _search(v){ RECHERCHE=v; PAGE_COURANTE=0; rafraichirTbody(); },
     _toggleRelances(){ SEULEMENT_RELANCES=!SEULEMENT_RELANCES; PAGE_COURANTE=0; vueEnseignes(); },

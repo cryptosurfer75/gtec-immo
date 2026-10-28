@@ -21,8 +21,8 @@
 
   // -- Identité Cabinet H3C -----------------------------------------------------
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
-  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
+  const LOGO = 'https://www.cabinet-h3c.fr/logo-h3c-vert.png?v=1';
+  const LOGO_CONTACT = 'https://www.cabinet-h3c.fr/logo-h3c-mark.png?v=1';
   const AGENTS = {
     VDM: { nom:'Valéry de Martelaere', tel:'06 11 51 16 91', mail:'v.demartelaere@cabinet-h3c.com' }
   };
@@ -656,7 +656,7 @@
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${esc(titre)}</title>
-      <link rel="icon" href="https://gtec-immobilier.fr/favicon.png">
+      <link rel="icon" href="https://www.cabinet-h3c.fr/favicon.png">
       <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -697,7 +697,7 @@
       const up = await sb.storage.from('offres').upload('avis-public/'+id+'.html', blob, { contentType:'text/html; charset=utf-8', upsert:true, cacheControl:'60' });
       if(up.error) throw up.error;
     }catch(e){ alert('Impossible de publier l’avis : '+(e.message||e)); return; }
-    afficherLien('https://gtec-immobilier.fr/a/?id=' + encodeURIComponent(id), id);
+    afficherLien('https://www.cabinet-h3c.fr/a/?id=' + encodeURIComponent(id), id);
   }
 
   // Révoque le lien : supprime l'avis publié → le lien ne mène plus à rien.

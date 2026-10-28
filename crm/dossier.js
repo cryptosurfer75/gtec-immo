@@ -12,12 +12,12 @@
 
   // -- Identité Cabinet H3C -----------------------------------------------------
   // Clé Google Maps (Static Maps). Vide = on retombe sur les cartes libres.
-  // À restreindre par référent HTTP au domaine gtec-immobilier.fr dans la console Google.
+  // À restreindre par référent HTTP au domaine www.cabinet-h3c.fr dans la console Google.
   const GMAPS_KEY = 'AIzaSyBvPpjWZpcGSgSIFmCiRC6pnPjzI332GRU';
-  const LOGO = 'https://gtec-immobilier.fr/logo-h3c-vert.png?v=1';
+  const LOGO = 'https://www.cabinet-h3c.fr/logo-h3c-vert.png?v=1';
   // Marque « bâtiment + H3C » fond transparent (sans wordmark) — dernière page ;
   // le sous-titre « IMMOBILIER D'ENTREPRISE » est rendu en texte juste en dessous.
-  const LOGO_CONTACT = 'https://gtec-immobilier.fr/logo-h3c-mark.png?v=1';
+  const LOGO_CONTACT = 'https://www.cabinet-h3c.fr/logo-h3c-mark.png?v=1';
   // Bloc logo + signature « Immobilier d'entreprise » (taille homogène partout)
   const logoBlock = (cls) => `<span class="logo-wrap ${cls}-wrap"><img class="${cls}" src="${LOGO}" alt="Cabinet H3C"><span class="logo-tag">Immobilier d’entreprise</span></span>`;
   // Signature de l'agence (Florent et Maxime ne sont plus dans le projet)
@@ -628,7 +628,7 @@
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${esc(titre)}</title>
-      <link rel="icon" href="https://gtec-immobilier.fr/favicon.png">
+      <link rel="icon" href="https://www.cabinet-h3c.fr/favicon.png">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -697,7 +697,7 @@
     }catch(e){ alert('Impossible de publier le dossier : '+(e.message||e)); return; }
     // Le client ouvre la visionneuse sur le domaine du site (qui sert le vrai HTML) ;
     // elle récupère puis affiche le dossier déposé dans le stockage.
-    const lien = 'https://gtec-immobilier.fr/d/?id=' + encodeURIComponent(offreId);
+    const lien = 'https://www.cabinet-h3c.fr/d/?id=' + encodeURIComponent(offreId);
     afficherLien(lien, offreId);
   }
 
