@@ -30,7 +30,7 @@ const D=window.DATA;const ME=window.ME||{agent:'?'};
 /* LS / SV : fournis par la page (index.html) → base Supabase */
 let edits=LS('edits',{}), newC=LS('newc',[]), tasks=LS('tasks',[]), notes=LS('notes',[]), nedits=LS('nedits',{}), newO=LS('newo',[]), newD=LS('newd',[]);
 D.o0=D.offres.slice(); D.d0=D.demandes.slice();
-let oedits=LS('oedits',{}), dedits=LS('dedits',{}), props=LS('props',[]);
+let oedits=LS('oedits',{}), dedits=LS('dedits',{}), props=LS('props',[]), files=LS('files',[]);
 /* statuts d'un bien (cliquables sur la fiche) ; les anciennes valeurs sont converties à la lecture */
 const BSTAT=[['attente','En attente'],['marche','Sur le marché'],['sous_offre','Sous offre'],['compromis','Sous compromis'],['vendu_loue','Vendu / loué'],['archive','Archivé']];
 const statB=o=>({disponible:'marche',sous_compromis:'compromis',retire:'archive'}[o.statut]||o.statut||'marche');
@@ -287,6 +287,7 @@ const prop=o.client_id?getC(o.client_id):null;
    <div class="card"><div class="fh" style="align-items:flex-start"><div><h2>${esc(o.reference)} — ${esc(o.titre||BL[o.type_bien])}</h2><div class="sub">${esc([o.adresse,[o.code_postal,o.ville].filter(Boolean).join(' ')].filter(Boolean).join(', '))}${o.secteur?' · '+esc(o.secteur):''}</div></div>
      <div class="sp"><button class="btn sec" onclick="editFiche('offre','${o.id}')">${ic('edit',16)}Modifier</button>${S.delB===o.id?`<button class="btn sm" style="color:#c0392b" onclick="delFiche('offre','${o.id}')">Supprimer définitivement ?</button><button class="btn sec sm" onclick="S.delB=null;VIEWS.biens()">Non</button>`:`<button class="btn sec" title="Supprimer" onclick="S.delB='${o.id}';VIEWS.biens()">${ic('x',16)}Supprimer</button>`}<button class="btn pri" onclick="demoMsg('Dossier PDF du CRM')">${ic('file',16)}Dossier PDF</button></div></div>
      <div class="stepper">${BSTAT.map(([k,l],n)=>{const cur=BSTAT.findIndex(b=>b[0]===statB(o));return `<div class="st ${n<cur?'done':''} ${n===cur?'cur':''}" onclick="setStatB('${o.id}','${k}')"><i>${n<cur?ic('ok'):''}</i>${l}</div>`}).join('')}</div></div>
+   <div id="bmedia"></div>
    <div class="card" style="margin-top:14px"><h3>${ic('building',15)} Caractéristiques</h3><div class="cb">
      ${kv('Type',esc(BL[o.type_bien]||o.type_bien))}${kv('Transaction',esc(TL[o.transaction]||o.transaction))}${kv('Surface',o.surface_m2+' m²')}
      ${o.transaction==='location'?kv('Loyer annuel',euro(o.loyer_annuel_m2==null?null:o.loyer_annuel_m2*12)+(o.loyer_type?' '+esc(o.loyer_type):'')+(o.loyer_annuel_m2?` <small style="color:var(--gris)">(${euro(o.loyer_annuel_m2)} / mois)</small>`:'')):kv('Prix',euro(o.prix_vente))}${kv('Charges annuelles',euro(o.charges==null?null:o.charges*12)+(o.charges?` <small style="color:var(--gris)">(${euro(o.charges)} / mois)</small>`:''))}${kv('DPE',esc((o.dpe||'—')+(o.dpe_conso?' · '+o.dpe_conso+' kWh/m²/an':'')))}${kv('Suivi par',esc(o.agent||'—'))}
@@ -295,6 +296,7 @@ const prop=o.client_id?getC(o.client_id):null;
    ${o.description?`<div class="card" style="margin-top:14px"><h3>${ic('note',15)} Description de l'annonce</h3><div class="cb" style="padding-top:12px;white-space:pre-wrap">${esc(o.description)}</div></div>`:''}
    <div class="card" style="margin-top:14px"><h3>${ic('link',15)} Demandes compatibles (${comp.length})</h3>
      ${comp.map(x=>{const c=getC(x.d.client_id);return `<div class="li" onclick="go('#/demandes/${x.d.id}')"><b>${esc(x.d.reference)}</b><small>${esc(c?c.nom:'—')}${c&&c.societe?' · '+esc(c.societe):''}</small><span class="sp match"><span class="bar"><i style="width:${x.m.pct}%"></i></span>${x.m.pct}%</span>${propCell(o.id,x.d.id)}</div>`}).join('')||`<div class="empty"><b>Aucune demande compatible</b></div>`}</div>${propCard('o',o.id)}`;
+  renderMedia(o);
 };
 
 /* ---- Demandes ---- */
@@ -665,7 +667,8 @@ function recapD(){const d=W.d,c=d.client_id?getC(d.client_id):null;
 function setStatB(id,k){oedits[id]={...(oedits[id]||{}),statut:k};SV('oedits',oedits);refreshData();toast('Statut : '+BSTAT.find(b=>b[0]===k)[1]);VIEWS.biens()}
 function setDStatut(id,k){dedits[id]={...(dedits[id]||{}),statut:k};SV('dedits',dedits);refreshData();toast(k==='cloturee'?'Demande clôturée':'Demande réactivée');VIEWS.demandes()}
 function setDEtape(id,n){dedits[id]={...(dedits[id]||{}),etape:n};SV('dedits',dedits);refreshData();VIEWS.demandes()}
-function delFiche(kind,id){const E=kind==='offre'?oedits:dedits;E[id]={...(E[id]||{}),del:true};SV(kind==='offre'?'oedits':'dedits',E);props=props.filter(p=>p.offre!==id&&p.demande!==id);SV('props',props);
+function delFiche(kind,id){if(kind==='offre'){const fs=files.filter(f=>f.owner==='offre:'+id);if(fs.length){files=files.filter(f=>f.owner!=='offre:'+id);SV('files',files);sb.storage.from(BUCKET).remove(fs.map(f=>f.path))}}
+  const E=kind==='offre'?oedits:dedits;E[id]={...(E[id]||{}),del:true};SV(kind==='offre'?'oedits':'dedits',E);props=props.filter(p=>p.offre!==id&&p.demande!==id);SV('props',props);
   S.delB=S.delD=null;if(kind==='offre')S.bienSel=null;else S.demSel=null;refreshData();toast(kind==='offre'?'Offre supprimée':'Demande supprimée');route()}
 /* propositions d'un bien à un client (historique + état) */
 const propOf=(o,d)=>props.find(p=>p.offre===o&&p.demande===d);
@@ -684,6 +687,32 @@ function delProp(id){props=props.filter(x=>x.id!==id);SV('props',props);route()}
 function propCard(kind,id){const L=props.filter(p=>kind==='o'?p.offre===id:p.demande===id);
   return `<div class="card" style="margin-top:14px"><h3>${ic('mail',15)} Propositions (${L.length})</h3>${L.map(p=>{const o=D.offres.find(x=>x.id===p.offre),d=D.demandes.find(x=>x.id===p.demande);if(!o||!d)return '';const c=getC(d.client_id);
     return `<div class="li" onclick="go('${kind==='o'?'#/demandes/'+d.id:'#/biens/'+o.id}')"><b>${esc(kind==='o'?d.reference:o.reference)}</b><small>${esc(kind==='o'?(c?c.nom:'—'):(o.adresse||o.ville||''))} · ${fdate(p.date)}</small><span class="sp">${propCell(o.id,d.id)}<button class="iconbtn" title="Retirer" onclick="event.stopPropagation();delProp('${p.id}')">${ic('x',15)}</button></span></div>`}).join('')||`<div class="empty"><b>Aucune proposition</b>Utilisez « Proposer » dans la liste ci-dessus.</div>`}</div>`}
+
+/* ===== Photos & documents d'un bien (stockage privé « crm-fichiers », rangé par référence) =====
+   Une ligne « files » par fichier : {id, owner:'offre:<id>', kind:'photo|plan|mandat|dossier|autre', name, path, ord, principal, categorie}
+   Rangement : offres/<REF>/photos/…  offres/<REF>/documents/… */
+const BUCKET='crm-fichiers', KINDS=[['plan','Plan'],['mandat','Mandat'],['dossier','Dossier'],['autre','Autre']];
+const URLS={};
+const fOf=(owner,kind)=>files.filter(f=>f.owner===owner&&(kind?f.kind===kind:true)).sort((a,b)=>(a.ord||0)-(b.ord||0));
+async function signed(paths){const need=paths.filter(p=>!URLS[p]||URLS[p].exp<Date.now());
+  if(need.length){const {data}=await sb.storage.from(BUCKET).createSignedUrls(need,3600);(data||[]).forEach(d=>{if(d.signedUrl)URLS[d.path]={url:d.signedUrl,exp:Date.now()+3300000}})}
+  return p=>URLS[p]&&URLS[p].url}
+async function renderMedia(o){const el=$('#bmedia');if(!el)return;const owner='offre:'+o.id,ph=fOf(owner,'photo'),docs=files.filter(f=>f.owner===owner&&f.kind!=='photo');
+  const url=await signed([...ph,...docs].map(f=>f.path));if(S.bienSel!==o.id||!$('#bmedia'))return;
+  el.innerHTML=`<div class="card" style="margin-top:14px"><h3 style="display:flex;align-items:center">${ic('building',15)} Photos (${ph.length})<label class="btn sec sm" style="margin-left:auto;cursor:pointer">${ic('plus',13)}Ajouter<input type="file" accept="image/*" multiple hidden onchange="addFiles('${o.id}','photo',this)"></label></h3>
+    <div class="cb" style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px">${ph.map(f=>`<div style="width:150px"><div style="position:relative"><img src="${url(f.path)||''}" style="width:150px;height:105px;object-fit:cover;border-radius:8px;border:1.5px solid ${f.principal?'var(--teal)':'var(--gris-clair)'}" loading="lazy"><span class="chip ${f.principal?'c-vert':'c-gris'}" style="position:absolute;left:6px;top:6px;cursor:pointer" onclick="setCover('${f.id}')" title="Photo principale">${f.principal?'★ Principale':'☆'}</span><button class="iconbtn" style="position:absolute;right:4px;top:4px;background:#fff" title="Supprimer" onclick="delFile('${f.id}')">${ic('x',14)}</button></div><small style="color:var(--gris)">${esc(f.categorie||'')}</small></div>`).join('')||'<span style="color:var(--gris);font-size:13px">Aucune photo</span>'}</div></div>
+   <div class="card" style="margin-top:14px"><h3 style="display:flex;align-items:center;gap:8px">${ic('file',15)} Documents (${docs.length})<span style="margin-left:auto;display:flex;gap:6px;align-items:center"><select id="dockind" class="sm">${KINDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select><label class="btn sec sm" style="cursor:pointer">${ic('plus',13)}Ajouter<input type="file" multiple hidden onchange="addFiles('${o.id}',$('#dockind').value,this)"></label></span></h3>
+    <div class="cb">${docs.map(f=>`<div class="kv"><span class="k">${esc((KINDS.find(k=>k[0]===f.kind)||[0,f.kind])[1])}</span><span class="v"><a href="${url(f.path)||'#'}" target="_blank" style="color:var(--teal)">${esc(f.name)}</a></span><span><button class="iconbtn" title="Supprimer" onclick="delFile('${f.id}')">${ic('x',14)}</button></span></div>`).join('')||'<div class="empty" style="padding:12px"><b>Aucun document</b>Plans, mandat, dossier…</div>'}</div></div>`}
+async function addFiles(oid,kind,inp){const o=D.offres.find(x=>x.id===oid);const list=[...inp.files];inp.value='';if(!o||!list.length)return;toast('Envoi de '+list.length+' fichier(s)…');let ok=0;
+  for(const file of list){const safe=file.name.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._-]+/g,'-');const n=fOf('offre:'+oid,kind==='photo'?'photo':null).length+1;
+    const path=`offres/${o.reference}/${kind==='photo'?'photos':'documents'}/${String(Date.now()).slice(-6)}-${safe}`;
+    const {error}=await sb.storage.from(BUCKET).upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+    if(error){toast('Échec : '+file.name+' ('+error.message+')');continue}
+    files.push({id:'f'+Date.now()+'-'+ok,owner:'offre:'+oid,kind,name:file.name,path,ord:n,principal:kind==='photo'&&!fOf('offre:'+oid,'photo').length,categorie:null,created:today()});ok++}
+  SV('files',files);toast(ok+' fichier(s) ajouté(s)');renderMedia(o)}
+function setCover(id){const f=files.find(x=>x.id===id);if(!f)return;files.filter(x=>x.owner===f.owner&&x.kind==='photo').forEach(x=>x.principal=x.id===id);SV('files',files);renderMedia(D.offres.find(x=>'offre:'+x.id===f.owner))}
+async function delFile(id){const i=files.findIndex(x=>x.id===id);if(i<0)return;const f=files[i];files.splice(i,1);SV('files',files);await sb.storage.from(BUCKET).remove([f.path]);
+  if(f.kind==='photo'&&f.principal){const n=fOf(f.owner,'photo')[0];if(n){n.principal=true;SV('files',files)}}toast('Fichier supprimé');renderMedia(D.offres.find(x=>'offre:'+x.id===f.owner))}
 /* reconstitue les réponses de l'assistant à partir d'une fiche (offres / demandes d'origine, ou enregistrées avant l'ajout de l'historique complet) */
 function wOffre(o){return Object.assign({},DEFAUTS.offre,{type_bien:o.type_bien,transaction:o.transaction,statut:statB(o),adresse:o.adresse||'',cp:o.code_postal||'',ville:o.ville||'',secteur:o.secteur||'',surface:o.surface_m2||'',loyer:o.loyer_annuel_m2||'',prix:o.prix_vente||'',loyer_type:o.loyer_type||'HT HC',charges:o.charges||'',titre:o.titre||'',dpe:o.dpe||'',dpe_conso:o.dpe_conso||'',agent:o.agent,client_id:o.client_id,desc:o.description||'',bail:o.bail||DEFAUTS.offre.bail,indexation:o.indexation||DEFAUTS.offre.indexation,equip:o.equip||{},acces:o.acces||[],env:o.env||[]})}
 function wDemande(d){return Object.assign({},DEFAUTS.demande,{client_id:d.client_id,types:d.types_bien||[],transaction:d.transaction,smin:d.surface_min_m2||'',smax:d.surface_max_m2||'',budget:d.budget_max||'',urgence:d.urgence||'',statut:d.statut,agent:d.agent,notes:d.notes||'',loc:d.localites||[],tolb:d.tolerance_budget_pct||15,tols:d.tolerance_surface_pct||15})}

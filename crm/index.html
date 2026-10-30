@@ -274,7 +274,7 @@ table.t tr.tr{cursor:pointer}table.t tr.tr:hover{background:#FAFCFC}table.t tr.s
 const SB_URL='https://rqeyadmapekiwzyjtyhv.supabase.co', SB_KEY='sb_publishable_kSLakua0tOFW8_6tL7W_Tw_Keihe6xW';
 const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 window.DATA={contacts:[],offres:[],demandes:[],echanges:[]};
-const ARR=['newc','tasks','notes','newo','newd','props'], DIC=['edits','nedits','oedits','dedits'];
+const ARR=['newc','tasks','notes','newo','newd','props','files'], DIC=['edits','nedits','oedits','dedits'];
 const CACHE={}, SYNCED={}, PENDING=new Set(); let flushT=null, flushing=false, syncBad=false;
 const LS=(k,d)=>CACHE[k]!==undefined?CACHE[k]:d;
 function SV(k,v){CACHE[k]=v;PENDING.add(k);setSync('…');clearTimeout(flushT);flushT=setTimeout(flush,200)}
@@ -315,7 +315,7 @@ async function start(user){
   window.ME={email:user.email,agent:agentDe(user.email)};
   const av=document.getElementById('meav');av.textContent=ME.agent;av.title=user.email;
   show('boot',false);
-  const s=document.createElement('script');s.src='app.js?v=1';document.body.appendChild(s)}
+  const s=document.createElement('script');s.src='app.js?v=2';document.body.appendChild(s)}
 async function logout(){if(PENDING.size)await flush();await sb.auth.signOut();location.reload()}
 boot();
 </script>
