@@ -315,7 +315,7 @@ async function start(user){
   window.ME={email:user.email,agent:agentDe(user.email)};
   const av=document.getElementById('meav');av.textContent=ME.agent;av.title=user.email;
   show('boot',false);
-  const s=document.createElement('script');s.src='app.js?v=2';document.body.appendChild(s)}
+  window.ME_AGENT=ME.agent;const s=document.createElement('script');s.src='app.js?v=3';s.onload=()=>{const d=document.createElement('script');d.src='dossier.js?v=1';document.body.appendChild(d)};document.body.appendChild(s)}
 async function logout(){if(PENDING.size)await flush();await sb.auth.signOut();location.reload()}
 boot();
 </script>
