@@ -1,5 +1,6 @@
 User-agent: *
 Disallow: /crm/
+Disallow: /crm-ancien/
 Allow: /
 
 Sitemap: https://www.cabinet-h3c.fr/sitemap.xml
